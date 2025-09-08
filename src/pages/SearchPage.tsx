@@ -82,16 +82,16 @@ const SearchPage: React.FC = () => {
       const filteredFloorResults: SearchResult[] = [];
       
       allFloorData.forEach(item => {
-        if (item.department?.toLowerCase().includes(searchLower) ||
-            item.room?.toLowerCase().includes(searchLower) ||
-            item.equipment_code?.toLowerCase().includes(searchLower) ||
-            item.equipment_name?.toLowerCase().includes(searchLower)) {
+        if (item["ОТДЕЛЕНИЕ"]?.toLowerCase().includes(searchLower) ||
+            item["Наименование помещения"]?.toLowerCase().includes(searchLower) ||
+            item["Код оборудования"]?.toLowerCase().includes(searchLower) ||
+            item["Наименование оборудования"]?.toLowerCase().includes(searchLower)) {
           filteredFloorResults.push({
-            department: item.department || '',
-            room: item.room || '',
-            code: item.equipment_code || '',
-            name: item.equipment_name || '',
-            quantity: item.quantity || 1,
+            department: item["ОТДЕЛЕНИЕ"] || '',
+            room: item["Наименование помещения"] || '',
+            code: item["Код оборудования"] || '',
+            name: item["Наименование оборудования"] || '',
+            quantity: item["Кол-во"] || 1,
             source: 'floors'
           });
         }
