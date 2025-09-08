@@ -122,32 +122,45 @@ const SearchPage: React.FC = () => {
     return () => clearTimeout(delayedSearch);
   }, [searchTerm]);
 
-  const ResultCard = ({ result }: { result: SearchResult }) => (
-    <Card className="bg-card/50 backdrop-blur border-border/50">
-      <CardContent className="p-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">{result.name}</h4>
-            <Badge variant="secondary">{result.quantity} шт.</Badge>
+  const ResultCard = ({ result }: { result: SearchResult }) => {
+    const handleClick = () => {
+      if (result.source === 'turar') {
+        navigate('/turar');
+      } else {
+        navigate('/floors');
+      }
+    };
+
+    return (
+      <Card 
+        className="bg-card/50 backdrop-blur border-border/50 cursor-pointer hover:bg-card/70 transition-colors"
+        onClick={handleClick}
+      >
+        <CardContent className="p-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm">{result.name}</h4>
+              <Badge variant="secondary">{result.quantity} шт.</Badge>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {result.department}
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {result.room}
+              </div>
+              <div className="flex items-center gap-1">
+                <Package className="h-3 w-3" />
+                {result.code}
+              </div>
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div className="flex items-center gap-1">
-              <Building2 className="h-3 w-3" />
-              {result.department}
-            </div>
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {result.room}
-            </div>
-            <div className="flex items-center gap-1">
-              <Package className="h-3 w-3" />
-              {result.code}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
