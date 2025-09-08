@@ -45,17 +45,6 @@ interface Department {
 
 interface Floor {
   number: string;
-  blocks: Block[];
-  stats: {
-    totalBlocks: number;
-    totalDepartments: number;
-    totalRooms: number;
-    totalEquipment: number;
-  };
-}
-
-interface Block {
-  name: string;
   departments: Department[];
   stats: {
     totalDepartments: number;
@@ -64,9 +53,9 @@ interface Block {
   };
 }
 
-// Process floor data to group by floors -> blocks -> departments -> rooms
+// Process floor data to group by floors -> departments -> rooms (with block markers)
 const processFloorData = (data: FloorData[]): Floor[] => {
-  const floorsMap = new Map<string, Map<string, Map<string, Department>>>();
+  const floorsMap = new Map<string, Map<string, Department>>();
 
   data.forEach(item => {
     const floorNumber = String(item["Этаж"]);
@@ -79,14 +68,8 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     
     const floor = floorsMap.get(floorNumber)!;
     
-    if (!floor.has(blockName)) {
-      floor.set(blockName, new Map());
-    }
-    
-    const block = floor.get(blockName)!;
-    
-    if (!block.has(departmentName)) {
-      block.set(departmentName, {
+    if (!floor.has(departmentName)) {
+      floor.set(departmentName, {
         name: departmentName,
         block: blockName,
         rooms: [],
@@ -94,7 +77,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
       });
     }
 
-    const department = block.get(departmentName)!;
+    const department = floor.get(departmentName)!;
     let room = department.rooms.find(r => r.code === item["Код помещения"]);
     
     if (!room) {
@@ -121,35 +104,16 @@ const processFloorData = (data: FloorData[]): Floor[] => {
   // Convert to Floor[] structure
   const floors: Floor[] = [];
   
-  floorsMap.forEach((blocksMap, floorNumber) => {
-    const blocks: Block[] = [];
-    
-    blocksMap.forEach((departmentsMap, blockName) => {
-      const departments = Array.from(departmentsMap.values());
-      const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
-      const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
-      
-      blocks.push({
-        name: blockName,
-        departments,
-        stats: {
-          totalDepartments: departments.length,
-          totalRooms,
-          totalEquipment
-        }
-      });
-    });
-    
-    const totalDepartments = blocks.reduce((sum, block) => sum + block.stats.totalDepartments, 0);
-    const totalRooms = blocks.reduce((sum, block) => sum + block.stats.totalRooms, 0);
-    const totalEquipment = blocks.reduce((sum, block) => sum + block.stats.totalEquipment, 0);
+  floorsMap.forEach((departmentsMap, floorNumber) => {
+    const departments = Array.from(departmentsMap.values());
+    const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
+    const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
     
     floors.push({
       number: floorNumber,
-      blocks,
+      departments,
       stats: {
-        totalBlocks: blocks.length,
-        totalDepartments,
+        totalDepartments: departments.length,
         totalRooms,
         totalEquipment
       }
@@ -177,11 +141,10 @@ export default function FloorsPage() {
 
   // Calculate total statistics
   const totalStats = floors.reduce((acc, floor) => ({
-    totalBlocks: acc.totalBlocks + floor.stats.totalBlocks,
     totalDepartments: acc.totalDepartments + floor.stats.totalDepartments,
     totalRooms: acc.totalRooms + floor.stats.totalRooms,
     totalEquipment: acc.totalEquipment + floor.stats.totalEquipment
-  }), { totalBlocks: 0, totalDepartments: 0, totalRooms: 0, totalEquipment: 0 });
+  }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,7 +180,6 @@ export default function FloorsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{floor.stats.totalBlocks} блоков</span>
                         <span>{floor.stats.totalDepartments} отделений</span>
                         <span>{floor.stats.totalRooms} помещений</span>
                         <span>{floor.stats.totalEquipment} ед. оборуд.</span>
@@ -226,86 +188,64 @@ export default function FloorsPage() {
                   </AccordionTrigger>
                   <AccordionContent className="px-6 pb-6">
                     <div className="space-y-4">
-                      {floor.blocks.map((block) => (
-                        <div key={block.name} className="border rounded-lg overflow-hidden">
+                      {floor.departments.map((department, deptIndex) => (
+                        <div key={deptIndex} className="border rounded-lg overflow-hidden">
                           <Accordion type="single" collapsible>
-                            <AccordionItem value={`block-${block.name}`} className="border-none">
+                            <AccordionItem value={`dept-${deptIndex}`} className="border-none">
                               <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
                                 <div className="flex items-center justify-between w-full mr-4">
                                   <div className="flex items-center gap-3">
                                     <Badge variant="outline" className="font-mono">
-                                      Блок {block.name}
+                                      Блок {department.block}
                                     </Badge>
+                                    <span className="font-medium">{department.name}</span>
                                     <span className="text-sm text-muted-foreground">
-                                      {block.stats.totalDepartments} отделений • {block.stats.totalRooms} помещений
+                                      {department.rooms.length} помещений
                                     </span>
                                   </div>
                                   <Badge variant="secondary" className="text-xs">
-                                    {block.stats.totalEquipment} ед. оборуд.
+                                    {department.equipmentCount} ед. оборуд.
                                   </Badge>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
                                 <div className="space-y-3">
                                   <div className="text-xs font-medium text-muted-foreground mb-2">
-                                    ВСЕ ОТДЕЛЕНИЯ В БЛОКЕ:
+                                    КАБИНЕТЫ В ОТДЕЛЕНИИ:
                                   </div>
-                                  {block.departments.map((department, deptIndex) => (
-                                    <div key={deptIndex} className="border rounded-md overflow-hidden">
-                                      <Accordion type="single" collapsible>
-                                        <AccordionItem value={`dept-${deptIndex}`} className="border-none">
-                                          <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-muted/30">
-                                            <div className="flex items-center justify-between w-full mr-4">
-                                              <div className="text-left">
-                                                <div className="font-medium text-sm">{department.name}</div>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {department.rooms.map((room, roomIndex) => (
+                                      <div key={roomIndex} className="text-xs bg-muted/20 p-2 rounded border-l-2 border-primary/30">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="font-medium">{room.name}</span>
+                                          <span className="text-muted-foreground font-mono text-xs">{room.code}</span>
+                                        </div>
+                                        {room.equipment.length > 0 && (
+                                          <div className="mt-2 space-y-1">
+                                            {room.equipment.map((eq, eqIndex) => (
+                                              <div key={eqIndex} className="flex flex-wrap items-center gap-2 text-xs">
+                                                <span className="text-muted-foreground">{eq.name}</span>
+                                                {eq.code && (
+                                                  <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                                                    {eq.code}
+                                                  </Badge>
+                                                )}
+                                                {eq.quantity && eq.unit && (
+                                                  <span className="text-muted-foreground">
+                                                    {eq.quantity} {eq.unit}
+                                                  </span>
+                                                )}
+                                                {eq.notes && (
+                                                  <span className="text-muted-foreground italic">({eq.notes})</span>
+                                                )}
                                               </div>
-                                              <div className="text-xs text-muted-foreground">
-                                                {department.rooms.length} каб.
-                                              </div>
-                                            </div>
-                                          </AccordionTrigger>
-                                          <AccordionContent className="px-3 pb-3">
-                                            <div className="space-y-2">
-                                              <div className="text-xs font-medium text-muted-foreground">Кабинеты:</div>
-                                              <div className="grid grid-cols-1 gap-2">
-                                                {department.rooms.map((room, roomIndex) => (
-                                                  <div key={roomIndex} className="text-xs bg-muted/20 p-2 rounded border-l-2 border-primary/30">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                      <span className="font-medium">{room.name}</span>
-                                                      <span className="text-muted-foreground font-mono text-xs">{room.code}</span>
-                                                    </div>
-                                                    {room.equipment.length > 0 && (
-                                                      <div className="mt-2 space-y-1">
-                                                        {room.equipment.map((eq, eqIndex) => (
-                                                          <div key={eqIndex} className="flex flex-wrap items-center gap-2 text-xs">
-                                                            <span className="text-muted-foreground">{eq.name}</span>
-                                                            {eq.code && (
-                                                              <Badge variant="outline" className="text-xs px-1 py-0 h-4">
-                                                                {eq.code}
-                                                              </Badge>
-                                                            )}
-                                                            {eq.quantity && eq.unit && (
-                                                              <span className="text-muted-foreground">
-                                                                {eq.quantity} {eq.unit}
-                                                              </span>
-                                                            )}
-                                                            {eq.notes && (
-                                                              <span className="text-muted-foreground italic">({eq.notes})</span>
-                                                            )}
-                                                          </div>
-                                                        ))}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          </AccordionContent>
-                                        </AccordionItem>
-                                      </Accordion>
-                                    </div>
-                                  ))}
-                                </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                   </div>
+                                 </div>
                               </AccordionContent>
                             </AccordionItem>
                           </Accordion>
