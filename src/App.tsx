@@ -8,6 +8,8 @@ import NotFound from "./pages/NotFound";
 import FloorsPage from "./pages/FloorsPage";
 import TurarPage from "./pages/TurarPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
+import SearchPage from "./pages/SearchPage";
+import ConsolidationPage from "./pages/ConsolidationPage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/floors" element={<FloorsPage />} />
           <Route path="/turar" element={<TurarPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/consolidation" element={<ConsolidationPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

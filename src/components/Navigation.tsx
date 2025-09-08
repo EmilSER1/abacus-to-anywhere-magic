@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Home, Users, Database, ArrowLeft } from 'lucide-react'
+import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Navigation() {
@@ -22,6 +22,16 @@ export function Navigation() {
       name: 'Турар',
       href: '/turar',
       icon: Users,
+    },
+    {
+      name: 'Поиск',
+      href: '/search',
+      icon: Search,
+    },
+    {
+      name: 'Консолидация',
+      href: '/consolidation',
+      icon: BarChart3,
     },
     {
       name: 'Таблица соединения',

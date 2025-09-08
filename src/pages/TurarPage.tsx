@@ -9,6 +9,7 @@ import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Navigation } from '@/components/Navigation';
 import { Building2, Users, MapPin, Download, Search, Package, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
 interface TurarEquipment {
@@ -108,15 +109,18 @@ const TurarPage: React.FC = () => {
   );
 
   const exportData = () => {
-    const dataStr = JSON.stringify(turarData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = 'turar_equipment.json';
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    const exportData = turarData.map(item => ({
+      'Отделение/Блок': item["Отделение/Блок"],
+      'Помещение/Кабинет': item["Помещение/Кабинет"],
+      'Код оборудования': item["Код оборудования"],
+      'Наименование': item["Наименование"],
+      'Количество': item["Кол-во"]
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Турар');
+    XLSX.writeFile(workbook, 'turar_equipment.xlsx');
   };
 
   return (
@@ -156,7 +160,7 @@ const TurarPage: React.FC = () => {
           </div>
           <Button onClick={exportData} variant="outline" className="gap-2">
             <Download className="h-4 w-4" />
-            Экспорт данных
+            Экспорт в Excel
           </Button>
         </div>
 
