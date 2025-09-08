@@ -150,12 +150,18 @@ export default function FloorsPage() {
     const urlRoom = searchParams.get('room');
     
     if (urlSearchTerm && urlDepartment) {
+      console.log('FloorsPage URL params:', { urlSearchTerm, urlDepartment, urlRoom });
+      setHighlightTimeout(false); // Reset highlight
+      
       // Find and expand relevant sections
       floors.forEach((floor, floorIndex) => {
         const deptIndex = floor.departments.findIndex(dept => dept.name === urlDepartment);
+        console.log(`Floor ${floor.number}: found department index ${deptIndex} for ${urlDepartment}`);
         if (deptIndex !== -1) {
           setExpandedFloors([`floor-${floor.number}`]);
           setExpandedDepartments([`dept-${deptIndex}`]);
+          console.log('Expanded floors:', [`floor-${floor.number}`]);
+          console.log('Expanded departments:', [`dept-${deptIndex}`]);
         }
       });
       
@@ -259,7 +265,18 @@ export default function FloorsPage() {
                     <div className="space-y-4">
                       {floor.departments.map((department, deptIndex) => (
                         <div key={deptIndex} className="border rounded-lg overflow-hidden">
-                          <Accordion type="single" collapsible>
+                           <Accordion 
+                            type="single" 
+                            collapsible
+                            value={expandedDepartments.includes(`dept-${deptIndex}`) ? `dept-${deptIndex}` : undefined}
+                            onValueChange={(value) => {
+                              if (value) {
+                                setExpandedDepartments([value]);
+                              } else {
+                                setExpandedDepartments([]);
+                              }
+                            }}
+                          >
                             <AccordionItem value={`dept-${deptIndex}`} className="border-none">
                               <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
                                 <div className="flex items-center justify-between w-full mr-4">
@@ -313,11 +330,20 @@ export default function FloorsPage() {
                                                       const urlDepartment = searchParams.get('department');
                                                       const urlRoom = searchParams.get('room');
                                                       
-                                                      const isHighlighted = urlSearchTerm && 
-                                                        urlDepartment === department.name && 
-                                                        urlRoom === room.name && 
-                                                        eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
-                                                        !highlightTimeout;
+                                                       const isHighlighted = urlSearchTerm && 
+                                                         urlDepartment === department.name && 
+                                                         urlRoom === room.name && 
+                                                         eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                                         !highlightTimeout;
+
+                                                       if (urlSearchTerm && urlDepartment === department.name && urlRoom === room.name) {
+                                                         console.log('FloorsPage highlighting check:', {
+                                                           equipmentName: eq.name,
+                                                           searchTerm: urlSearchTerm,
+                                                           matches: eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()),
+                                                           isHighlighted
+                                                         });
+                                                       }
 
                                                       return (
                                                         <tr 
