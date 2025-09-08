@@ -6,16 +6,18 @@ import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
-import firstFloorData from '@/data/1F_filled.json';
-import secondFloorData from '@/data/2F_filled.json';
+import combinedFloorsData from '@/data/combined_floors.json';
 
 // Interface definitions
 interface FloorData {
-  "Этаж": string | number;
+  "ЭТАЖ": number;
   "БЛОК": string;
   "ОТДЕЛЕНИЕ": string;
+  "КОД ПОМЕЩЕНИЯ": string;
+  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
   "Код помещения": string;
   "Наименование помещения": string;
+  "Площадь (м2)": number;
   "Код оборудования": string | null;
   "Наименование оборудования": string | null;
   "Ед. изм.": string | null;
@@ -34,6 +36,7 @@ interface Equipment {
 interface Room {
   code: string;
   name: string;
+  area: number;
   equipment: Equipment[];
 }
 
@@ -42,6 +45,7 @@ interface Department {
   block: string;
   rooms: Room[];
   equipmentCount: number;
+  totalArea: number;
 }
 
 interface Floor {
@@ -51,6 +55,7 @@ interface Floor {
     totalDepartments: number;
     totalRooms: number;
     totalEquipment: number;
+    totalArea: number;
   };
 }
 
@@ -59,9 +64,10 @@ const processFloorData = (data: FloorData[]): Floor[] => {
   const floorsMap = new Map<string, Map<string, Department>>();
 
   data.forEach(item => {
-    const floorNumber = String(item["Этаж"]);
+    const floorNumber = String(item["ЭТАЖ"]);
     const blockName = item["БЛОК"];
     const departmentName = item["ОТДЕЛЕНИЕ"];
+    const roomArea = item["Площадь (м2)"] || 0;
     
     if (!floorsMap.has(floorNumber)) {
       floorsMap.set(floorNumber, new Map());
@@ -74,20 +80,23 @@ const processFloorData = (data: FloorData[]): Floor[] => {
         name: departmentName,
         block: blockName,
         rooms: [],
-        equipmentCount: 0
+        equipmentCount: 0,
+        totalArea: 0
       });
     }
 
     const department = floor.get(departmentName)!;
-    let room = department.rooms.find(r => r.code === item["Код помещения"]);
+    let room = department.rooms.find(r => r.code === item["КОД ПОМЕЩЕНИЯ"]);
     
     if (!room) {
       room = {
-        code: item["Код помещения"],
-        name: item["Наименование помещения"],
+        code: item["КОД ПОМЕЩЕНИЯ"],
+        name: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+        area: roomArea,
         equipment: []
       };
       department.rooms.push(room);
+      department.totalArea += roomArea;
     }
 
     if (item["Наименование оборудования"]) {
@@ -109,6 +118,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     const departments = Array.from(departmentsMap.values());
     const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
     const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
+    const totalArea = departments.reduce((sum, dept) => sum + dept.totalArea, 0);
     
     floors.push({
       number: floorNumber,
@@ -116,7 +126,8 @@ const processFloorData = (data: FloorData[]): Floor[] => {
       stats: {
         totalDepartments: departments.length,
         totalRooms,
-        totalEquipment
+        totalEquipment,
+        totalArea
       }
     });
   });
@@ -126,7 +137,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
-  const allData = [...firstFloorData, ...secondFloorData] as FloorData[];
+  const allData = combinedFloorsData as FloorData[];
   const [floors] = useState<Floor[]>(() => processFloorData(allData));
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -169,8 +180,9 @@ export default function FloorsPage() {
   const totalStats = floors.reduce((acc, floor) => ({
     totalDepartments: acc.totalDepartments + floor.stats.totalDepartments,
     totalRooms: acc.totalRooms + floor.stats.totalRooms,
-    totalEquipment: acc.totalEquipment + floor.stats.totalEquipment
-  }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0 });
+    totalEquipment: acc.totalEquipment + floor.stats.totalEquipment,
+    totalArea: acc.totalArea + floor.stats.totalArea
+  }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0, totalArea: 0 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -185,6 +197,24 @@ export default function FloorsPage() {
           <p className="text-muted-foreground">
             Иерархическая навигация по этажам → блокам → кабинетам с полным функционалом редактирования
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalDepartments}</strong> отделений</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalRooms}</strong> помещений</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalEquipment}</strong> ед. оборудования</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalArea.toFixed(1)}</strong> м² общая площадь</span>
+            </div>
+          </div>
           <Button onClick={exportData} className="mt-4 gap-2">
             <Download className="h-4 w-4" />
             Экспорт Проектировщики в Excel
@@ -195,7 +225,19 @@ export default function FloorsPage() {
         <div className="space-y-6">
           {floors.map((floor) => (
             <Card key={floor.number} className="overflow-hidden">
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full"
+                value={expandedFloors.includes(`floor-${floor.number}`) ? `floor-${floor.number}` : undefined}
+                onValueChange={(value) => {
+                  if (value) {
+                    setExpandedFloors([value]);
+                  } else {
+                    setExpandedFloors([]);
+                  }
+                }}
+              >
                 <AccordionItem value={`floor-${floor.number}`} className="border-none">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
                     <div className="flex items-center justify-between w-full mr-4">
@@ -205,11 +247,12 @@ export default function FloorsPage() {
                           <h2 className="text-xl font-semibold">{floor.number} этаж</h2>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{floor.stats.totalDepartments} отделений</span>
-                        <span>{floor.stats.totalRooms} помещений</span>
-                        <span>{floor.stats.totalEquipment} ед. оборуд.</span>
-                      </div>
+                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                         <span>{floor.stats.totalDepartments} отделений</span>
+                         <span>{floor.stats.totalRooms} помещений</span>
+                         <span>{floor.stats.totalEquipment} ед. оборуд.</span>
+                         <span>{floor.stats.totalArea.toFixed(1)} м²</span>
+                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-6 pb-6">
@@ -224,14 +267,16 @@ export default function FloorsPage() {
                                     <Badge variant="outline" className="font-mono">
                                       Блок {department.block}
                                     </Badge>
-                                    <span className="font-medium">{department.name}</span>
-                                    <span className="text-sm text-muted-foreground">
-                                      {department.rooms.length} помещений
-                                    </span>
-                                  </div>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {department.equipmentCount} ед. оборуд.
-                                  </Badge>
+                                     <span className="font-medium">{department.name}</span>
+                                     <span className="text-sm text-muted-foreground">
+                                       {department.rooms.length} помещений • {department.totalArea.toFixed(1)} м²
+                                     </span>
+                                   </div>
+                                   <div className="flex items-center gap-2">
+                                     <Badge variant="secondary" className="text-xs">
+                                       {department.equipmentCount} ед. оборуд.
+                                     </Badge>
+                                   </div>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
@@ -242,10 +287,13 @@ export default function FloorsPage() {
                                   <div className="grid grid-cols-1 gap-2">
                                     {department.rooms.map((room, roomIndex) => (
                                       <div key={roomIndex} className="text-xs bg-muted/20 p-2 rounded border-l-2 border-primary/30">
-                                        <div className="flex justify-between items-start mb-1">
-                                          <span className="font-medium">{room.name}</span>
-                                          <span className="text-muted-foreground font-mono text-xs">{room.code}</span>
-                                        </div>
+                                         <div className="flex justify-between items-start mb-1">
+                                           <span className="font-medium">{room.name}</span>
+                                           <div className="text-right">
+                                             <div className="text-muted-foreground font-mono text-xs">{room.code}</div>
+                                             <div className="text-muted-foreground text-xs">{room.area.toFixed(1)} м²</div>
+                                           </div>
+                                         </div>
                                          {room.equipment.length > 0 && (
                                            <div className="mt-3">
                                              <div className="bg-background/50 rounded border">

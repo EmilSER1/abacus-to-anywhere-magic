@@ -59,8 +59,9 @@ const TurarPage: React.FC = () => {
       
       if (urlSearchTerm && urlDepartment) {
         setSearchTerm(urlSearchTerm);
+        setHighlightTimeout(false); // Reset highlight
         
-        // Auto-expand relevant sections
+        // Auto-expand relevant sections based on original data, not filtered
         const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
         console.log('Found department index:', deptIndex, 'for department:', urlDepartment);
         
