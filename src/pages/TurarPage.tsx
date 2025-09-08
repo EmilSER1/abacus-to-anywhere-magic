@@ -1,296 +1,286 @@
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Plus, Users, Building, Download, Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { EditDepartmentDialog } from '@/components/EditDepartmentDialog'
-import { EditRoomDialog } from '@/components/EditRoomDialog'
+import React, { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
+import { EditRoomDialog } from '@/components/EditRoomDialog';
+import { Navigation } from '@/components/Navigation';
+import { Building2, Users, MapPin, Download, Search, Package, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
+// Define the interface for Turar equipment data
+interface TurarEquipment {
+  "Отделение/Блок": string;
+  "Помещение/Кабинет": string;
+  "Код оборудования": string;
+  "Наименование": string;
+  "Кол-во": number;
+}
+
+// Define the interface for a processed department
 interface TurarDepartment {
-  id: string
-  name: string
-  code?: string | null
-  description?: string | null
-  staff: number
-  rooms: TurarRoom[]
+  name: string;
+  rooms: {
+    name: string;
+    equipment: TurarEquipment[];
+  }[];
 }
 
-interface TurarRoom {
-  id: string
-  name: string
-  code?: string | null
-  area?: number | null
-  description?: string | null
-  capacity: number
-  occupied: number
-}
+let turarData: TurarEquipment[] = [];
 
-// Mock data for Turar departments
-const mockTurarDepartments: TurarDepartment[] = [
-  {
-    id: '1',
-    name: 'Отделение Турар А',
-    code: 'TUR-A',
-    description: 'Основное отделение Турар',
-    staff: 15,
-    rooms: [
-      { id: '1', name: 'Палата 101', code: 'T101', area: 25, description: 'Палата на 4 места', capacity: 4, occupied: 3 },
-      { id: '2', name: 'Палата 102', code: 'T102', area: 20, description: 'Палата на 2 места', capacity: 2, occupied: 2 },
-      { id: '3', name: 'Процедурная 103', code: 'T103', area: 15, description: 'Процедурная комната', capacity: 1, occupied: 0 },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Отделение Турар Б',
-    code: 'TUR-B',
-    description: 'Дополнительное отделение Турар',
-    staff: 12,
-    rooms: [
-      { id: '4', name: 'Палата 201', code: 'T201', area: 30, description: 'Палата на 6 мест', capacity: 6, occupied: 4 },
-      { id: '5', name: 'Палата 202', code: 'T202', area: 25, description: 'Палата на 4 места', capacity: 4, occupied: 1 },
-      { id: '6', name: 'Кабинет врача 203', code: 'T203', area: 18, description: 'Кабинет лечащего врача', capacity: 1, occupied: 1 },
-    ]
-  }
-]
+const TurarPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [departments, setDepartments] = useState<TurarDepartment[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-export default function TurarPage() {
-  const [departments] = useState<TurarDepartment[]>(mockTurarDepartments)
-  const [searchTerm, setSearchTerm] = useState('')
+  useEffect(() => {
+    const loadTurarData = async () => {
+      try {
+        const response = await fetch('/src/data/turar.json');
+        const data: TurarEquipment[] = await response.json();
+        turarData = data;
+        
+        // Process data to group by departments and rooms
+        const processedData = processTurarData(data);
+        setDepartments(processedData);
+      } catch (error) {
+        console.error('Error loading turar data:', error);
+      }
+    };
 
+    loadTurarData();
+  }, []);
+
+  const processTurarData = (data: TurarEquipment[]): TurarDepartment[] => {
+    const departmentMap = new Map<string, Map<string, TurarEquipment[]>>();
+
+    // Group equipment by department and room
+    data.forEach(item => {
+      const deptName = item["Отделение/Блок"];
+      const roomName = item["Помещение/Кабинет"];
+
+      if (!departmentMap.has(deptName)) {
+        departmentMap.set(deptName, new Map());
+      }
+
+      const deptRooms = departmentMap.get(deptName)!;
+      if (!deptRooms.has(roomName)) {
+        deptRooms.set(roomName, []);
+      }
+
+      deptRooms.get(roomName)!.push(item);
+    });
+
+    // Convert to array format
+    return Array.from(departmentMap.entries()).map(([deptName, rooms]) => ({
+      name: deptName,
+      rooms: Array.from(rooms.entries()).map(([roomName, equipment]) => ({
+        name: roomName,
+        equipment: equipment
+      }))
+    }));
+  };
+
+  // Calculate statistics
+  const totalDepartments = departments.length;
+  const totalRooms = departments.reduce((acc, dept) => acc + dept.rooms.length, 0);
+  const totalEquipment = departments.reduce((acc, dept) => 
+    acc + dept.rooms.reduce((roomAcc, room) => 
+      roomAcc + room.equipment.reduce((eqAcc, eq) => eqAcc + eq["Кол-во"], 0), 0), 0);
+  const totalEquipmentTypes = departments.reduce((acc, dept) => 
+    acc + dept.rooms.reduce((roomAcc, room) => roomAcc + room.equipment.length, 0), 0);
+
+  // Filter departments based on search term
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0)
-  const totalCapacity = departments.reduce((sum, dept) => 
-    sum + dept.rooms.reduce((roomSum, room) => roomSum + room.capacity, 0), 0
-  )
-  const totalOccupied = departments.reduce((sum, dept) => 
-    sum + dept.rooms.reduce((roomSum, room) => roomSum + room.occupied, 0), 0
-  )
-  const occupancyRate = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0
+    dept.rooms.some(room => 
+      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room.equipment.some(eq => 
+        eq["Наименование"].toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq["Код оборудования"].toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    )
+  );
 
   const exportData = () => {
-    const data = departments.map(dept => ({
-      department: dept.name,
-      code: dept.code,
-      description: dept.description,
-      staff: dept.staff,
-      rooms: dept.rooms.map(room => ({
-        name: room.name,
-        code: room.code,
-        area: room.area,
-        description: room.description,
-        capacity: room.capacity,
-        occupied: room.occupied
-      }))
-    }))
+    const dataStr = JSON.stringify(turarData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'turar-departments-data.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const exportFileDefaultName = 'turar_equipment.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Турар</h1>
-          <p className="text-muted-foreground">Управление отделениями Турар, персоналом и размещением</p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <Navigation />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6 gap-2"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Назад
+        </Button>
+
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Турар - Медицинское оборудование
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Управление медицинским оборудованием по отделениям
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={exportData} variant="outline" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Экспорт
-          </Button>
-          <Button className="medical-button flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Добавить отделение
+
+        {/* Search and Export Controls */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по отделениям, кабинетам или оборудованию..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={exportData} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" />
+            Экспорт данных
           </Button>
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-        <Input
-          placeholder="Поиск по отделениям..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="medical-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Отделения</CardTitle>
-            <Building className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{departments.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Отделений Турар
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="medical-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Палаты</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRooms}</div>
-            <p className="text-xs text-muted-foreground">
-              Палат и кабинетов
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="medical-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Загрузка</CardTitle>
-            <Users className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{occupancyRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              {totalOccupied} из {totalCapacity} мест
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="medical-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Персонал</CardTitle>
-            <Users className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {departments.reduce((sum, dept) => sum + dept.staff, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Сотрудников всего
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Departments List */}
-      <div className="space-y-6">
-        {filteredDepartments.map((department) => (
-          <Card key={department.id} className="medical-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    {department.name}
-                    {department.code && (
-                      <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">
-                        {department.code}
-                      </span>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    {department.description} • Персонал: {department.staff} сотрудников
-                  </CardDescription>
-                </div>
-                <EditDepartmentDialog department={department} type="turar" />
-              </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Всего отделений</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-foreground">
-                    Палаты и кабинеты ({department.rooms.length})
-                  </h4>
-                  <Button size="sm" variant="outline" className="flex items-center gap-1">
-                    <Plus className="w-3 h-3" />
-                    Добавить палату
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {department.rooms.map((room) => (
-                    <Card key={room.id} className="border border-border bg-background/50">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">{room.name}</CardTitle>
-                          <EditRoomDialog room={room} type="turar" />
-                        </div>
-                        {room.code && (
-                          <CardDescription className="text-xs">{room.code}</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="text-sm space-y-2">
-                          {room.area && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Площадь:</span>
-                              <span>{room.area} м²</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Загрузка:</span>
-                            <span className={`font-medium ${
-                              room.occupied === room.capacity ? 'text-destructive' :
-                              room.occupied > room.capacity * 0.8 ? 'text-warning' :
-                              'text-success'
-                            }`}>
-                              {room.occupied}/{room.capacity}
-                            </span>
-                          </div>
-                          
-                          {/* Occupancy bar */}
-                          <div className="w-full bg-secondary rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${
-                                room.occupied === room.capacity ? 'bg-destructive' :
-                                room.occupied > room.capacity * 0.8 ? 'bg-warning' :
-                                'bg-success'
-                              }`}
-                              style={{ 
-                                width: `${room.capacity > 0 ? (room.occupied / room.capacity) * 100 : 0}%` 
-                              }}
-                            />
-                          </div>
-                          
-                          {room.description && (
-                            <div className="text-xs text-muted-foreground mt-2">
-                              {room.description}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+              <div className="text-2xl font-bold text-primary">{totalDepartments}</div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {filteredDepartments.length === 0 && searchTerm && (
-        <Card className="medical-card">
-          <CardContent className="py-8 text-center">
-            <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">Ничего не найдено</h3>
-            <p className="text-muted-foreground">
-              Попробуйте изменить поисковый запрос или очистить фильтры
-            </p>
-          </CardContent>
-        </Card>
-      )}
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Всего помещений</CardTitle>
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalRooms}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Единиц оборудования</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalEquipment}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Типов оборудования</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalEquipmentTypes}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Departments List */}
+        <div className="space-y-6">
+          {filteredDepartments.length === 0 ? (
+            <Card className="bg-card/50 backdrop-blur border-border/50">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Результаты не найдены</h3>
+                <p className="text-muted-foreground text-center">
+                  Попробуйте изменить критерии поиска или очистить фильтр
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Accordion type="multiple" className="space-y-4">
+              {filteredDepartments.map((department, deptIndex) => (
+                <AccordionItem key={deptIndex} value={`dept-${deptIndex}`}>
+                  <Card className="bg-card/50 backdrop-blur border-border/50">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <Building2 className="h-6 w-6 text-primary" />
+                        <div className="text-left">
+                          <div className="text-xl font-semibold">{department.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {department.rooms.length} помещений
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <Accordion type="multiple" className="space-y-2">
+                        {department.rooms.map((room, roomIndex) => (
+                          <AccordionItem key={roomIndex} value={`room-${deptIndex}-${roomIndex}`}>
+                            <Card className="bg-muted/30 border-border/50">
+                              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                <div className="flex items-center gap-3">
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  <div className="text-left">
+                                    <div className="font-medium">{room.name}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {room.equipment.length} типов оборудования
+                                    </div>
+                                  </div>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4 pb-4">
+                                <div className="space-y-2">
+                                  {room.equipment.map((equipment, eqIndex) => (
+                                    <div
+                                      key={eqIndex}
+                                      className="flex items-center justify-between p-3 rounded-md bg-background/50 border border-border/30"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <Package className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <div className="font-medium">{equipment["Наименование"]}</div>
+                                          <div className="text-sm text-muted-foreground">
+                                            Код: {equipment["Код оборудования"]}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <Badge variant="secondary" className="font-medium">
+                                        {equipment["Кол-во"]} шт.
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              </AccordionContent>
+                            </Card>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </AccordionContent>
+                  </Card>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </div>
+      </main>
     </div>
-  )
-}
+  );
+};
+
+export default TurarPage;
