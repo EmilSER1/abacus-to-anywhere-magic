@@ -82,14 +82,22 @@ const SearchPage: React.FC = () => {
       const filteredFloorResults: SearchResult[] = [];
       
       allFloorData.forEach(item => {
-        if (item["ОТДЕЛЕНИЕ"]?.toLowerCase().includes(searchLower) ||
-            item["Наименование помещения"]?.toLowerCase().includes(searchLower) ||
-            item["Код оборудования"]?.toLowerCase().includes(searchLower) ||
-            item["Наименование оборудования"]?.toLowerCase().includes(searchLower)) {
+        // Skip items with null/empty equipment
+        if (!item["Наименование оборудования"]) return;
+        
+        const department = (item["ОТДЕЛЕНИЕ"] || '').toLowerCase();
+        const room = (item["Наименование помещения"] || '').toLowerCase();
+        const code = String(item["Код оборудования"] || '').toLowerCase();
+        const name = (item["Наименование оборудования"] || '').toLowerCase();
+        
+        if (department.includes(searchLower) ||
+            room.includes(searchLower) ||
+            code.includes(searchLower) ||
+            name.includes(searchLower)) {
           filteredFloorResults.push({
             department: item["ОТДЕЛЕНИЕ"] || '',
             room: item["Наименование помещения"] || '',
-            code: item["Код оборудования"] || '',
+            code: String(item["Код оборудования"] || ''),
             name: item["Наименование оборудования"] || '',
             quantity: item["Кол-во"] || 1,
             source: 'floors'
