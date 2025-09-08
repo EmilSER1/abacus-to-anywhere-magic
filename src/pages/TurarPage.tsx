@@ -88,7 +88,10 @@ const TurarPage: React.FC = () => {
   const totalRooms = departments.reduce((acc, dept) => acc + dept.rooms.length, 0);
   const totalEquipment = departments.reduce((acc, dept) => 
     acc + dept.rooms.reduce((roomAcc, room) => 
-      roomAcc + room.equipment.reduce((eqAcc, eq) => eqAcc + eq["Кол-во"], 0), 0), 0);
+      roomAcc + room.equipment.reduce((eqAcc, eq) => {
+        const count = typeof eq["Кол-во"] === 'number' ? eq["Кол-во"] : parseInt(eq["Кол-во"]) || 0;
+        return eqAcc + count;
+      }, 0), 0), 0);
   const totalEquipmentTypes = departments.reduce((acc, dept) => 
     acc + dept.rooms.reduce((roomAcc, room) => roomAcc + room.equipment.length, 0), 0);
 
