@@ -65,6 +65,7 @@ const TurarPage: React.FC = () => {
         // Auto-expand relevant sections based on original data, not filtered
         const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
         console.log('Found department index:', deptIndex, 'for department:', urlDepartment);
+        console.log('Available departments:', processedData.map(d => d.name));
         
         if (deptIndex !== -1) {
           setExpandedDepartments([`dept-${deptIndex}`]);
@@ -73,6 +74,7 @@ const TurarPage: React.FC = () => {
           if (urlRoom) {
             const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
             console.log('Found room index:', roomIndex, 'for room:', urlRoom);
+            console.log('Available rooms:', processedData[deptIndex]?.rooms.map(r => r.name));
             if (roomIndex !== -1) {
               setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
               console.log('Expanded rooms:', [`room-${deptIndex}-${roomIndex}`]);
