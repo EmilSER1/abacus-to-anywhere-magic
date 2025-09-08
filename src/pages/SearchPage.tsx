@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import { Navigation } from '@/components/Navigation';
 import { Search, Package, MapPin, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import turarFullData from '@/data/turar_full.json';
+import combinedFloorsData from '@/data/combined_floors.json';
 
 // Interfaces
 interface TurarEquipment {
@@ -53,8 +55,7 @@ const SearchPage: React.FC = () => {
 
     try {
       // Search Turar data
-      const turarResponse = await fetch('/src/data/turar_full.json');
-      const turarData: TurarEquipment[] = await turarResponse.json();
+      const turarData: TurarEquipment[] = turarFullData as TurarEquipment[];
       
       const filteredTurarResults = turarData
         .filter(item => 
@@ -72,12 +73,8 @@ const SearchPage: React.FC = () => {
           source: 'turar' as const
         }));
 
-      // Search Floor data
-      const floor1Response = await fetch('/src/data/1F_filled.json');
-      const floor2Response = await fetch('/src/data/2F_filled.json');
-      const floor1Data = await floor1Response.json();
-      const floor2Data = await floor2Response.json();
-      const allFloorData = [...floor1Data, ...floor2Data];
+      // Search Floor data  
+      const allFloorData = combinedFloorsData as any[];
       
       const filteredFloorResults: SearchResult[] = [];
       
@@ -86,7 +83,7 @@ const SearchPage: React.FC = () => {
         if (!item["Наименование оборудования"]) return;
         
         const department = (item["ОТДЕЛЕНИЕ"] || '').toLowerCase();
-        const room = (item["Наименование помещения"] || '').toLowerCase();
+        const room = (item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '').toLowerCase();
         const code = String(item["Код оборудования"] || '').toLowerCase();
         const name = (item["Наименование оборудования"] || '').toLowerCase();
         
@@ -96,7 +93,7 @@ const SearchPage: React.FC = () => {
             name.includes(searchLower)) {
           filteredFloorResults.push({
             department: item["ОТДЕЛЕНИЕ"] || '',
-            room: item["Наименование помещения"] || '',
+            room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
             code: String(item["Код оборудования"] || ''),
             name: item["Наименование оборудования"] || '',
             quantity: item["Кол-во"] || 1,
