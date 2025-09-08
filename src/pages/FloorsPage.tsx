@@ -220,28 +220,48 @@ export default function FloorsPage() {
                                           <span className="font-medium">{room.name}</span>
                                           <span className="text-muted-foreground font-mono text-xs">{room.code}</span>
                                         </div>
-                                        {room.equipment.length > 0 && (
-                                          <div className="mt-2 space-y-1">
-                                            {room.equipment.map((eq, eqIndex) => (
-                                              <div key={eqIndex} className="flex flex-wrap items-center gap-2 text-xs">
-                                                <span className="text-muted-foreground">{eq.name}</span>
-                                                {eq.code && (
-                                                  <Badge variant="outline" className="text-xs px-1 py-0 h-4">
-                                                    {eq.code}
-                                                  </Badge>
-                                                )}
-                                                {eq.quantity && eq.unit && (
-                                                  <span className="text-muted-foreground">
-                                                    {eq.quantity} {eq.unit}
-                                                  </span>
-                                                )}
-                                                {eq.notes && (
-                                                  <span className="text-muted-foreground italic">({eq.notes})</span>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
+                                         {room.equipment.length > 0 && (
+                                           <div className="mt-3">
+                                             <div className="bg-background/50 rounded border">
+                                               <table className="w-full text-xs">
+                                                 <thead className="bg-muted/30">
+                                                   <tr>
+                                                     <th className="text-left p-2 font-medium">Код оборудования</th>
+                                                     <th className="text-left p-2 font-medium">Наименование</th>
+                                                     <th className="text-center p-2 font-medium">Количество</th>
+                                                     <th className="text-center p-2 font-medium">Ед. изм.</th>
+                                                     <th className="text-center p-2 font-medium">Примечания</th>
+                                                   </tr>
+                                                 </thead>
+                                                 <tbody>
+                                                   {room.equipment.map((eq, eqIndex) => (
+                                                     <tr key={eqIndex} className="border-t border-border/50">
+                                                       <td className="p-2 font-mono text-xs">
+                                                         {eq.code || '-'}
+                                                       </td>
+                                                       <td className="p-2 max-w-[200px] truncate" title={eq.name || ''}>
+                                                         {eq.name || '-'}
+                                                       </td>
+                                                       <td className="p-2 text-center">
+                                                         {eq.quantity || '-'}
+                                                       </td>
+                                                       <td className="p-2 text-center">
+                                                         {eq.unit || '-'}
+                                                       </td>
+                                                       <td className="p-2 text-center">
+                                                         {eq.notes && (
+                                                           <Badge variant="secondary" className="text-xs h-5">
+                                                             {eq.notes}
+                                                           </Badge>
+                                                         )}
+                                                       </td>
+                                                     </tr>
+                                                   ))}
+                                                 </tbody>
+                                               </table>
+                                             </div>
+                                           </div>
+                                         )}
                                       </div>
                                     ))}
                                    </div>

@@ -21,13 +21,9 @@ interface TurarEquipment {
 interface ConsolidatedEquipment {
   code: string;
   name: string;
-  turarQuantity: number;
-  floorsQuantity: number;
-  difference: number;
-  turarDepartments: string[];
-  floorsDepartments: string[];
-  turarRooms: string[];
-  floorsRooms: string[];
+  quantity: number;
+  departments: string[];
+  rooms: string[];
 }
 
 const ConsolidationPage: React.FC = () => {
@@ -112,41 +108,34 @@ const ConsolidationPage: React.FC = () => {
       });
 
       // Create consolidated data arrays
-      const allCodes = new Set([...turarMap.keys(), ...floorsMap.keys()]);
-      
       const turarConsolidated: ConsolidatedEquipment[] = [];
       const floorsConsolidated: ConsolidatedEquipment[] = [];
 
-      allCodes.forEach(code => {
-        const turarItem = turarMap.get(code);
-        const floorsItem = floorsMap.get(code);
-
-        const consolidatedItem: ConsolidatedEquipment = {
+      // Convert Turar data
+      turarMap.forEach((item, code) => {
+        turarConsolidated.push({
           code,
-          name: turarItem?.name || floorsItem?.name || '',
-          turarQuantity: turarItem?.quantity || 0,
-          floorsQuantity: floorsItem?.quantity || 0,
-          difference: (turarItem?.quantity || 0) - (floorsItem?.quantity || 0),
-          turarDepartments: Array.from(turarItem?.departments || []),
-          floorsDepartments: Array.from(floorsItem?.departments || []),
-          turarRooms: Array.from(turarItem?.rooms || []),
-          floorsRooms: Array.from(floorsItem?.rooms || [])
-        };
-
-        // Only include items that exist in Turar for Turar tab
-        if (turarItem) {
-          turarConsolidated.push(consolidatedItem);
-        }
-
-        // Only include items that exist in Floors for Floors tab
-        if (floorsItem) {
-          floorsConsolidated.push(consolidatedItem);
-        }
+          name: item.name,
+          quantity: item.quantity,
+          departments: Array.from(item.departments),
+          rooms: Array.from(item.rooms)
+        });
       });
 
-      // Sort by difference (descending)
-      turarConsolidated.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
-      floorsConsolidated.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+      // Convert Floors data
+      floorsMap.forEach((item, code) => {
+        floorsConsolidated.push({
+          code,
+          name: item.name,
+          quantity: item.quantity,
+          departments: Array.from(item.departments),
+          rooms: Array.from(item.rooms)
+        });
+      });
+
+      // Sort by quantity (descending)
+      turarConsolidated.sort((a, b) => b.quantity - a.quantity);
+      floorsConsolidated.sort((a, b) => b.quantity - a.quantity);
 
       setTurarData(turarConsolidated);
       setFloorsData(floorsConsolidated);
@@ -162,13 +151,9 @@ const ConsolidationPage: React.FC = () => {
       data.map(item => ({
         'Код оборудования': item.code,
         'Наименование': item.name,
-        'Количество (Турар)': item.turarQuantity,
-        'Количество (Проектировщики)': item.floorsQuantity,
-        'Разница': item.difference,
-        'Отделения (Турар)': item.turarDepartments.join(', '),
-        'Отделения (Проектировщики)': item.floorsDepartments.join(', '),
-        'Кабинеты (Турар)': item.turarRooms.join(', '),
-        'Кабинеты (Проектировщики)': item.floorsRooms.join(', ')
+        'Количество': item.quantity,
+        'Отделения': item.departments.join(', '),
+        'Кабинеты': item.rooms.join(', ')
       }))
     );
 
@@ -183,9 +168,7 @@ const ConsolidationPage: React.FC = () => {
         <TableRow>
           <TableHead>Код</TableHead>
           <TableHead>Наименование</TableHead>
-          <TableHead className="text-center">Турар</TableHead>
-          <TableHead className="text-center">Проектировщики</TableHead>
-          <TableHead className="text-center">Разница</TableHead>
+          <TableHead className="text-center">Количество</TableHead>
           <TableHead>Отделения</TableHead>
           <TableHead>Кабинеты</TableHead>
         </TableRow>
@@ -198,48 +181,14 @@ const ConsolidationPage: React.FC = () => {
               {item.name}
             </TableCell>
             <TableCell className="text-center">
-              <Badge variant="outline">{item.turarQuantity}</Badge>
-            </TableCell>
-            <TableCell className="text-center">
-              <Badge variant="outline">{item.floorsQuantity}</Badge>
-            </TableCell>
-            <TableCell className="text-center">
-              <Badge 
-                variant={item.difference === 0 ? "secondary" : "destructive"}
-                className="font-medium"
-              >
-                {item.difference > 0 ? `+${item.difference}` : item.difference}
-              </Badge>
+              <Badge variant="outline">{item.quantity}</Badge>
             </TableCell>
             <TableCell className="text-xs">
-              <div className="space-y-1">
-                {item.turarDepartments.length > 0 && (
-                  <div>
-                    <span className="font-medium">Т:</span> {item.turarDepartments.join(', ')}
-                  </div>
-                )}
-                {item.floorsDepartments.length > 0 && (
-                  <div>
-                    <span className="font-medium">П:</span> {item.floorsDepartments.join(', ')}
-                  </div>
-                )}
-              </div>
+              {item.departments.join(', ')}
             </TableCell>
             <TableCell className="text-xs">
-              <div className="space-y-1">
-                {item.turarRooms.length > 0 && (
-                  <div>
-                    <span className="font-medium">Т:</span> {item.turarRooms.slice(0, 2).join(', ')}
-                    {item.turarRooms.length > 2 && '...'}
-                  </div>
-                )}
-                {item.floorsRooms.length > 0 && (
-                  <div>
-                    <span className="font-medium">П:</span> {item.floorsRooms.slice(0, 2).join(', ')}
-                    {item.floorsRooms.length > 2 && '...'}
-                  </div>
-                )}
-              </div>
+              {item.rooms.slice(0, 3).join(', ')}
+              {item.rooms.length > 3 && '...'}
             </TableCell>
           </TableRow>
         ))}
@@ -280,7 +229,7 @@ const ConsolidationPage: React.FC = () => {
             Консолидация данных
           </h1>
           <p className="text-muted-foreground text-lg">
-            Сравнение данных Турар и Проектировщиков
+            Консолидированные данные по источникам
           </p>
         </div>
 
