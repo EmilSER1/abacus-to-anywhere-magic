@@ -73,8 +73,11 @@ const SearchPage: React.FC = () => {
         }));
 
       // Search Floor data
-      const floorResponse = await fetch('/src/data/F_filled.json');
-      const allFloorData = await floorResponse.json();
+      const floor1Response = await fetch('/src/data/1F_filled.json');
+      const floor2Response = await fetch('/src/data/2F_filled.json');
+      const floor1Data = await floor1Response.json();
+      const floor2Data = await floor2Response.json();
+      const allFloorData = [...floor1Data, ...floor2Data];
       
       const filteredFloorResults: SearchResult[] = [];
       
