@@ -147,10 +147,10 @@ export default function FloorsPage() {
           setExpandedDepartments([`dept-${deptIndex}`]);
         }
       });
+      
+      // Auto-remove highlight after 3 seconds
+      setTimeout(() => setHighlightTimeout(true), 3000);
     }
-    
-    // Auto-remove highlight after 3 seconds
-    setTimeout(() => setHighlightTimeout(true), 3000);
   }, [searchParams, floors]);
 
   const exportData = () => {

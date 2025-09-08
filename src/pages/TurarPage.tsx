@@ -55,26 +55,31 @@ const TurarPage: React.FC = () => {
       const urlDepartment = searchParams.get('department');
       const urlRoom = searchParams.get('room');
       
-      if (urlSearchTerm) {
+      console.log('TurarPage URL params:', { urlSearchTerm, urlDepartment, urlRoom });
+      
+      if (urlSearchTerm && urlDepartment) {
         setSearchTerm(urlSearchTerm);
         
         // Auto-expand relevant sections
-        if (urlDepartment) {
-          const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
-          if (deptIndex !== -1) {
-            setExpandedDepartments([`dept-${deptIndex}`]);
-            
-            if (urlRoom) {
-              const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
-              if (roomIndex !== -1) {
-                setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
-        }
-      }
-      
-      // Auto-remove highlight after 3 seconds
-      setTimeout(() => setHighlightTimeout(true), 3000);
+        const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
+        console.log('Found department index:', deptIndex, 'for department:', urlDepartment);
+        
+        if (deptIndex !== -1) {
+          setExpandedDepartments([`dept-${deptIndex}`]);
+          console.log('Expanded departments:', [`dept-${deptIndex}`]);
+          
+          if (urlRoom) {
+            const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
+            console.log('Found room index:', roomIndex, 'for room:', urlRoom);
+            if (roomIndex !== -1) {
+              setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
+              console.log('Expanded rooms:', [`room-${deptIndex}-${roomIndex}`]);
+            }
           }
         }
+        
+        // Auto-remove highlight after 3 seconds
+        setTimeout(() => setHighlightTimeout(true), 3000);
       }
     } catch (error) {
       console.error('Error loading turar data:', error);
