@@ -67,7 +67,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     const floorNumber = String(item["ЭТАЖ"]);
     const blockName = item["БЛОК"];
     const departmentName = item["ОТДЕЛЕНИЕ"];
-    const roomArea = item["Площадь (м2)"] || 0;
+    const roomArea = typeof item["Площадь (м2)"] === 'number' ? item["Площадь (м2)"] : 0;
     
     if (!floorsMap.has(floorNumber)) {
       floorsMap.set(floorNumber, new Map());
@@ -96,7 +96,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
         equipment: []
       };
       department.rooms.push(room);
-      department.totalArea += roomArea;
+      department.totalArea = (department.totalArea || 0) + roomArea;
     }
 
     if (item["Наименование оборудования"]) {
@@ -118,7 +118,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     const departments = Array.from(departmentsMap.values());
     const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
     const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
-    const totalArea = departments.reduce((sum, dept) => sum + dept.totalArea, 0);
+    const totalArea = departments.reduce((sum, dept) => sum + (dept.totalArea || 0), 0);
     
     floors.push({
       number: floorNumber,
@@ -178,10 +178,10 @@ export default function FloorsPage() {
 
   // Calculate total statistics
   const totalStats = floors.reduce((acc, floor) => ({
-    totalDepartments: acc.totalDepartments + floor.stats.totalDepartments,
-    totalRooms: acc.totalRooms + floor.stats.totalRooms,
-    totalEquipment: acc.totalEquipment + floor.stats.totalEquipment,
-    totalArea: acc.totalArea + floor.stats.totalArea
+    totalDepartments: acc.totalDepartments + (floor.stats.totalDepartments || 0),
+    totalRooms: acc.totalRooms + (floor.stats.totalRooms || 0),
+    totalEquipment: acc.totalEquipment + (floor.stats.totalEquipment || 0),
+    totalArea: acc.totalArea + (floor.stats.totalArea || 0)
   }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0, totalArea: 0 });
 
   return (
@@ -212,7 +212,7 @@ export default function FloorsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
-              <span><strong>{totalStats.totalArea.toFixed(1)}</strong> м² общая площадь</span>
+              <span><strong>{(totalStats.totalArea || 0).toFixed(1)}</strong> м² общая площадь</span>
             </div>
           </div>
           <Button onClick={exportData} className="mt-4 gap-2">
@@ -251,7 +251,7 @@ export default function FloorsPage() {
                          <span>{floor.stats.totalDepartments} отделений</span>
                          <span>{floor.stats.totalRooms} помещений</span>
                          <span>{floor.stats.totalEquipment} ед. оборуд.</span>
-                         <span>{floor.stats.totalArea.toFixed(1)} м²</span>
+                         <span>{(floor.stats.totalArea || 0).toFixed(1)} м²</span>
                        </div>
                     </div>
                   </AccordionTrigger>
@@ -269,7 +269,7 @@ export default function FloorsPage() {
                                     </Badge>
                                      <span className="font-medium">{department.name}</span>
                                      <span className="text-sm text-muted-foreground">
-                                       {department.rooms.length} помещений • {department.totalArea.toFixed(1)} м²
+                                       {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
                                      </span>
                                    </div>
                                    <div className="flex items-center gap-2">
@@ -291,7 +291,7 @@ export default function FloorsPage() {
                                            <span className="font-medium">{room.name}</span>
                                            <div className="text-right">
                                              <div className="text-muted-foreground font-mono text-xs">{room.code}</div>
-                                             <div className="text-muted-foreground text-xs">{room.area.toFixed(1)} м²</div>
+                                             <div className="text-muted-foreground text-xs">{(room.area || 0).toFixed(1)} м²</div>
                                            </div>
                                          </div>
                                          {room.equipment.length > 0 && (
