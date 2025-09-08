@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
+import { useSearchParams } from 'react-router-dom';
 import firstFloorData from '@/data/1F_filled.json';
 import secondFloorData from '@/data/2F_filled.json';
 
@@ -124,8 +125,29 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 };
 
 export default function FloorsPage() {
+  const [searchParams] = useSearchParams();
   const allData = [...firstFloorData, ...secondFloorData] as FloorData[];
   const [floors] = useState<Floor[]>(() => processFloorData(allData));
+  const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
+  const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Handle search params from URL
+    const urlSearchTerm = searchParams.get('search');
+    const urlDepartment = searchParams.get('department');
+    const urlRoom = searchParams.get('room');
+    
+    if (urlSearchTerm && urlDepartment) {
+      // Find and expand relevant sections
+      floors.forEach((floor, floorIndex) => {
+        const deptIndex = floor.departments.findIndex(dept => dept.name === urlDepartment);
+        if (deptIndex !== -1) {
+          setExpandedFloors([`floor-${floor.number}`]);
+          setExpandedDepartments([`dept-${deptIndex}`]);
+        }
+      });
+    }
+  }, [searchParams, floors]);
 
   const exportData = () => {
     const dataStr = JSON.stringify(floors, null, 2);

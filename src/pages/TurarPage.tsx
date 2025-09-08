@@ -8,7 +8,7 @@ import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
 import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Navigation } from '@/components/Navigation';
 import { Building2, Users, MapPin, Download, Search, Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import turarFullData from '@/data/turar_full.json';
 
@@ -34,8 +34,11 @@ let turarData: TurarEquipment[] = [];
 
 const TurarPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
+  const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -45,10 +48,34 @@ const TurarPage: React.FC = () => {
       // Process data to group by departments and rooms
       const processedData = processTurarData(data);
       setDepartments(processedData);
+
+      // Handle search params from URL
+      const urlSearchTerm = searchParams.get('search');
+      const urlDepartment = searchParams.get('department');
+      const urlRoom = searchParams.get('room');
+      
+      if (urlSearchTerm) {
+        setSearchTerm(urlSearchTerm);
+        
+        // Auto-expand relevant sections
+        if (urlDepartment) {
+          const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
+          if (deptIndex !== -1) {
+            setExpandedDepartments([`dept-${deptIndex}`]);
+            
+            if (urlRoom) {
+              const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
+              if (roomIndex !== -1) {
+                setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error loading turar data:', error);
     }
-  }, []);
+  }, [searchParams]);
 
   const processTurarData = (data: TurarEquipment[]): TurarDepartment[] => {
     const departmentMap = new Map<string, Map<string, TurarEquipment[]>>();
@@ -206,7 +233,12 @@ const TurarPage: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <Accordion type="multiple" className="space-y-4">
+            <Accordion 
+              type="multiple" 
+              className="space-y-4"
+              value={expandedDepartments}
+              onValueChange={setExpandedDepartments}
+            >
               {filteredDepartments.map((department, deptIndex) => (
                 <AccordionItem key={deptIndex} value={`dept-${deptIndex}`}>
                   <Card className="bg-card/50 backdrop-blur border-border/50">
@@ -222,7 +254,12 @@ const TurarPage: React.FC = () => {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                      <Accordion type="multiple" className="space-y-2">
+                      <Accordion 
+                        type="multiple" 
+                        className="space-y-2"
+                        value={expandedRooms}
+                        onValueChange={setExpandedRooms}
+                      >
                         {department.rooms.map((room, roomIndex) => (
                           <AccordionItem key={roomIndex} value={`room-${deptIndex}-${roomIndex}`}>
                             <Card className="bg-muted/30 border-border/50">

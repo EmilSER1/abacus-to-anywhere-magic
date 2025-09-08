@@ -125,9 +125,9 @@ const SearchPage: React.FC = () => {
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
       if (result.source === 'turar') {
-        navigate('/turar');
+        navigate(`/turar?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       } else {
-        navigate('/floors');
+        navigate(`/floors?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       }
     };
 
