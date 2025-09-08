@@ -10,6 +10,7 @@ import { Navigation } from '@/components/Navigation';
 import { Building2, Users, MapPin, Download, Search, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import turarFullData from '@/data/turar_full.json';
 
 // Define the interface for Turar equipment data
 interface TurarEquipment {
@@ -37,21 +38,16 @@ const TurarPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
-    const loadTurarData = async () => {
-      try {
-        const response = await fetch('/src/data/turar_full.json');
-        const data: TurarEquipment[] = await response.json();
-        turarData = data;
-        
-        // Process data to group by departments and rooms
-        const processedData = processTurarData(data);
-        setDepartments(processedData);
-      } catch (error) {
-        console.error('Error loading turar data:', error);
-      }
-    };
-
-    loadTurarData();
+    try {
+      const data: TurarEquipment[] = turarFullData as TurarEquipment[];
+      turarData = data;
+      
+      // Process data to group by departments and rooms
+      const processedData = processTurarData(data);
+      setDepartments(processedData);
+    } catch (error) {
+      console.error('Error loading turar data:', error);
+    }
   }, []);
 
   const processTurarData = (data: TurarEquipment[]): TurarDepartment[] => {
