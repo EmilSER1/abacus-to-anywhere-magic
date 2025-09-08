@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom'
-import { Building2, Home, Users, Database } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Building2, Home, Users, Database, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Navigation() {
   const location = useLocation()
+  const navigate = useNavigate()
   const pathname = location.pathname
 
   const navItems = [
@@ -33,7 +34,16 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border shadow-sm">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
+            {pathname !== '/' && (
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Назад</span>
+              </button>
+            )}
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
               <Building2 className="w-6 h-6" />
               МГБ
