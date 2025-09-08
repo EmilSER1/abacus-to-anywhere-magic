@@ -142,6 +142,7 @@ export default function FloorsPage() {
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
+  const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
     // Handle search params from URL
@@ -162,6 +163,24 @@ export default function FloorsPage() {
           setExpandedDepartments([`dept-${deptIndex}`]);
           console.log('Expanded floors:', [`floor-${floor.number}`]);
           console.log('Expanded departments:', [`dept-${deptIndex}`]);
+          
+          // Set target equipment for scrolling
+          if (urlRoom) {
+            const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
+            setTargetEquipmentId(targetId);
+            
+            // Scroll to element after animations complete
+            setTimeout(() => {
+              const element = document.getElementById(targetId);
+              if (element) {
+                element.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'center',
+                  inline: 'nearest'
+                });
+              }
+            }, 800);
+          }
         }
       });
       
@@ -345,23 +364,31 @@ export default function FloorsPage() {
                                                          });
                                                        }
 
-                                                      return (
-                                                        <tr 
-                                                          key={eqIndex} 
-                                                          className={`border-t border-border/50 transition-all duration-500 ${
-                                                            isHighlighted 
-                                                              ? 'bg-primary/10 animate-pulse' 
-                                                              : ''
-                                                          }`}
-                                                        >
+                                                       const equipmentId = isHighlighted ? 
+                                                         `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                                         undefined;
+
+                                                       return (
+                                                         <tr 
+                                                           key={eqIndex}
+                                                           id={equipmentId}
+                                                           className={`border-t border-border/50 transition-all duration-500 ${
+                                                             isHighlighted 
+                                                               ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
+                                                               : ''
+                                                           }`}
+                                                         >
                                                           <td className="p-2 font-mono text-xs">
                                                             {eq.code || '-'}
                                                           </td>
-                                                          <td className={`p-2 max-w-[200px] truncate ${
-                                                            isHighlighted ? 'text-primary font-semibold' : ''
-                                                          }`} title={eq.name || ''}>
-                                                            {eq.name || '-'}
-                                                          </td>
+                                                           <td className={`p-2 max-w-[200px] truncate transition-all duration-300 ${
+                                                             isHighlighted 
+                                                               ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
+                                                               : ''
+                                                           }`} title={eq.name || ''}>
+                                                             {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                                             {eq.name || '-'}
+                                                           </td>
                                                           <td className="p-2 text-center">
                                                             {eq.quantity || '-'}
                                                           </td>

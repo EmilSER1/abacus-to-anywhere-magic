@@ -40,6 +40,7 @@ const TurarPage: React.FC = () => {
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
+  const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -75,6 +76,22 @@ const TurarPage: React.FC = () => {
             if (roomIndex !== -1) {
               setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
               console.log('Expanded rooms:', [`room-${deptIndex}-${roomIndex}`]);
+              
+              // Set target equipment for scrolling
+              const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
+              setTargetEquipmentId(targetId);
+              
+              // Scroll to element after animations complete
+              setTimeout(() => {
+                const element = document.getElementById(targetId);
+                if (element) {
+                  element.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                  });
+                }
+              }, 800);
             }
           }
         }
@@ -291,39 +308,49 @@ const TurarPage: React.FC = () => {
                                     const urlDepartment = searchParams.get('department');
                                     const urlRoom = searchParams.get('room');
                                     
-                                    const isHighlighted = urlSearchTerm && 
-                                      urlDepartment === department.name && 
-                                      urlRoom === room.name && 
-                                      equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
-                                      !highlightTimeout;
+                                     const isHighlighted = urlSearchTerm && 
+                                       urlDepartment === department.name && 
+                                       urlRoom === room.name && 
+                                       equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                       !highlightTimeout;
+
+                                     const equipmentId = isHighlighted ? 
+                                       `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                       undefined;
 
                                     return (
-                                      <div
-                                        key={eqIndex}
-                                        className={`flex items-center justify-between p-3 rounded-md border transition-all duration-500 ${
-                                          isHighlighted 
-                                            ? 'bg-primary/10 border-primary/50 shadow-lg animate-pulse' 
-                                            : 'bg-background/50 border-border/30'
-                                        }`}
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <Package className="h-4 w-4 text-muted-foreground" />
-                                          <div>
-                                            <div className={`font-medium ${isHighlighted ? 'text-primary font-semibold' : ''}`}>
-                                              {equipment["Наименование"]}
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                              Код: {equipment["Код оборудования"]}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <Badge 
-                                          variant={isHighlighted ? "default" : "secondary"} 
-                                          className="font-medium"
-                                        >
-                                          {equipment["Кол-во"]} шт.
-                                        </Badge>
-                                      </div>
+                                       <div
+                                         key={eqIndex}
+                                         id={equipmentId}
+                                         className={`flex items-center justify-between p-3 rounded-md border transition-all duration-500 ${
+                                           isHighlighted 
+                                             ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-500 shadow-lg ring-2 ring-yellow-400 dark:ring-yellow-500 animate-pulse' 
+                                             : 'bg-background/50 border-border/30'
+                                         }`}
+                                       >
+                                         <div className="flex items-center gap-3">
+                                           <Package className="h-4 w-4 text-muted-foreground" />
+                                           <div>
+                                             <div className={`font-medium transition-all duration-300 ${
+                                               isHighlighted 
+                                                 ? 'text-yellow-800 dark:text-yellow-200 font-bold' 
+                                                 : ''
+                                             }`}>
+                                               {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                               {equipment["Наименование"]}
+                                             </div>
+                                             <div className="text-sm text-muted-foreground">
+                                               Код: {equipment["Код оборудования"]}
+                                             </div>
+                                           </div>
+                                         </div>
+                                         <Badge 
+                                           variant={isHighlighted ? "default" : "secondary"} 
+                                           className={`font-medium ${isHighlighted ? 'bg-yellow-500 text-yellow-900' : ''}`}
+                                         >
+                                           {equipment["Кол-во"]} шт.
+                                         </Badge>
+                                       </div>
                                     );
                                   })}
                                 </div>
