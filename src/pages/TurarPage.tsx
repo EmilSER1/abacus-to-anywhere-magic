@@ -39,6 +39,7 @@ const TurarPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
+  const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -67,8 +68,11 @@ const TurarPage: React.FC = () => {
               const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
               if (roomIndex !== -1) {
                 setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
-              }
-            }
+        }
+      }
+      
+      // Auto-remove highlight after 3 seconds
+      setTimeout(() => setHighlightTimeout(true), 3000);
           }
         }
       }
@@ -276,25 +280,46 @@ const TurarPage: React.FC = () => {
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
                                 <div className="space-y-2">
-                                  {room.equipment.map((equipment, eqIndex) => (
-                                    <div
-                                      key={eqIndex}
-                                      className="flex items-center justify-between p-3 rounded-md bg-background/50 border border-border/30"
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <Package className="h-4 w-4 text-muted-foreground" />
-                                        <div>
-                                          <div className="font-medium">{equipment["Наименование"]}</div>
-                                          <div className="text-sm text-muted-foreground">
-                                            Код: {equipment["Код оборудования"]}
+                                  {room.equipment.map((equipment, eqIndex) => {
+                                    const urlSearchTerm = searchParams.get('search');
+                                    const urlDepartment = searchParams.get('department');
+                                    const urlRoom = searchParams.get('room');
+                                    
+                                    const isHighlighted = urlSearchTerm && 
+                                      urlDepartment === department.name && 
+                                      urlRoom === room.name && 
+                                      equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                      !highlightTimeout;
+
+                                    return (
+                                      <div
+                                        key={eqIndex}
+                                        className={`flex items-center justify-between p-3 rounded-md border transition-all duration-500 ${
+                                          isHighlighted 
+                                            ? 'bg-primary/10 border-primary/50 shadow-lg animate-pulse' 
+                                            : 'bg-background/50 border-border/30'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <Package className="h-4 w-4 text-muted-foreground" />
+                                          <div>
+                                            <div className={`font-medium ${isHighlighted ? 'text-primary font-semibold' : ''}`}>
+                                              {equipment["Наименование"]}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                              Код: {equipment["Код оборудования"]}
+                                            </div>
                                           </div>
                                         </div>
+                                        <Badge 
+                                          variant={isHighlighted ? "default" : "secondary"} 
+                                          className="font-medium"
+                                        >
+                                          {equipment["Кол-во"]} шт.
+                                        </Badge>
                                       </div>
-                                      <Badge variant="secondary" className="font-medium">
-                                        {equipment["Кол-во"]} шт.
-                                      </Badge>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </AccordionContent>
                             </Card>

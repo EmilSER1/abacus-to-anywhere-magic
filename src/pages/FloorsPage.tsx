@@ -130,6 +130,7 @@ export default function FloorsPage() {
   const [floors] = useState<Floor[]>(() => processFloorData(allData));
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
+  const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
 
   useEffect(() => {
     // Handle search params from URL
@@ -147,6 +148,9 @@ export default function FloorsPage() {
         }
       });
     }
+    
+    // Auto-remove highlight after 3 seconds
+    setTimeout(() => setHighlightTimeout(true), 3000);
   }, [searchParams, floors]);
 
   const exportData = () => {
@@ -255,31 +259,55 @@ export default function FloorsPage() {
                                                      <th className="text-center p-2 font-medium">Примечания</th>
                                                    </tr>
                                                  </thead>
-                                                 <tbody>
-                                                   {room.equipment.map((eq, eqIndex) => (
-                                                     <tr key={eqIndex} className="border-t border-border/50">
-                                                       <td className="p-2 font-mono text-xs">
-                                                         {eq.code || '-'}
-                                                       </td>
-                                                       <td className="p-2 max-w-[200px] truncate" title={eq.name || ''}>
-                                                         {eq.name || '-'}
-                                                       </td>
-                                                       <td className="p-2 text-center">
-                                                         {eq.quantity || '-'}
-                                                       </td>
-                                                       <td className="p-2 text-center">
-                                                         {eq.unit || '-'}
-                                                       </td>
-                                                       <td className="p-2 text-center">
-                                                         {eq.notes && (
-                                                           <Badge variant="secondary" className="text-xs h-5">
-                                                             {eq.notes}
-                                                           </Badge>
-                                                         )}
-                                                       </td>
-                                                     </tr>
-                                                   ))}
-                                                 </tbody>
+                                                  <tbody>
+                                                    {room.equipment.map((eq, eqIndex) => {
+                                                      const urlSearchTerm = searchParams.get('search');
+                                                      const urlDepartment = searchParams.get('department');
+                                                      const urlRoom = searchParams.get('room');
+                                                      
+                                                      const isHighlighted = urlSearchTerm && 
+                                                        urlDepartment === department.name && 
+                                                        urlRoom === room.name && 
+                                                        eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                                        !highlightTimeout;
+
+                                                      return (
+                                                        <tr 
+                                                          key={eqIndex} 
+                                                          className={`border-t border-border/50 transition-all duration-500 ${
+                                                            isHighlighted 
+                                                              ? 'bg-primary/10 animate-pulse' 
+                                                              : ''
+                                                          }`}
+                                                        >
+                                                          <td className="p-2 font-mono text-xs">
+                                                            {eq.code || '-'}
+                                                          </td>
+                                                          <td className={`p-2 max-w-[200px] truncate ${
+                                                            isHighlighted ? 'text-primary font-semibold' : ''
+                                                          }`} title={eq.name || ''}>
+                                                            {eq.name || '-'}
+                                                          </td>
+                                                          <td className="p-2 text-center">
+                                                            {eq.quantity || '-'}
+                                                          </td>
+                                                          <td className="p-2 text-center">
+                                                            {eq.unit || '-'}
+                                                          </td>
+                                                          <td className="p-2 text-center">
+                                                            {eq.notes && (
+                                                              <Badge 
+                                                                variant={isHighlighted ? "default" : "secondary"} 
+                                                                className="text-xs h-5"
+                                                              >
+                                                                {eq.notes}
+                                                              </Badge>
+                                                            )}
+                                                          </td>
+                                                        </tr>
+                                                      );
+                                                    })}
+                                                  </tbody>
                                                </table>
                                              </div>
                                            </div>
