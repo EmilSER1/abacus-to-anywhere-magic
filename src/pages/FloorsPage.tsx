@@ -6,7 +6,6 @@ import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
-import combinedFloorsData from '@/data/combined_floors.json';
 
 // Interface definitions
 interface FloorData {
@@ -137,12 +136,28 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
-  const allData = combinedFloorsData as FloorData[];
-  const [floors] = useState<Floor[]>(() => processFloorData(allData));
+  const [allData, setAllData] = useState<FloorData[]>([]);
+  const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadFloorsData = async () => {
+      try {
+        const response = await fetch('/combined_floors.json');
+        const data: FloorData[] = await response.json();
+        setAllData(data);
+        const processedFloors = processFloorData(data);
+        setFloors(processedFloors);
+      } catch (error) {
+        console.error('Error loading floors data:', error);
+      }
+    };
+
+    loadFloorsData();
+  }, []);
 
   useEffect(() => {
     // Handle search params from URL

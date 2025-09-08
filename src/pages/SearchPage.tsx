@@ -7,8 +7,6 @@ import { Separator } from '@/components/ui/separator';
 import { Navigation } from '@/components/Navigation';
 import { Search, Package, MapPin, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import turarFullData from '@/data/turar_full.json';
-import combinedFloorsData from '@/data/combined_floors.json';
 
 // Interfaces
 interface TurarEquipment {
@@ -55,7 +53,8 @@ const SearchPage: React.FC = () => {
 
     try {
       // Search Turar data
-      const turarData: TurarEquipment[] = turarFullData as TurarEquipment[];
+      const turarResponse = await fetch('/turar_full.json');
+      const turarData: TurarEquipment[] = await turarResponse.json();
       
       const filteredTurarResults = turarData
         .filter(item => 
@@ -74,7 +73,8 @@ const SearchPage: React.FC = () => {
         }));
 
       // Search Floor data  
-      const allFloorData = combinedFloorsData as any[];
+      const floorsResponse = await fetch('/combined_floors.json');
+      const allFloorData = await floorsResponse.json();
       
       const filteredFloorResults: SearchResult[] = [];
       
