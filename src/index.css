@@ -2,6 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 15% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 15% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+    
+    /* Custom hospital theme colors */
+    --medical-blue: 217 91% 60%;
+    --medical-blue-light: 217 91% 70%;
+    --medical-green: 142 69% 58%;
+    --medical-red: 0 84% 60%;
+    --success: 142 69% 58%;
+    --warning: 43 96% 56%;
+    
+    /* Background gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--medical-blue-light)));
+    --gradient-medical: linear-gradient(135deg, hsl(var(--medical-blue)), hsl(var(--medical-green)));
+    
+    /* Shadows */
+    --shadow-medical: 0 4px 20px -2px hsl(var(--primary) / 0.1);
+    --shadow-card: 0 2px 10px -2px hsl(220 15% 15% / 0.1);
+  }
+
+  .dark {
+    --background: 220 15% 9%;
+    --foreground: 220 15% 95%;
+    --card: 220 15% 12%;
+    --card-foreground: 220 15% 95%;
+    --popover: 220 15% 12%;
+    --popover-foreground: 220 15% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 220 15% 9%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 220 15% 85%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 54%;
+    --accent: 220 15% 15%;
+    --accent-foreground: 220 15% 85%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .medical-card {
+    @apply bg-card/70 backdrop-blur-sm border-0 shadow-[var(--shadow-card)] rounded-xl;
+  }
+  
+  .medical-button {
+    @apply bg-gradient-to-r from-primary to-medical-blue-light text-primary-foreground shadow-[var(--shadow-medical)] transition-all duration-300 hover:scale-105;
+  }
+  
+  .nav-link {
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200;
+  }
+  
+  .nav-link-active {
+    @apply bg-primary text-primary-foreground shadow-sm;
+  }
+  
+  .nav-link-inactive {
+    @apply text-muted-foreground hover:text-foreground hover:bg-accent;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
