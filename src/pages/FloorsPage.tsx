@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Download, Plus, Edit, MapPin, Users, ChevronDown, ChevronRight } from 'lucide-react';
-import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
-import { EditRoomDialog } from '@/components/EditRoomDialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
-import floorsData from '@/data/floorsData.json';
+import firstFloorData from '@/data/1F_filled.json';
+import secondFloorData from '@/data/2F_filled.json';
 
 // Interface definitions
 interface FloorData {
-  "Этаж": string;
+  "Этаж": string | number;
   "БЛОК": string;
   "ОТДЕЛЕНИЕ": string;
   "Код помещения": string;
@@ -23,42 +22,79 @@ interface FloorData {
   "Примечания": string | null;
 }
 
+interface Equipment {
+  code: string | null;
+  name: string | null;
+  unit: string | null;
+  quantity: number | string | null;
+  notes: string | null;
+}
+
 interface Room {
   code: string;
   name: string;
-  equipment: Array<{
-    code: string | null;
-    name: string | null;
-    unit: string | null;
-    quantity: number | string | null;
-    notes: string | null;
-  }>;
+  equipment: Equipment[];
 }
 
 interface Department {
   name: string;
-  floor: string;
   block: string;
   rooms: Room[];
+  equipmentCount: number;
 }
 
-// Process floor data to group by departments
-const processFloorData = (data: FloorData[]): Department[] => {
-  const departmentMap = new Map<string, Department>();
+interface Floor {
+  number: string;
+  blocks: Block[];
+  stats: {
+    totalBlocks: number;
+    totalDepartments: number;
+    totalRooms: number;
+    totalEquipment: number;
+  };
+}
+
+interface Block {
+  name: string;
+  departments: Department[];
+  stats: {
+    totalDepartments: number;
+    totalRooms: number;
+    totalEquipment: number;
+  };
+}
+
+// Process floor data to group by floors -> blocks -> departments -> rooms
+const processFloorData = (data: FloorData[]): Floor[] => {
+  const floorsMap = new Map<string, Map<string, Map<string, Department>>>();
 
   data.forEach(item => {
-    const deptKey = `${item["Этаж"]}-${item["БЛОК"]}-${item["ОТДЕЛЕНИЕ"]}`;
+    const floorNumber = String(item["Этаж"]);
+    const blockName = item["БЛОК"];
+    const departmentName = item["ОТДЕЛЕНИЕ"];
     
-    if (!departmentMap.has(deptKey)) {
-      departmentMap.set(deptKey, {
-        name: item["ОТДЕЛЕНИЕ"],
-        floor: item["Этаж"],
-        block: item["БЛОК"],
-        rooms: []
+    if (!floorsMap.has(floorNumber)) {
+      floorsMap.set(floorNumber, new Map());
+    }
+    
+    const floor = floorsMap.get(floorNumber)!;
+    
+    if (!floor.has(blockName)) {
+      floor.set(blockName, new Map());
+    }
+    
+    const block = floor.get(blockName)!;
+    
+    if (!block.has(departmentName)) {
+      block.set(departmentName, {
+        name: departmentName,
+        block: blockName,
+        rooms: [],
+        equipmentCount: 0
       });
     }
 
-    const department = departmentMap.get(deptKey)!;
+    const department = block.get(departmentName)!;
     let room = department.rooms.find(r => r.code === item["Код помещения"]);
     
     if (!room) {
@@ -78,31 +114,60 @@ const processFloorData = (data: FloorData[]): Department[] => {
         quantity: item["Кол-во"],
         notes: item["Примечания"]
       });
+      department.equipmentCount++;
     }
   });
 
-  return Array.from(departmentMap.values());
+  // Convert to Floor[] structure
+  const floors: Floor[] = [];
+  
+  floorsMap.forEach((blocksMap, floorNumber) => {
+    const blocks: Block[] = [];
+    
+    blocksMap.forEach((departmentsMap, blockName) => {
+      const departments = Array.from(departmentsMap.values());
+      const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
+      const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
+      
+      blocks.push({
+        name: blockName,
+        departments,
+        stats: {
+          totalDepartments: departments.length,
+          totalRooms,
+          totalEquipment
+        }
+      });
+    });
+    
+    const totalDepartments = blocks.reduce((sum, block) => sum + block.stats.totalDepartments, 0);
+    const totalRooms = blocks.reduce((sum, block) => sum + block.stats.totalRooms, 0);
+    const totalEquipment = blocks.reduce((sum, block) => sum + block.stats.totalEquipment, 0);
+    
+    floors.push({
+      number: floorNumber,
+      blocks,
+      stats: {
+        totalBlocks: blocks.length,
+        totalDepartments,
+        totalRooms,
+        totalEquipment
+      }
+    });
+  });
+
+  return floors.sort((a, b) => Number(a.number) - Number(b.number));
 };
 
 export default function FloorsPage() {
-  const [departments] = useState<Department[]>(() => processFloorData(floorsData as FloorData[]));
-  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
-
-  const toggleDepartment = (deptKey: string) => {
-    const newExpanded = new Set(expandedDepts);
-    if (newExpanded.has(deptKey)) {
-      newExpanded.delete(deptKey);
-    } else {
-      newExpanded.add(deptKey);
-    }
-    setExpandedDepts(newExpanded);
-  };
+  const allData = [...firstFloorData, ...secondFloorData] as FloorData[];
+  const [floors] = useState<Floor[]>(() => processFloorData(allData));
 
   const exportData = () => {
-    const dataStr = JSON.stringify(departments, null, 2);
+    const dataStr = JSON.stringify(floors, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = 'departments_data.json';
+    const exportFileDefaultName = 'floors_data.json';
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -110,153 +175,148 @@ export default function FloorsPage() {
     linkElement.click();
   };
 
-  // Calculate statistics
-  const totalDepartments = departments.length;
-  const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
-  const totalEquipment = departments.reduce((sum, dept) => 
-    sum + dept.rooms.reduce((roomSum, room) => roomSum + room.equipment.length, 0), 0
-  );
+  // Calculate total statistics
+  const totalStats = floors.reduce((acc, floor) => ({
+    totalBlocks: acc.totalBlocks + floor.stats.totalBlocks,
+    totalDepartments: acc.totalDepartments + floor.stats.totalDepartments,
+    totalRooms: acc.totalRooms + floor.stats.totalRooms,
+    totalEquipment: acc.totalEquipment + floor.stats.totalEquipment
+  }), { totalBlocks: 0, totalDepartments: 0, totalRooms: 0, totalEquipment: 0 });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-primary" />
-              Проектировщики
-            </h1>
-            <p className="text-gray-600 mt-1">Управление этажами, отделениями и помещениями</p>
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+            <Building2 className="h-6 w-6 text-primary" />
           </div>
-          <div className="flex gap-2">
-            <Button onClick={exportData} variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт
-            </Button>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Добавить отделение
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold mb-2">Управление этажами и блоками</h1>
+          <p className="text-muted-foreground">
+            Иерархическая навигация по этажам → блокам → кабинетам с полным функционалом редактирования
+          </p>
+          <Button onClick={exportData} className="mt-4 gap-2">
+            <Download className="h-4 w-4" />
+            Экспорт Проектировщики в Excel
+          </Button>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Всего отделений</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalDepartments}</div>
-              <p className="text-xs text-muted-foreground">активных отделений</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Всего помещений</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalRooms}</div>
-              <p className="text-xs text-muted-foreground">различных помещений</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Всего оборудования</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalEquipment}</div>
-              <p className="text-xs text-muted-foreground">единиц оборудования</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Departments List */}
+        {/* Floors with Accordion */}
         <div className="space-y-6">
-          {departments.map((department, deptIndex) => {
-            const deptKey = `${department.floor}-${department.block}-${department.name}`;
-            const isExpanded = expandedDepts.has(deptKey);
-
-            return (
-              <Card key={deptIndex} className="overflow-hidden">
-                <Collapsible open={isExpanded} onOpenChange={() => toggleDepartment(deptKey)}>
-                  <CollapsibleTrigger asChild>
-                    <div className="p-6 hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-xl font-semibold">{department.name}</h2>
-                            <Badge variant="secondary">Этаж {department.floor}</Badge>
-                            <Badge variant="outline">Блок {department.block}</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
-                              {department.rooms.length} помещений
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              {department.rooms.reduce((sum, room) => sum + room.equipment.length, 0)} единиц оборудования
-                            </span>
-                          </div>
-                        </div>
+          {floors.map((floor) => (
+            <Card key={floor.number} className="overflow-hidden">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value={`floor-${floor.number}`} className="border-none">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
+                    <div className="flex items-center justify-between w-full mr-4">
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          {isExpanded ? 
-                            <ChevronDown className="h-5 w-5 text-gray-500" /> : 
-                            <ChevronRight className="h-5 w-5 text-gray-500" />
-                          }
+                          <Building2 className="h-5 w-5 text-primary" />
+                          <h2 className="text-xl font-semibold">{floor.number} этаж</h2>
                         </div>
                       </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{floor.stats.totalBlocks} блоков</span>
+                        <span>{floor.stats.totalDepartments} отделений</span>
+                        <span>{floor.stats.totalRooms} помещений</span>
+                        <span>{floor.stats.totalEquipment} ед. оборуд.</span>
+                      </div>
                     </div>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent>
-                    <div className="px-6 pb-6 border-t bg-gray-50/50">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {department.rooms.map((room, roomIndex) => (
-                          <Card key={roomIndex} className="p-4 bg-white shadow-sm">
-                            <div className="mb-3">
-                              <h3 className="font-medium text-lg">{room.name}</h3>
-                              <p className="text-sm text-gray-600 font-mono">{room.code}</p>
-                            </div>
-                            
-                            {room.equipment.length > 0 && (
-                              <div className="mt-3">
-                                <h4 className="font-medium text-sm mb-2">Оборудование:</h4>
-                                <div className="space-y-1">
-                                  {room.equipment.map((eq, eqIndex) => (
-                                    <div key={eqIndex} className="text-xs bg-gray-100 p-2 rounded">
-                                      <div className="font-medium">{eq.name}</div>
-                                      {eq.code && <div className="text-gray-600">Код: {eq.code}</div>}
-                                      {eq.quantity && eq.unit && (
-                                        <div className="text-gray-600">
-                                          Количество: {eq.quantity} {eq.unit}
-                                        </div>
-                                      )}
-                                      {eq.notes && (
-                                        <div className="text-gray-500 italic">{eq.notes}</div>
-                                      )}
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <div className="space-y-4">
+                      {floor.blocks.map((block) => (
+                        <div key={block.name} className="border rounded-lg overflow-hidden">
+                          <Accordion type="single" collapsible>
+                            <AccordionItem value={`block-${block.name}`} className="border-none">
+                              <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
+                                <div className="flex items-center justify-between w-full mr-4">
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="font-mono">
+                                      Блок {block.name}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">
+                                      {block.stats.totalDepartments} отделений • {block.stats.totalRooms} помещений
+                                    </span>
+                                  </div>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {block.stats.totalEquipment} ед. оборуд.
+                                  </Badge>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4 pb-4">
+                                <div className="space-y-3">
+                                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                                    ВСЕ ОТДЕЛЕНИЯ В БЛОКЕ:
+                                  </div>
+                                  {block.departments.map((department, deptIndex) => (
+                                    <div key={deptIndex} className="border rounded-md overflow-hidden">
+                                      <Accordion type="single" collapsible>
+                                        <AccordionItem value={`dept-${deptIndex}`} className="border-none">
+                                          <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-muted/30">
+                                            <div className="flex items-center justify-between w-full mr-4">
+                                              <div className="text-left">
+                                                <div className="font-medium text-sm">{department.name}</div>
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {department.rooms.length} каб.
+                                              </div>
+                                            </div>
+                                          </AccordionTrigger>
+                                          <AccordionContent className="px-3 pb-3">
+                                            <div className="space-y-2">
+                                              <div className="text-xs font-medium text-muted-foreground">Кабинеты:</div>
+                                              <div className="grid grid-cols-1 gap-2">
+                                                {department.rooms.map((room, roomIndex) => (
+                                                  <div key={roomIndex} className="text-xs bg-muted/20 p-2 rounded border-l-2 border-primary/30">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                      <span className="font-medium">{room.name}</span>
+                                                      <span className="text-muted-foreground font-mono text-xs">{room.code}</span>
+                                                    </div>
+                                                    {room.equipment.length > 0 && (
+                                                      <div className="mt-2 space-y-1">
+                                                        {room.equipment.map((eq, eqIndex) => (
+                                                          <div key={eqIndex} className="flex flex-wrap items-center gap-2 text-xs">
+                                                            <span className="text-muted-foreground">{eq.name}</span>
+                                                            {eq.code && (
+                                                              <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                                                                {eq.code}
+                                                              </Badge>
+                                                            )}
+                                                            {eq.quantity && eq.unit && (
+                                                              <span className="text-muted-foreground">
+                                                                {eq.quantity} {eq.unit}
+                                                              </span>
+                                                            )}
+                                                            {eq.notes && (
+                                                              <span className="text-muted-foreground italic">({eq.notes})</span>
+                                                            )}
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                      </Accordion>
                                     </div>
                                   ))}
                                 </div>
-                              </div>
-                            )}
-                          </Card>
-                        ))}
-                      </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      ))}
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            );
-          })}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
