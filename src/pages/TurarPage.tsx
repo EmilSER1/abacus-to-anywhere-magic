@@ -38,7 +38,7 @@ const TurarPage: React.FC = () => {
   useEffect(() => {
     const loadTurarData = async () => {
       try {
-        const response = await fetch('/src/data/turar.json');
+        const response = await fetch('/src/data/turar_full.json');
         const data: TurarEquipment[] = await response.json();
         turarData = data;
         
