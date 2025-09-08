@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Navigation } from '@/components/Navigation';
-import { Search, Package, MapPin, Building2, ArrowLeft } from 'lucide-react';
+import { Search, Package, MapPin, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Interfaces
@@ -153,16 +153,6 @@ const SearchPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <Navigation />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-6 gap-2"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Назад
-        </Button>
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
