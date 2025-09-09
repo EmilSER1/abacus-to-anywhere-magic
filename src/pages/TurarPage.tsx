@@ -321,17 +321,6 @@ const TurarPage: React.FC = () => {
                                          equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
                                         !highlightTimeout;
 
-                                      if (urlSearchTerm && urlDepartment === department.name && urlRoom === room.name) {
-                                        console.log('TurarPage highlighting check:', {
-                                          equipmentName: equipment["Наименование"],
-                                          equipmentCode: equipment["Код оборудования"],
-                                          searchTerm: urlSearchTerm,
-                                          nameMatches: equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()),
-                                          codeMatches: equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase()),
-                                          isHighlighted
-                                        });
-                                      }
-
                                       const equipmentId = isHighlighted ? 
                                         `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
                                         undefined;

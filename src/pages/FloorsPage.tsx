@@ -346,107 +346,112 @@ export default function FloorsPage() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
-                                <div className="space-y-3">
-                                  <div className="text-xs font-medium text-muted-foreground mb-2">
-                                    КАБИНЕТЫ В ОТДЕЛЕНИИ:
-                                  </div>
-                                  <div className="grid grid-cols-1 gap-2">
-                                    {department.rooms.map((room, roomIndex) => (
-                                      <div key={roomIndex} className="text-xs bg-muted/20 p-2 rounded border-l-2 border-primary/30">
-                                         <div className="flex justify-between items-start mb-1">
-                                           <span className="font-medium">{room.name}</span>
-                                           <div className="text-right">
-                                             <div className="text-muted-foreground font-mono text-xs">{room.code}</div>
-                                             <div className="text-muted-foreground text-xs">{(room.area || 0).toFixed(1)} м²</div>
-                                           </div>
-                                         </div>
-                                         {room.equipment.length > 0 && (
-                                           <div className="mt-3">
-                                             <div className="bg-background/50 rounded border">
-                                               <table className="w-full text-xs">
-                                                 <thead className="bg-muted/30">
-                                                   <tr>
-                                                     <th className="text-left p-2 font-medium">Код оборудования</th>
-                                                     <th className="text-left p-2 font-medium">Наименование</th>
-                                                     <th className="text-center p-2 font-medium">Количество</th>
-                                                     <th className="text-center p-2 font-medium">Ед. изм.</th>
-                                                     <th className="text-center p-2 font-medium">Примечания</th>
-                                                   </tr>
-                                                 </thead>
-                                                  <tbody>
-                                                    {room.equipment.map((eq, eqIndex) => {
-                                                      const urlSearchTerm = searchParams.get('search');
-                                                      const urlDepartment = searchParams.get('department');
-                                                      const urlRoom = searchParams.get('room');
-                                                      
-                                                       const isHighlighted = urlSearchTerm && 
-                                                         urlDepartment === department.name && 
-                                                         urlRoom === room.name && 
-                                                         eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
-                                                         !highlightTimeout;
-
-                                                       if (urlSearchTerm && urlDepartment === department.name && urlRoom === room.name) {
-                                                         console.log('FloorsPage highlighting check:', {
-                                                           equipmentName: eq.name,
-                                                           searchTerm: urlSearchTerm,
-                                                           matches: eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()),
-                                                           isHighlighted
-                                                         });
-                                                       }
-
-                                                       const equipmentId = isHighlighted ? 
-                                                         `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
-                                                         undefined;
-
-                                                       return (
-                                                         <tr 
-                                                           key={eqIndex}
-                                                           id={equipmentId}
-                                                           className={`border-t border-border/50 transition-all duration-500 ${
-                                                             isHighlighted 
-                                                               ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
-                                                               : ''
-                                                           }`}
-                                                         >
-                                                          <td className="p-2 font-mono text-xs">
-                                                            {eq.code || '-'}
-                                                          </td>
-                                                           <td className={`p-2 max-w-[200px] truncate transition-all duration-300 ${
-                                                             isHighlighted 
-                                                               ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
-                                                               : ''
-                                                           }`} title={eq.name || ''}>
-                                                             {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
-                                                             {eq.name || '-'}
-                                                           </td>
-                                                          <td className="p-2 text-center">
-                                                            {eq.quantity || '-'}
-                                                          </td>
-                                                          <td className="p-2 text-center">
-                                                            {eq.unit || '-'}
-                                                          </td>
-                                                          <td className="p-2 text-center">
-                                                            {eq.notes && (
-                                                              <Badge 
-                                                                variant={isHighlighted ? "default" : "secondary"} 
-                                                                className="text-xs h-5"
-                                                              >
-                                                                {eq.notes}
-                                                              </Badge>
-                                                            )}
-                                                          </td>
-                                                        </tr>
-                                                      );
-                                                    })}
-                                                  </tbody>
-                                               </table>
-                                             </div>
-                                           </div>
-                                         )}
-                                      </div>
-                                    ))}
+                                 <div className="space-y-3">
+                                   <div className="text-xs font-medium text-muted-foreground mb-2">
+                                     КАБИНЕТЫ В ОТДЕЛЕНИИ:
                                    </div>
-                                 </div>
+                                   <div className="grid grid-cols-1 gap-2">
+                                     {department.rooms.map((room, roomIndex) => (
+                                       <Accordion key={roomIndex} type="single" collapsible>
+                                         <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
+                                           <AccordionTrigger className="px-3 py-2 text-xs hover:no-underline hover:bg-muted/30">
+                                             <div className="flex justify-between items-center w-full mr-4">
+                                               <div className="flex items-center gap-2">
+                                                 <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                 <span className="font-medium">{room.name}</span>
+                                                 <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
+                                               </div>
+                                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                 <span>{(room.area || 0).toFixed(1)} м²</span>
+                                                 <Badge variant="secondary" className="text-xs">
+                                                   {room.equipment.length} ед.
+                                                 </Badge>
+                                               </div>
+                                             </div>
+                                           </AccordionTrigger>
+                                            <AccordionContent className="px-3 pb-3">
+                                              {room.equipment.length > 0 ? (
+                                                <div className="bg-background/50 rounded border">
+                                                  <table className="w-full text-xs">
+                                                    <thead className="bg-muted/30">
+                                                      <tr>
+                                                        <th className="text-left p-2 font-medium">Код оборудования</th>
+                                                        <th className="text-left p-2 font-medium">Наименование</th>
+                                                        <th className="text-center p-2 font-medium">Количество</th>
+                                                        <th className="text-center p-2 font-medium">Ед. изм.</th>
+                                                        <th className="text-center p-2 font-medium">Примечания</th>
+                                                      </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                      {room.equipment.map((eq, eqIndex) => {
+                                                        const urlSearchTerm = searchParams.get('search');
+                                                        const urlDepartment = searchParams.get('department');
+                                                        const urlRoom = searchParams.get('room');
+                                                        
+                                                        const isHighlighted = urlSearchTerm && 
+                                                          urlDepartment === department.name && 
+                                                          urlRoom === room.name && 
+                                                          eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                                          !highlightTimeout;
+
+                                                        const equipmentId = isHighlighted ? 
+                                                          `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                                          undefined;
+
+                                                        return (
+                                                          <tr 
+                                                            key={eqIndex}
+                                                            id={equipmentId}
+                                                            className={`border-t border-border/50 transition-all duration-500 ${
+                                                              isHighlighted 
+                                                                ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
+                                                                : ''
+                                                            }`}
+                                                          >
+                                                            <td className="p-2 font-mono text-xs">
+                                                              {eq.code || '-'}
+                                                            </td>
+                                                            <td className={`p-2 max-w-[200px] truncate transition-all duration-300 ${
+                                                              isHighlighted 
+                                                                ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
+                                                                : ''
+                                                            }`} title={eq.name || ''}>
+                                                              {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                                              {eq.name || '-'}
+                                                            </td>
+                                                            <td className="p-2 text-center">
+                                                              {eq.quantity || '-'}
+                                                            </td>
+                                                            <td className="p-2 text-center">
+                                                              {eq.unit || '-'}
+                                                            </td>
+                                                            <td className="p-2 text-center">
+                                                              {eq.notes && (
+                                                                <Badge 
+                                                                  variant={isHighlighted ? "default" : "secondary"} 
+                                                                  className="text-xs h-5"
+                                                                >
+                                                                  {eq.notes}
+                                                                </Badge>
+                                                              )}
+                                                            </td>
+                                                          </tr>
+                                                        );
+                                                      })}
+                                                    </tbody>
+                                                  </table>
+                                                </div>
+                                              ) : (
+                                                <div className="text-center py-4 text-muted-foreground text-xs">
+                                                  Оборудование не указано
+                                                </div>
+                                              )}
+                                            </AccordionContent>
+                                          </AccordionItem>
+                                        </Accordion>
+                                      ))}
+                                    </div>
+                                  </div>
                               </AccordionContent>
                             </AccordionItem>
                           </Accordion>
