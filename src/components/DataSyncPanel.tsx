@@ -86,24 +86,47 @@ export const DataSyncPanel: React.FC = () => {
         return value;
       };
 
-      // Исправляем числовые поля в данных проектировщиков
-      const projectorData = rawProjectorData.map(item => ({
-        ...item,
-        "ЭТАЖ": fixNumericField(item["ЭТАЖ"]),
-        "Площадь (м2)": fixNumericField(item["Площадь (м2)"]),
-        "Кол-во": item["Кол-во"] === null ? null : fixNumericField(item["Кол-во"])
-      }));
+      // Исправляем числовые поля в данных проектировщиков и фильтруем некорректные записи
+      const projectorData = rawProjectorData
+        .map(item => ({
+          ...item,
+          "ЭТАЖ": fixNumericField(item["ЭТАЖ"]),
+          "Площадь (м2)": fixNumericField(item["Площадь (м2)"]),
+          "Кол-во": item["Кол-во"] === null ? null : fixNumericField(item["Кол-во"])
+        }))
+        .filter(item => 
+          // Фильтруем записи с пустыми обязательными полями
+          item["КОД ПОМЕЩЕНИЯ"] && 
+          item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] && 
+          item["ОТДЕЛЕНИЕ"] && 
+          item["БЛОК"] &&
+          item["ЭТАЖ"] !== null &&
+          item["ЭТАЖ"] !== undefined
+        );
 
-      // Исправляем числовые поля в данных турар
-      const turarData = rawTurarData.map(item => ({
-        ...item,
-        "Кол-во": fixNumericField(item["Кол-во"])
-      }));
+      // Исправляем числовые поля в данных турар и фильтруем некорректные записи
+      const turarData = rawTurarData
+        .map(item => ({
+          ...item,
+          "Кол-во": fixNumericField(item["Кол-во"])
+        }))
+        .filter(item =>
+          // Фильтруем записи с пустыми обязательными полями
+          item["Отделение/Блок"] &&
+          item["Помещение/Кабинет"] &&
+          item["Код оборудования"] &&
+          item["Наименование"] &&
+          item["Кол-во"] !== null &&
+          item["Кол-во"] !== undefined
+        );
+
+      console.log(`Отфильтровано: ${rawProjectorData.length - projectorData.length} записей проектировщиков`);
+      console.log(`Отфильтровано: ${rawTurarData.length - turarData.length} записей турар`);
 
       setSyncStatus({
         type: 'all',
         status: 'loading',
-        message: `Загружено из JSON: ${projectorData.length + turarData.length} записей. Сохраняем в БД...`
+        message: `Обработано ${projectorData.length + turarData.length} корректных записей. Сохраняем в БД...`
       });
 
       // Очищаем существующие данные
