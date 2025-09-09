@@ -60,6 +60,86 @@ export const DataSyncPanel: React.FC = () => {
     }
   };
 
+  const handleRealDataSync = async () => {
+    setSyncStatus({ type: 'all', status: 'loading' });
+
+    try {
+      let totalInserted = 0;
+      
+      // Загружаем проектировщиков батчами
+      let batch = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase.functions.invoke('load-real-data', {
+          body: { action: 'load-projector-batch', batch }
+        });
+
+        if (error) throw error;
+        
+        totalInserted += data.inserted;
+        hasMore = data.hasMore;
+        batch++;
+        
+        setSyncStatus({
+          type: 'all',
+          status: 'loading',
+          message: `Загружено проектировщиков: ${data.totalLoaded}/${data.totalAvailable}`,
+          inserted: totalInserted
+        });
+      }
+
+      // Загружаем турар батчами
+      batch = 0;
+      hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase.functions.invoke('load-real-data', {
+          body: { action: 'load-turar-batch', batch }
+        });
+
+        if (error) throw error;
+        
+        totalInserted += data.inserted;
+        hasMore = data.hasMore;
+        batch++;
+        
+        setSyncStatus({
+          type: 'all',
+          status: 'loading',
+          message: `Загружено турар: ${data.totalLoaded}/${data.totalAvailable}`,
+          inserted: totalInserted
+        });
+      }
+
+      setSyncStatus({
+        type: 'all',
+        status: 'success',
+        message: 'Все реальные данные успешно загружены!',
+        inserted: totalInserted
+      });
+
+      toast({
+        title: "Загрузка завершена",
+        description: `Загружено ${totalInserted.toLocaleString()} записей`,
+      });
+
+    } catch (error) {
+      console.error('Real data sync error:', error);
+      setSyncStatus({
+        type: 'all',
+        status: 'error',
+        message: error.message || 'Ошибка загрузки реальных данных'
+      });
+
+      toast({
+        title: "Ошибка загрузки",
+        description: error.message || 'Не удалось загрузить реальные данные',
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusIcon = (status: SyncStatus['status']) => {
     switch (status) {
       case 'loading':
@@ -124,7 +204,7 @@ export const DataSyncPanel: React.FC = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Button
             variant="outline"
             onClick={() => handleSync('sync-projector-data')}
@@ -132,7 +212,7 @@ export const DataSyncPanel: React.FC = () => {
             className="flex items-center gap-2"
           >
             <Upload className="h-4 w-4" />
-            Проектировщики
+            Тест проектировщики
           </Button>
 
           <Button
@@ -142,7 +222,7 @@ export const DataSyncPanel: React.FC = () => {
             className="flex items-center gap-2"
           >
             <Upload className="h-4 w-4" />
-            Турар
+            Тест турар
           </Button>
 
           <Button
@@ -151,7 +231,17 @@ export const DataSyncPanel: React.FC = () => {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${syncStatus.status === 'loading' ? 'animate-spin' : ''}`} />
-            Все данные
+            Все тестовые
+          </Button>
+
+          <Button
+            variant="default"
+            onClick={() => handleRealDataSync()}
+            disabled={syncStatus.status === 'loading'}
+            className="flex items-center gap-2 bg-primary"
+          >
+            <Download className="h-4 w-4" />
+            Реальные данные
           </Button>
         </div>
 
