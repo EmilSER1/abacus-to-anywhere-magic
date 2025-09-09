@@ -20,7 +20,9 @@ export const useTurarMedicalData = () => {
         .from("turar_medical")
         .select("*")
         .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
-        .limit(5000); // Увеличиваем лимит для отображения всех записей
+        .limit(50000); // Максимально возможный лимит
+
+      console.log(`Loaded ${data?.length || 0} turar records`);
 
       if (error) {
         throw error;

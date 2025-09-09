@@ -28,7 +28,9 @@ export const useFloorsData = () => {
         .from("projector_floors")
         .select("*")
         .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"')
-        .limit(10000); // Увеличиваем лимит для отображения всех записей
+        .limit(100000); // Максимально возможный лимит
+
+      console.log(`Loaded ${data?.length || 0} projector records`);
 
       if (error) {
         throw error;
