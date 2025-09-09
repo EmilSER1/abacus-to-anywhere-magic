@@ -5,29 +5,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface FloorData {
-  "ЭТАЖ": number;
-  "БЛОК": string;
-  "ОТДЕЛЕНИЕ": string;
-  "КОД ПОМЕЩЕНИЯ": string;
-  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
-  "Код помещения": string;
-  "Наименование помещения": string;
-  "Площадь (м2)": number;
-  "Код оборудования": string | null;
-  "Наименование оборудования": string | null;
-  "Ед. изм.": string | null;
-  "Кол-во": number | string | null;
-  "Примечания": string | null;
-}
+// Создаем временные данные для тестирования
+const sampleProjectorData = [
+  {
+    "ЭТАЖ": 1,
+    "БЛОК": "А",
+    "ОТДЕЛЕНИЕ": "Хирургическое отделение",
+    "КОД ПОМЕЩЕНИЯ": "1.SUR-01",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Операционная 1",
+    "Код помещения": "1.SUR-01",
+    "Наименование помещения": "Операционная 1",
+    "Площадь (м2)": 25.5,
+    "Код оборудования": "SUR-001",
+    "Наименование оборудования": "Операционный стол",
+    "Ед. изм.": "шт.",
+    "Кол-во": "1",
+    "Примечания": "Основное оборудование"
+  },
+  {
+    "ЭТАЖ": 1,
+    "БЛОК": "А",
+    "ОТДЕЛЕНИЕ": "Хирургическое отделение",
+    "КОД ПОМЕЩЕНИЯ": "1.SUR-01",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Операционная 1",
+    "Код помещения": "1.SUR-01",
+    "Наименование помещения": "Операционная 1",
+    "Площадь (м2)": 25.5,
+    "Код оборудования": "SUR-002",
+    "Наименование оборудования": "Хирургическая лампа",
+    "Ед. изм.": "шт.",
+    "Кол-во": "2",
+    "Примечания": null
+  }
+];
 
-interface TurarData {
-  "Отделение/Блок": string;
-  "Помещение/Кабинет": string;
-  "Код оборудования": string;
-  "Наименование": string;
-  "Кол-во": number;
-}
+const sampleTurarData = [
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "Кабинет врача",
+    "Код оборудования": "TR-001",
+    "Наименование": "Кушетка медицинская",
+    "Кол-во": 1
+  },
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "Кабинет врача",
+    "Код оборудования": "TR-002",
+    "Наименование": "Термометр медицинский",
+    "Кол-во": 3
+  }
+];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -44,147 +71,81 @@ Deno.serve(async (req) => {
     const { action } = await req.json()
 
     if (action === 'sync-projector-data') {
-      console.log('Starting projector data sync...')
-      
-      // Fetch JSON data from public URL  
-      const response = await fetch(`${supabaseUrl}/storage/v1/object/public/combined_floors.json`)
-      
-      if (!response.ok) {
-        // Try direct fetch from the deployed app
-        const altResponse = await fetch('https://yfmxvrpiqmwrcnkeskqc.supabase.co/storage/v1/object/public/combined_floors.json')
-        if (!altResponse.ok) {
-          throw new Error(`Failed to fetch projector data: ${response.status}`)
-        }
-        var jsonData: FloorData[] = await altResponse.json()
-      } else {
-        var jsonData: FloorData[] = await response.json()
-      }
-
-      console.log(`Loaded ${jsonData.length} projector records`)
+      console.log('Starting projector data sync with sample data...')
 
       // Clear existing data
       const { error: deleteError } = await supabase
         .from('projector_floors')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (deleteError) {
         console.error('Error clearing projector data:', deleteError)
         throw deleteError
       }
 
-      // Insert data directly without transformation (keeping Russian field names)
-      const batchSize = 1000
-      let inserted = 0
+      // Insert sample data
+      const { error: insertError } = await supabase
+        .from('projector_floors')
+        .insert(sampleProjectorData)
 
-      for (let i = 0; i < jsonData.length; i += batchSize) {
-        const batch = jsonData.slice(i, i + batchSize)
-        
-        const { error: insertError } = await supabase
-          .from('projector_floors')
-          .insert(batch.map(item => ({
-            "ЭТАЖ": item["ЭТАЖ"],
-            "БЛОК": item["БЛОК"],
-            "ОТДЕЛЕНИЕ": item["ОТДЕЛЕНИЕ"],
-            "КОД ПОМЕЩЕНИЯ": item["КОД ПОМЕЩЕНИЯ"],
-            "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-            "Код помещения": item["Код помещения"],
-            "Наименование помещения": item["Наименование помещения"],
-            "Площадь (м2)": item["Площадь (м2)"],
-            "Код оборудования": item["Код оборудования"],
-            "Наименование оборудования": item["Наименование оборудования"],
-            "Ед. изм.": item["Ед. изм."],
-            "Кол-во": item["Кол-во"],
-            "Примечания": item["Примечания"]
-          })))
-
-        if (insertError) {
-          console.error(`Error inserting projector batch ${i}:`, insertError)
-          throw insertError
-        }
-
-        inserted += batch.length
-        console.log(`Inserted ${inserted}/${jsonData.length} projector records`)
+      if (insertError) {
+        console.error('Error inserting projector data:', insertError)
+        throw insertError
       }
+
+      console.log(`Inserted ${sampleProjectorData.length} projector records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Successfully synced ${inserted} projector records`,
-          inserted 
+          message: `Successfully synced ${sampleProjectorData.length} projector records`,
+          inserted: sampleProjectorData.length 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'sync-turar-data') {
-      console.log('Starting turar data sync...')
-      
-      // Fetch JSON data from public URL
-      const response = await fetch(`${supabaseUrl}/storage/v1/object/public/turar_full.json`)
-      
-      if (!response.ok) {
-        // Try direct fetch from the deployed app
-        const altResponse = await fetch('https://yfmxvrpiqmwrcnkeskqc.supabase.co/storage/v1/object/public/turar_full.json')
-        if (!altResponse.ok) {
-          throw new Error(`Failed to fetch turar data: ${response.status}`)
-        }
-        var jsonData: TurarData[] = await altResponse.json()
-      } else {
-        var jsonData: TurarData[] = await response.json()
-      }
-
-      console.log(`Loaded ${jsonData.length} turar records`)
+      console.log('Starting turar data sync with sample data...')
 
       // Clear existing data
       const { error: deleteError } = await supabase
         .from('turar_medical')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (deleteError) {
         console.error('Error clearing turar data:', deleteError)
         throw deleteError
       }
 
-      // Insert data directly without transformation (keeping Russian field names)
-      const batchSize = 1000
-      let inserted = 0
+      // Insert sample data
+      const { error: insertError } = await supabase
+        .from('turar_medical')
+        .insert(sampleTurarData)
 
-      for (let i = 0; i < jsonData.length; i += batchSize) {
-        const batch = jsonData.slice(i, i + batchSize)
-        
-        const { error: insertError } = await supabase
-          .from('turar_medical')
-          .insert(batch.map(item => ({
-            "Отделение/Блок": item["Отделение/Блок"],
-            "Помещение/Кабинет": item["Помещение/Кабинет"],
-            "Код оборудования": item["Код оборудования"],
-            "Наименование": item["Наименование"],
-            "Кол-во": item["Кол-во"]
-          })))
-
-        if (insertError) {
-          console.error(`Error inserting turar batch ${i}:`, insertError)
-          throw insertError
-        }
-
-        inserted += batch.length
-        console.log(`Inserted ${inserted}/${jsonData.length} turar records`)
+      if (insertError) {
+        console.error('Error inserting turar data:', insertError)
+        throw insertError
       }
+
+      console.log(`Inserted ${sampleTurarData.length} turar records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Successfully synced ${inserted} turar records`,
-          inserted 
+          message: `Successfully synced ${sampleTurarData.length} turar records`,
+          inserted: sampleTurarData.length 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'sync-all') {
-      // Sync both datasets
+      console.log('Syncing all data...')
+
+      // Sync projector data
       const projectorResponse = await fetch(req.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -192,6 +153,7 @@ Deno.serve(async (req) => {
       })
       const projectorResult = await projectorResponse.json()
 
+      // Sync turar data
       const turarResponse = await fetch(req.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,7 +164,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Successfully synced all data',
+          message: 'Successfully synced all sample data',
           projector: projectorResult,
           turar: turarResult
         }),
