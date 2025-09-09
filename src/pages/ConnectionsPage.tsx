@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Database, Link as LinkIcon, Download, Filter, ArrowRight, ChevronDown, ChevronRight, Edit, Link2 } from 'lucide-react'
+import { Database, Link as LinkIcon, Download, Filter, ArrowRight, ChevronDown, ChevronRight, Edit, Link2, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // Типы данных
@@ -622,16 +622,27 @@ export default function ConnectionsPage() {
                                                </div>
                                                <div className="flex items-center gap-2">
                                                  {/* Показать связанные кабинеты */}
-                                                 {getConnectedRooms(mapping.turarDepartment, room.name).length > 0 && (
-                                                   <div className="flex gap-1">
-                                                     {getConnectedRooms(mapping.turarDepartment, room.name).map(conn => (
-                                                       <Badge key={conn.id} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                                                         <Link2 className="w-2 h-2 mr-1" />
-                                                         {getDisplayName(conn.projectorRoom, 'room')}
-                                                       </Badge>
-                                                     ))}
-                                                   </div>
-                                                 )}
+                                                  {getConnectedRooms(mapping.turarDepartment, room.name).length > 0 && (
+                                                    <div className="flex gap-1">
+                                                      {getConnectedRooms(mapping.turarDepartment, room.name).map(conn => (
+                                                        <Badge key={conn.id} variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex items-center gap-1">
+                                                          <Link2 className="w-2 h-2" />
+                                                          {getDisplayName(conn.projectorRoom, 'room')}
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation()
+                                                              removeConnection(conn.id)
+                                                            }}
+                                                            className="h-4 w-4 p-0 hover:bg-red-100"
+                                                          >
+                                                            <X className="w-2 h-2 text-red-600" />
+                                                          </Button>
+                                                        </Badge>
+                                                      ))}
+                                                    </div>
+                                                  )}
                                                  <Badge variant="outline" className="text-xs">
                                                    {room.equipment.length} оборудования
                                                  </Badge>
@@ -660,6 +671,9 @@ export default function ConnectionsPage() {
                                                <DialogContent>
                                                  <DialogHeader>
                                                    <DialogTitle>Связать кабинет</DialogTitle>
+                                                   <DialogDescription>
+                                                     Выберите кабинет из Проектировщиков для создания связи
+                                                   </DialogDescription>
                                                  </DialogHeader>
                                                  <div className="space-y-4">
                                                    <div>
@@ -804,16 +818,27 @@ export default function ConnectionsPage() {
                                                </div>
                                                <div className="flex items-center gap-2">
                                                  {/* Показать связанные кабинеты */}
-                                                 {getConnectedToProjectorRoom(dept.name, room.name).length > 0 && (
-                                                   <div className="flex gap-1">
-                                                     {getConnectedToProjectorRoom(dept.name, room.name).map(conn => (
-                                                       <Badge key={conn.id} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                                                         <Link2 className="w-2 h-2 mr-1" />
-                                                         {getDisplayName(conn.turarRoom, 'room')}
-                                                       </Badge>
-                                                     ))}
-                                                   </div>
-                                                 )}
+                                                  {getConnectedToProjectorRoom(dept.name, room.name).length > 0 && (
+                                                    <div className="flex gap-1">
+                                                      {getConnectedToProjectorRoom(dept.name, room.name).map(conn => (
+                                                        <Badge key={conn.id} variant="secondary" className="text-xs bg-primary/10 text-primary flex items-center gap-1">
+                                                          <Link2 className="w-2 h-2" />
+                                                          {getDisplayName(conn.turarRoom, 'room')}
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation()
+                                                              removeConnection(conn.id)
+                                                            }}
+                                                            className="h-4 w-4 p-0 hover:bg-red-100"
+                                                          >
+                                                            <X className="w-2 h-2 text-red-600" />
+                                                          </Button>
+                                                        </Badge>
+                                                      ))}
+                                                    </div>
+                                                  )}
                                                  
                                                  {/* Кнопка связать */}
                                                  {!getConnectedToProjectorRoom(dept.name, room.name).length && (
@@ -829,10 +854,13 @@ export default function ConnectionsPage() {
                                                          Связать
                                                        </Button>
                                                      </DialogTrigger>
-                                                     <DialogContent>
-                                                       <DialogHeader>
-                                                         <DialogTitle>Связать кабинет</DialogTitle>
-                                                       </DialogHeader>
+                                                      <DialogContent>
+                                                        <DialogHeader>
+                                                          <DialogTitle>Связать кабинет</DialogTitle>
+                                                          <DialogDescription>
+                                                            Выберите кабинет из Турар для создания связи
+                                                          </DialogDescription>
+                                                        </DialogHeader>
                                                        <div className="space-y-4">
                                                          <div>
                                                            <p className="text-sm mb-2">Выберите кабинет из Турар для связи с:</p>
