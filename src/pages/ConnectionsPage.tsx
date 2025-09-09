@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Database, Link as LinkIcon, Download, Filter } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Navigation } from '@/components/Navigation'
 
 interface Connection {
   id: string
@@ -144,7 +145,10 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <Navigation />
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -350,6 +354,8 @@ export default function ConnectionsPage() {
           </CardContent>
         </Card>
       )}
+        </div>
+      </main>
     </div>
   )
 }
