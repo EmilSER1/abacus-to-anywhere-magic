@@ -1,9 +1,32 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Database, Link as LinkIcon, Download, Filter, ArrowRight } from 'lucide-react'
+import { Database, Link as LinkIcon, Download, Filter, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
+
+// Типы данных
+interface ProjectorRoom {
+  floor: number
+  block: string
+  department: string
+  roomCode: string
+  roomName: string
+  area: number
+  equipmentCode: string | null
+  equipmentName: string | null
+  unit: string | null
+  quantity: number | null
+  notes: string | null
+}
+
+interface TurarEquipment {
+  department: string
+  room: string
+  equipmentCode: string
+  equipmentName: string
+  quantity: number
+}
 
 // Интерфейс для соответствий отделений
 interface DepartmentMapping {
@@ -115,6 +138,92 @@ const unmappedDepartments = [
 export default function ConnectionsPage() {
   const [selectedMapping, setSelectedMapping] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set())
+  const [projectorData, setProjectorData] = useState<ProjectorRoom[]>([])
+  const [turarData, setTurarData] = useState<TurarEquipment[]>([])
+
+  // Загрузка данных
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [projectorResponse, turarResponse] = await Promise.all([
+          fetch('/combined_floors.json'),
+          fetch('/turar_full.json')
+        ])
+        
+        const projectorRaw = await projectorResponse.json()
+        const turarRaw = await turarResponse.json()
+        
+        // Преобразование данных проектировщиков
+        const projectorProcessed = projectorRaw.map((item: any) => ({
+          floor: item['ЭТАЖ'],
+          block: item['БЛОК'],
+          department: item['ОТДЕЛЕНИЕ']?.trim(),
+          roomCode: item['КОД ПОМЕЩЕНИЯ'],
+          roomName: item['НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ'],
+          area: item['Площадь (м2)'],
+          equipmentCode: item['Код оборудования'],
+          equipmentName: item['Наименование оборудования'],
+          unit: item['Ед. изм.'],
+          quantity: item['Кол-во'],
+          notes: item['Примечания']
+        }))
+        
+        // Преобразование данных Турар
+        const turarProcessed = turarRaw.map((item: any) => ({
+          department: item['Отделение/Блок'],
+          room: item['Помещение/Кабинет'],
+          equipmentCode: item['Код оборудования'],
+          equipmentName: item['Наименование'],
+          quantity: item['Кол-во']
+        }))
+        
+        setProjectorData(projectorProcessed)
+        setTurarData(turarProcessed)
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error)
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  // Получение уникальных отделений из загруженных данных
+  const getProjectorDepartments = (turarDept: string) => {
+    const mapping = departmentMappings.find(m => m.turarDepartment === turarDept)
+    if (!mapping) return []
+    
+    return mapping.projectorsDepartments.map(deptName => {
+      const deptData = projectorData.filter(item => item.department === deptName)
+      const rooms = [...new Set(deptData.map(item => item.roomName))].filter(Boolean)
+      const equipment = deptData.filter(item => item.equipmentName).map(item => ({
+        roomName: item.roomName,
+        equipmentName: item.equipmentName,
+        quantity: item.quantity,
+        unit: item.unit
+      }))
+      
+      return {
+        name: deptName,
+        rooms,
+        equipment
+      }
+    })
+  }
+
+  const getTurarEquipment = (deptName: string) => {
+    return turarData.filter(item => item.department === deptName)
+  }
+
+  const toggleDepartment = (deptId: string) => {
+    const newExpanded = new Set(expandedDepartments)
+    if (newExpanded.has(deptId)) {
+      newExpanded.delete(deptId)
+    } else {
+      newExpanded.add(deptId)
+    }
+    setExpandedDepartments(newExpanded)
+  }
 
   const filteredMappings = departmentMappings.filter(mapping =>
     mapping.turarDepartment.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,9 +234,9 @@ export default function ConnectionsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'mapped': return 'bg-success text-white'
-      case 'partial': return 'bg-warning text-white'
-      case 'unmapped': return 'bg-destructive text-white'
+      case 'mapped': return 'bg-blue-600 text-white'
+      case 'partial': return 'bg-amber-600 text-white'
+      case 'unmapped': return 'bg-red-600 text-white'
       default: return 'bg-secondary text-secondary-foreground'
     }
   }
@@ -205,10 +314,10 @@ export default function ConnectionsPage() {
             <Card className="medical-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Отделений проектировщиков</CardTitle>
-                <LinkIcon className="h-4 w-4 text-success" />
+                <LinkIcon className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-success">{stats.totalProjectorsDepts}</div>
+                <div className="text-2xl font-bold text-blue-600">{stats.totalProjectorsDepts}</div>
               </CardContent>
             </Card>
             
@@ -278,34 +387,63 @@ export default function ConnectionsPage() {
                     {/* Отделения Проектировщиков */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-center gap-2 mb-4">
-                        <LinkIcon className="w-5 h-5 text-success" />
-                        <h3 className="text-lg font-semibold text-success">Отделения Проектировщиков</h3>
+                        <LinkIcon className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-blue-600">Отделения Проектировщиков</h3>
                       </div>
                       <div className="space-y-3">
-                        {mapping.projectorsDepartments.map((dept, index) => (
-                          <details key={index} className="group">
-                            <summary className="cursor-pointer">
-                              <Card className="border-success/20 bg-success/5 hover:bg-success/10 transition-colors">
+                        {getProjectorDepartments(mapping.turarDepartment).map((dept, index) => {
+                          const deptId = `${mapping.id}-${index}`
+                          const isExpanded = expandedDepartments.has(deptId)
+                          
+                          return (
+                            <div key={index} className="space-y-2">
+                              <Card 
+                                className="border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                                onClick={() => toggleDepartment(deptId)}
+                              >
                                 <CardContent className="p-4">
                                   <div className="flex items-center justify-between">
-                                    <div className="font-medium text-foreground">{dept}</div>
-                                    <div className="text-success group-open:rotate-180 transition-transform">
-                                      ▼
+                                    <div className="font-medium text-foreground">{dept.name}</div>
+                                    <div className="text-blue-600 transition-transform">
+                                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                                     </div>
                                   </div>
                                 </CardContent>
                               </Card>
-                            </summary>
-                            <div className="mt-2 ml-4 p-3 bg-muted/50 rounded border border-border">
-                              <div className="text-sm text-muted-foreground">
-                                <p>Оборудование и детали отделения будут добавлены позже</p>
-                                <Badge variant="outline" className="mt-2 text-xs">
-                                  ID: {mapping.id}-{index + 1}
-                                </Badge>
-                              </div>
+                              
+                              {isExpanded && (
+                                <div className="ml-4 space-y-2">
+                                  {dept.rooms.length > 0 && (
+                                    <div className="p-3 bg-muted/50 rounded border border-border">
+                                      <h5 className="font-medium text-sm mb-2">Помещения:</h5>
+                                      <ul className="text-sm text-muted-foreground space-y-1">
+                                        {dept.rooms.map((room, roomIndex) => (
+                                          <li key={roomIndex}>• {room}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  
+                                  {dept.equipment.length > 0 && (
+                                    <div className="p-3 bg-blue-50/50 rounded border border-blue-200">
+                                      <h5 className="font-medium text-sm mb-2">Оборудование:</h5>
+                                      <ul className="text-sm space-y-1">
+                                        {dept.equipment.map((equip, equipIndex) => (
+                                          <li key={equipIndex} className="flex justify-between">
+                                            <span>{equip.equipmentName}</span>
+                                            <span className="text-muted-foreground">
+                                              {equip.quantity} {equip.unit}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          </details>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
