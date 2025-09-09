@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { Navigation } from '@/components/Navigation';
-import { Download, BarChart3, Package, AlertTriangle } from 'lucide-react';
+import { Download, BarChart3, Package, AlertTriangle, Search, Merge } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
@@ -18,18 +19,33 @@ interface TurarEquipment {
   "Кол-во": number;
 }
 
+interface FloorEquipment {
+  "ЭТАЖ": number;
+  "БЛОК": string;
+  "ОТДЕЛЕНИЕ": string;
+  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
+  "Код оборудования": string | null;
+  "Наименование оборудования": string | null;
+  "Кол-во": number | string | null;
+}
+
 interface ConsolidatedEquipment {
   code: string;
   name: string;
-  quantity: number;
-  departments: string[];
-  rooms: string[];
+  turarQuantity: number;
+  floorsQuantity: number;
+  totalQuantity: number;
+  turarDepartments: string[];
+  floorsDepartments: string[];
+  turarRooms: string[];
+  floorsRooms: string[];
+  source: 'both' | 'turar' | 'floors';
 }
 
 const ConsolidationPage: React.FC = () => {
   const navigate = useNavigate();
-  const [turarData, setTurarData] = useState<ConsolidatedEquipment[]>([]);
-  const [floorsData, setFloorsData] = useState<ConsolidatedEquipment[]>([]);
+  const [consolidatedData, setConsolidatedData] = useState<ConsolidatedEquipment[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -45,97 +61,99 @@ const ConsolidationPage: React.FC = () => {
 
       // Load Floor data
       const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
-      const floorsEquipment = await floorsResponse.json();
+      const floorsEquipment: FloorEquipment[] = await floorsResponse.json();
 
       // Create maps for consolidation
-      const turarMap = new Map<string, {
+      const equipmentMap = new Map<string, {
         name: string;
-        quantity: number;
-        departments: Set<string>;
-        rooms: Set<string>;
-      }>();
-
-      const floorsMap = new Map<string, {
-        name: string;
-        quantity: number;
-        departments: Set<string>;
-        rooms: Set<string>;
+        turarQuantity: number;
+        floorsQuantity: number;
+        turarDepartments: Set<string>;
+        floorsDepartments: Set<string>;
+        turarRooms: Set<string>;
+        floorsRooms: Set<string>;
+        source: Set<'turar' | 'floors'>;
       }>();
 
       // Process Turar data
       turarEquipment.forEach(item => {
         const code = item["Код оборудования"];
         const name = item["Наименование"];
-        const quantity = typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(item["Кол-во"]) || 0;
+        const quantity = typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(String(item["Кол-во"])) || 0;
 
-        if (turarMap.has(code)) {
-          const existing = turarMap.get(code)!;
-          existing.quantity += quantity;
-          existing.departments.add(item["Отделение/Блок"]);
-          existing.rooms.add(item["Помещение/Кабинет"]);
+        if (equipmentMap.has(code)) {
+          const existing = equipmentMap.get(code)!;
+          existing.turarQuantity += quantity;
+          existing.turarDepartments.add(item["Отделение/Блок"]);
+          existing.turarRooms.add(item["Помещение/Кабинет"]);
+          existing.source.add('turar');
         } else {
-          turarMap.set(code, {
+          equipmentMap.set(code, {
             name,
-            quantity,
-            departments: new Set([item["Отделение/Блок"]]),
-            rooms: new Set([item["Помещение/Кабинет"]])
+            turarQuantity: quantity,
+            floorsQuantity: 0,
+            turarDepartments: new Set([item["Отделение/Блок"]]),
+            floorsDepartments: new Set(),
+            turarRooms: new Set([item["Помещение/Кабинет"]]),
+            floorsRooms: new Set(),
+            source: new Set(['turar'])
           });
         }
       });
 
       // Process Floors data
       floorsEquipment.forEach(item => {
-        const code = item.equipment_code || '';
-        const name = item.equipment_name || '';
-        const quantity = item.quantity || 1;
+        const code = String(item["Код оборудования"] || '');
+        const name = item["Наименование оборудования"] || '';
+        const quantity = typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(String(item["Кол-во"])) || 1;
 
-        if (code && floorsMap.has(code)) {
-          const existing = floorsMap.get(code)!;
-          existing.quantity += quantity;
-          existing.departments.add(item.department || '');
-          existing.rooms.add(item.room || '');
-        } else if (code) {
-          floorsMap.set(code, {
+        if (!code || !name) return; // Skip items without code or name
+
+        if (equipmentMap.has(code)) {
+          const existing = equipmentMap.get(code)!;
+          existing.floorsQuantity += quantity;
+          existing.floorsDepartments.add(item["ОТДЕЛЕНИЕ"]);
+          existing.floorsRooms.add(item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]);
+          existing.source.add('floors');
+        } else {
+          equipmentMap.set(code, {
             name,
-            quantity,
-            departments: new Set([item.department || '']),
-            rooms: new Set([item.room || ''])
+            turarQuantity: 0,
+            floorsQuantity: quantity,
+            turarDepartments: new Set(),
+            floorsDepartments: new Set([item["ОТДЕЛЕНИЕ"]]),
+            turarRooms: new Set(),
+            floorsRooms: new Set([item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]]),
+            source: new Set(['floors'])
           });
         }
       });
 
-      // Create consolidated data arrays
-      const turarConsolidated: ConsolidatedEquipment[] = [];
-      const floorsConsolidated: ConsolidatedEquipment[] = [];
+      // Convert to consolidated data array
+      const consolidated: ConsolidatedEquipment[] = [];
+      equipmentMap.forEach((item, code) => {
+        const sourceArray = Array.from(item.source);
+        const source: 'both' | 'turar' | 'floors' = 
+          sourceArray.length === 2 ? 'both' : sourceArray[0] as 'turar' | 'floors';
 
-      // Convert Turar data
-      turarMap.forEach((item, code) => {
-        turarConsolidated.push({
+        consolidated.push({
           code,
           name: item.name,
-          quantity: item.quantity,
-          departments: Array.from(item.departments),
-          rooms: Array.from(item.rooms)
+          turarQuantity: item.turarQuantity,
+          floorsQuantity: item.floorsQuantity,
+          totalQuantity: item.turarQuantity + item.floorsQuantity,
+          turarDepartments: Array.from(item.turarDepartments),
+          floorsDepartments: Array.from(item.floorsDepartments),
+          turarRooms: Array.from(item.turarRooms),
+          floorsRooms: Array.from(item.floorsRooms),
+          source
         });
       });
 
-      // Convert Floors data
-      floorsMap.forEach((item, code) => {
-        floorsConsolidated.push({
-          code,
-          name: item.name,
-          quantity: item.quantity,
-          departments: Array.from(item.departments),
-          rooms: Array.from(item.rooms)
-        });
-      });
+      // Sort by total quantity (descending)
+      consolidated.sort((a, b) => b.totalQuantity - a.totalQuantity);
 
-      // Sort by quantity (descending)
-      turarConsolidated.sort((a, b) => b.quantity - a.quantity);
-      floorsConsolidated.sort((a, b) => b.quantity - a.quantity);
-
-      setTurarData(turarConsolidated);
-      setFloorsData(floorsConsolidated);
+      setConsolidatedData(consolidated);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -143,55 +161,43 @@ const ConsolidationPage: React.FC = () => {
     }
   };
 
-  const exportToExcel = (data: ConsolidatedEquipment[], filename: string) => {
+  const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      data.map(item => ({
+      filteredData.map(item => ({
         'Код оборудования': item.code,
         'Наименование': item.name,
-        'Количество': item.quantity,
-        'Отделения': item.departments.join(', '),
-        'Кабинеты': item.rooms.join(', ')
+        'Количество Турар': item.turarQuantity,
+        'Количество Проектировщики': item.floorsQuantity,
+        'Общее количество': item.totalQuantity,
+        'Отделения Турар': item.turarDepartments.join(', '),
+        'Отделения Проектировщики': item.floorsDepartments.join(', '),
+        'Кабинеты Турар': item.turarRooms.join(', '),
+        'Кабинеты Проектировщики': item.floorsRooms.join(', '),
+        'Источник': item.source === 'both' ? 'Оба' : item.source === 'turar' ? 'Турар' : 'Проектировщики'
       }))
     );
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Консолидация');
-    XLSX.writeFile(workbook, `${filename}.xlsx`);
+    XLSX.writeFile(workbook, 'equipment_consolidation.xlsx');
   };
 
-  const ConsolidationTable = ({ data }: { data: ConsolidatedEquipment[] }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Код</TableHead>
-          <TableHead>Наименование</TableHead>
-          <TableHead className="text-center">Количество</TableHead>
-          <TableHead>Отделения</TableHead>
-          <TableHead>Кабинеты</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((item, index) => (
-          <TableRow key={index}>
-            <TableCell className="font-mono text-xs">{item.code}</TableCell>
-            <TableCell className="max-w-xs truncate" title={item.name}>
-              {item.name}
-            </TableCell>
-            <TableCell className="text-center">
-              <Badge variant="outline">{item.quantity}</Badge>
-            </TableCell>
-            <TableCell className="text-xs">
-              {item.departments.join(', ')}
-            </TableCell>
-            <TableCell className="text-xs">
-              {item.rooms.slice(0, 3).join(', ')}
-              {item.rooms.length > 3 && '...'}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+  // Filter data based on search term
+  const filteredData = consolidatedData.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.turarDepartments.some(dept => dept.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    item.floorsDepartments.some(dept => dept.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Statistics
+  const stats = {
+    total: consolidatedData.length,
+    bothSources: consolidatedData.filter(item => item.source === 'both').length,
+    turarOnly: consolidatedData.filter(item => item.source === 'turar').length,
+    floorsOnly: consolidatedData.filter(item => item.source === 'floors').length,
+    totalEquipment: consolidatedData.reduce((sum, item) => sum + item.totalQuantity, 0)
+  };
 
   if (isLoading) {
     return (
@@ -216,70 +222,154 @@ const ConsolidationPage: React.FC = () => {
             Консолидация данных
           </h1>
           <p className="text-muted-foreground text-lg">
-            Консолидированные данные по источникам
+            Объединенные данные по оборудованию из Турар и Проектировщиков
           </p>
         </div>
 
-        <Tabs defaultValue="turar" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <TabsList className="grid w-fit grid-cols-2">
-              <TabsTrigger value="turar" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Турар
-              </TabsTrigger>
-              <TabsTrigger value="floors" className="gap-2">
-                <Package className="h-4 w-4" />
-                Проектировщики
-              </TabsTrigger>
-            </TabsList>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Всего позиций</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{stats.total}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">В обеих базах</CardTitle>
+              <Merge className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.bothSources}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Только Турар</CardTitle>
+              <BarChart3 className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.turarOnly}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Только Проектировщики</CardTitle>
+              <Package className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{stats.floorsOnly}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Общее кол-во</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{stats.totalEquipment}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search and Controls */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по коду, названию или отделению..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{filteredData.length} из {consolidatedData.length}</Badge>
+            <Button 
+              onClick={exportToExcel}
+              variant="outline" 
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Экспорт в Excel
+            </Button>
+          </div>
+        </div>
 
-          <TabsContent value="turar" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold">Данные Турар</h2>
-                <Badge variant="outline">{turarData.length} записей</Badge>
-              </div>
-              <Button 
-                onClick={() => exportToExcel(turarData, 'consolidation_turar')}
-                variant="outline" 
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Экспорт в Excel
-              </Button>
-            </div>
-            
-            <Card className="bg-card/50 backdrop-blur border-border/50">
-              <CardContent className="p-0">
-                <ConsolidationTable data={turarData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="floors" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold">Данные Проектировщиков</h2>
-                <Badge variant="outline">{floorsData.length} записей</Badge>
-              </div>
-              <Button 
-                onClick={() => exportToExcel(floorsData, 'consolidation_floors')}
-                variant="outline" 
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Экспорт в Excel
-              </Button>
-            </div>
-            
-            <Card className="bg-card/50 backdrop-blur border-border/50">
-              <CardContent className="p-0">
-                <ConsolidationTable data={floorsData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Consolidated Table */}
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Код</TableHead>
+                  <TableHead>Наименование</TableHead>
+                  <TableHead className="text-center">Турар</TableHead>
+                  <TableHead className="text-center">Проектировщики</TableHead>
+                  <TableHead className="text-center">Всего</TableHead>
+                  <TableHead>Источник</TableHead>
+                  <TableHead>Отделения (Турар)</TableHead>
+                  <TableHead>Отделения (Проектировщики)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredData.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-mono text-xs">{item.code}</TableCell>
+                    <TableCell className="break-words max-w-xs" title={item.name}>
+                      {item.name}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {item.turarQuantity > 0 ? (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {item.turarQuantity}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {item.floorsQuantity > 0 ? (
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                          {item.floorsQuantity}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="default" className="bg-primary">
+                        {item.totalQuantity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        item.source === 'both' ? 'default' : 
+                        item.source === 'turar' ? 'secondary' : 'outline'
+                      }>
+                        {item.source === 'both' ? 'Оба' : 
+                         item.source === 'turar' ? 'Турар' : 'Проектировщики'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs max-w-xs">
+                      {item.turarDepartments.length > 0 ? item.turarDepartments.join(', ') : '-'}
+                    </TableCell>
+                    <TableCell className="text-xs max-w-xs">
+                      {item.floorsDepartments.length > 0 ? item.floorsDepartments.join(', ') : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
