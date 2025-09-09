@@ -155,6 +155,7 @@ export default function FloorsPage() {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
+  const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
@@ -194,6 +195,32 @@ export default function FloorsPage() {
           console.log('Expanded floors:', [`floor-${floor.number}`]);
           console.log('Expanded departments:', [`dept-${deptIndex}`]);
           
+          // Find and expand rooms that contain the search term
+          if (urlRoom) {
+            const department = floor.departments[deptIndex];
+            const roomIndex = department.rooms.findIndex(room => room.name === urlRoom);
+            if (roomIndex !== -1) {
+              setExpandedRooms([`room-${roomIndex}`]);
+              console.log('Expanded rooms:', [`room-${roomIndex}`]);
+            }
+          } else {
+            // If no specific room, look for equipment matching search term
+            const department = floor.departments[deptIndex];
+            const matchingRooms: string[] = [];
+            department.rooms.forEach((room, roomIndex) => {
+              const hasMatchingEquipment = room.equipment.some(eq => 
+                eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase())
+              );
+              if (hasMatchingEquipment) {
+                matchingRooms.push(`room-${roomIndex}`);
+              }
+            });
+            if (matchingRooms.length > 0) {
+              setExpandedRooms(matchingRooms);
+              console.log('Expanded rooms with matching equipment:', matchingRooms);
+            }
+          }
+          
           // Set target equipment for scrolling
           if (urlRoom) {
             const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
@@ -209,7 +236,7 @@ export default function FloorsPage() {
                   inline: 'nearest'
                 });
               }
-            }, 800);
+            }, 1200);
           }
         }
       });
@@ -351,8 +378,20 @@ export default function FloorsPage() {
                                      КАБИНЕТЫ В ОТДЕЛЕНИИ:
                                    </div>
                                    <div className="grid grid-cols-1 gap-2">
-                                     {department.rooms.map((room, roomIndex) => (
-                                       <Accordion key={roomIndex} type="single" collapsible>
+                                      {department.rooms.map((room, roomIndex) => (
+                                        <Accordion 
+                                          key={roomIndex} 
+                                          type="single" 
+                                          collapsible
+                                          value={expandedRooms.includes(`room-${roomIndex}`) ? `room-${roomIndex}` : undefined}
+                                          onValueChange={(value) => {
+                                            if (value) {
+                                              setExpandedRooms([value]);
+                                            } else {
+                                              setExpandedRooms([]);
+                                            }
+                                          }}
+                                        >
                                          <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
                                            <AccordionTrigger className="px-3 py-2 text-xs hover:no-underline hover:bg-muted/30">
                                              <div className="flex justify-between items-center w-full mr-4">
