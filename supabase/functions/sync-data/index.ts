@@ -35,79 +35,107 @@ Deno.serve(async (req) => {
     if (action === 'sync-projector-data') {
       console.log('Starting projector data sync from JSON files...')
 
-      // Load data from JSON file
-      const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/combined_floors.json')
-      
-      // Clear existing data
-      const { error: deleteError } = await supabase
-        .from('projector_floors')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
+      try {
+        // Load data from JSON file
+        const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/combined_floors.json')
+        console.log(`Loaded ${jsonData.length} projector records from JSON`)
+        
+        // Clear existing data
+        const { error: deleteError } = await supabase
+          .from('projector_floors')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000')
 
-      if (deleteError) {
-        console.error('Error clearing projector data:', deleteError)
-        throw deleteError
+        if (deleteError) {
+          console.error('Error clearing projector data:', deleteError)
+          throw deleteError
+        }
+
+        // Insert JSON data in batches if needed
+        const batchSize = 1000
+        let totalInserted = 0
+        
+        for (let i = 0; i < jsonData.length; i += batchSize) {
+          const batch = jsonData.slice(i, i + batchSize)
+          const { error: insertError } = await supabase
+            .from('projector_floors')
+            .insert(batch)
+
+          if (insertError) {
+            console.error('Error inserting projector data batch:', insertError)
+            throw insertError
+          }
+          totalInserted += batch.length
+          console.log(`Inserted batch ${Math.floor(i/batchSize) + 1}, total: ${totalInserted}`)
+        }
+
+        console.log(`Successfully inserted ${totalInserted} projector records`)
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: `Successfully synced ${totalInserted} projector records`,
+            inserted: totalInserted 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } catch (error) {
+        console.error('Error in projector sync:', error)
+        throw error
       }
-
-      // Insert JSON data
-      const { error: insertError } = await supabase
-        .from('projector_floors')
-        .insert(jsonData)
-
-      if (insertError) {
-        console.error('Error inserting projector data:', insertError)
-        throw insertError
-      }
-
-      console.log(`Inserted ${jsonData.length} projector records`)
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Successfully synced ${jsonData.length} projector records`,
-          inserted: jsonData.length 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
     }
 
     if (action === 'sync-turar-data') {
       console.log('Starting turar data sync from JSON files...')
 
-      // Load data from JSON file
-      const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/turar_full.json')
-      
-      // Clear existing data
-      const { error: deleteError } = await supabase
-        .from('turar_medical')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
+      try {
+        // Load data from JSON file
+        const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/turar_full.json')
+        console.log(`Loaded ${jsonData.length} turar records from JSON`)
+        
+        // Clear existing data
+        const { error: deleteError } = await supabase
+          .from('turar_medical')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000')
 
-      if (deleteError) {
-        console.error('Error clearing turar data:', deleteError)
-        throw deleteError
+        if (deleteError) {
+          console.error('Error clearing turar data:', deleteError)
+          throw deleteError
+        }
+
+        // Insert JSON data in batches if needed
+        const batchSize = 1000
+        let totalInserted = 0
+        
+        for (let i = 0; i < jsonData.length; i += batchSize) {
+          const batch = jsonData.slice(i, i + batchSize)
+          const { error: insertError } = await supabase
+            .from('turar_medical')
+            .insert(batch)
+
+          if (insertError) {
+            console.error('Error inserting turar data batch:', insertError)
+            throw insertError
+          }
+          totalInserted += batch.length
+          console.log(`Inserted batch ${Math.floor(i/batchSize) + 1}, total: ${totalInserted}`)
+        }
+
+        console.log(`Successfully inserted ${totalInserted} turar records`)
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: `Successfully synced ${totalInserted} turar records`,
+            inserted: totalInserted 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } catch (error) {
+        console.error('Error in turar sync:', error)
+        throw error
       }
-
-      // Insert JSON data
-      const { error: insertError } = await supabase
-        .from('turar_medical')
-        .insert(jsonData)
-
-      if (insertError) {
-        console.error('Error inserting turar data:', insertError)
-        throw insertError
-      }
-
-      console.log(`Inserted ${jsonData.length} turar records`)
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Successfully synced ${jsonData.length} turar records`,
-          inserted: jsonData.length 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
     }
 
     if (action === 'sync-all') {
