@@ -5,56 +5,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Создаем временные данные для тестирования
-const sampleProjectorData = [
-  {
-    "ЭТАЖ": 1,
-    "БЛОК": "А",
-    "ОТДЕЛЕНИЕ": "Хирургическое отделение",
-    "КОД ПОМЕЩЕНИЯ": "1.SUR-01",
-    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Операционная 1",
-    "Код помещения": "1.SUR-01",
-    "Наименование помещения": "Операционная 1",
-    "Площадь (м2)": 25.5,
-    "Код оборудования": "SUR-001",
-    "Наименование оборудования": "Операционный стол",
-    "Ед. изм.": "шт.",
-    "Кол-во": "1",
-    "Примечания": "Основное оборудование"
-  },
-  {
-    "ЭТАЖ": 1,
-    "БЛОК": "А",
-    "ОТДЕЛЕНИЕ": "Хирургическое отделение",
-    "КОД ПОМЕЩЕНИЯ": "1.SUR-01",
-    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Операционная 1",
-    "Код помещения": "1.SUR-01",
-    "Наименование помещения": "Операционная 1",
-    "Площадь (м2)": 25.5,
-    "Код оборудования": "SUR-002",
-    "Наименование оборудования": "Хирургическая лампа",
-    "Ед. изм.": "шт.",
-    "Кол-во": "2",
-    "Примечания": null
+async function loadJsonData(url: string) {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error(`Error loading JSON from ${url}:`, error)
+    throw error
   }
-];
-
-const sampleTurarData = [
-  {
-    "Отделение/Блок": "Травмпункт",
-    "Помещение/Кабинет": "Кабинет врача",
-    "Код оборудования": "TR-001",
-    "Наименование": "Кушетка медицинская",
-    "Кол-во": 1
-  },
-  {
-    "Отделение/Блок": "Травмпункт",
-    "Помещение/Кабинет": "Кабинет врача",
-    "Код оборудования": "TR-002",
-    "Наименование": "Термометр медицинский",
-    "Кол-во": 3
-  }
-];
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -71,8 +33,11 @@ Deno.serve(async (req) => {
     const { action } = await req.json()
 
     if (action === 'sync-projector-data') {
-      console.log('Starting projector data sync with sample data...')
+      console.log('Starting projector data sync from JSON files...')
 
+      // Load data from JSON file
+      const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/combined_floors.json')
+      
       // Clear existing data
       const { error: deleteError } = await supabase
         .from('projector_floors')
@@ -84,31 +49,34 @@ Deno.serve(async (req) => {
         throw deleteError
       }
 
-      // Insert sample data
+      // Insert JSON data
       const { error: insertError } = await supabase
         .from('projector_floors')
-        .insert(sampleProjectorData)
+        .insert(jsonData)
 
       if (insertError) {
         console.error('Error inserting projector data:', insertError)
         throw insertError
       }
 
-      console.log(`Inserted ${sampleProjectorData.length} projector records`)
+      console.log(`Inserted ${jsonData.length} projector records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Successfully synced ${sampleProjectorData.length} projector records`,
-          inserted: sampleProjectorData.length 
+          message: `Successfully synced ${jsonData.length} projector records`,
+          inserted: jsonData.length 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'sync-turar-data') {
-      console.log('Starting turar data sync with sample data...')
+      console.log('Starting turar data sync from JSON files...')
 
+      // Load data from JSON file
+      const jsonData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/turar_full.json')
+      
       // Clear existing data
       const { error: deleteError } = await supabase
         .from('turar_medical')
@@ -120,36 +88,38 @@ Deno.serve(async (req) => {
         throw deleteError
       }
 
-      // Insert sample data
+      // Insert JSON data
       const { error: insertError } = await supabase
         .from('turar_medical')
-        .insert(sampleTurarData)
+        .insert(jsonData)
 
       if (insertError) {
         console.error('Error inserting turar data:', insertError)
         throw insertError
       }
 
-      console.log(`Inserted ${sampleTurarData.length} turar records`)
+      console.log(`Inserted ${jsonData.length} turar records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Successfully synced ${sampleTurarData.length} turar records`,
-          inserted: sampleTurarData.length 
+          message: `Successfully synced ${jsonData.length} turar records`,
+          inserted: jsonData.length 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'sync-all') {
-      console.log('Syncing all data...')
+      console.log('Syncing all data from JSON files...')
 
       let totalInserted = 0
       let messages = []
 
-      // Sync projector data
+      // Sync projector data from JSON
       try {
+        const projectorData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/combined_floors.json')
+        
         const { error: deleteError1 } = await supabase
           .from('projector_floors')
           .delete()
@@ -161,21 +131,24 @@ Deno.serve(async (req) => {
 
         const { error: insertError1 } = await supabase
           .from('projector_floors')
-          .insert(sampleProjectorData)
+          .insert(projectorData)
 
         if (insertError1) {
           throw insertError1
         }
 
-        totalInserted += sampleProjectorData.length
-        messages.push(`${sampleProjectorData.length} projector records`)
-        console.log(`Inserted ${sampleProjectorData.length} projector records`)
+        totalInserted += projectorData.length
+        messages.push(`${projectorData.length} projector records`)
+        console.log(`Inserted ${projectorData.length} projector records`)
       } catch (error) {
         console.error('Error syncing projector data:', error)
+        messages.push('projector data failed')
       }
 
-      // Sync turar data
+      // Sync turar data from JSON
       try {
+        const turarData = await loadJsonData('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/turar_full.json')
+        
         const { error: deleteError2 } = await supabase
           .from('turar_medical')
           .delete()
@@ -187,17 +160,18 @@ Deno.serve(async (req) => {
 
         const { error: insertError2 } = await supabase
           .from('turar_medical')
-          .insert(sampleTurarData)
+          .insert(turarData)
 
         if (insertError2) {
           throw insertError2
         }
 
-        totalInserted += sampleTurarData.length
-        messages.push(`${sampleTurarData.length} turar records`)
-        console.log(`Inserted ${sampleTurarData.length} turar records`)
+        totalInserted += turarData.length
+        messages.push(`${turarData.length} turar records`)
+        console.log(`Inserted ${turarData.length} turar records`)
       } catch (error) {
         console.error('Error syncing turar data:', error)
+        messages.push('turar data failed')
       }
 
       return new Response(
