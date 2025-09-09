@@ -201,19 +201,19 @@ const SearchPage: React.FC = () => {
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
       if (result.source === 'turar') {
-        // For different search types, use different parameters
-        if (result.searchType === 'equipment') {
-          navigate(`/turar?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
-        } else {
-          navigate(`/turar`);
-        }
+        // Always pass the original search term and location info for proper highlighting
+        const searchParam = result.searchType === 'equipment' ? result.name :
+                           result.searchType === 'code' ? result.code :
+                           result.searchType === 'department' ? result.department :
+                           result.room;
+        navigate(`/turar?search=${encodeURIComponent(searchParam)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       } else {
-        // For different search types, use different parameters  
-        if (result.searchType === 'equipment') {
-          navigate(`/floors?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
-        } else {
-          navigate(`/floors`);
-        }
+        // For floors, use the same logic
+        const searchParam = result.searchType === 'equipment' ? result.name :
+                           result.searchType === 'code' ? result.code :
+                           result.searchType === 'department' ? result.department :
+                           result.room;
+        navigate(`/floors?search=${encodeURIComponent(searchParam)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       }
     };
 
