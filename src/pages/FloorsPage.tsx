@@ -96,6 +96,11 @@ const processFloorData = (data: FloorData[]): Floor[] => {
       };
       department.rooms.push(room);
       department.totalArea = (department.totalArea || 0) + roomArea;
+    } else {
+      // Update area if it's not set or if current value is larger
+      if (!room.area || roomArea > room.area) {
+        room.area = roomArea;
+      }
     }
 
     if (item["Наименование оборудования"]) {
@@ -110,11 +115,17 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     }
   });
 
-  // Convert to Floor[] structure
+  // Convert to Floor[] structure and recalculate areas
   const floors: Floor[] = [];
   
   floorsMap.forEach((departmentsMap, floorNumber) => {
     const departments = Array.from(departmentsMap.values());
+    
+    // Recalculate department areas based on actual room areas
+    departments.forEach(dept => {
+      dept.totalArea = dept.rooms.reduce((sum, room) => sum + (room.area || 0), 0);
+    });
+    
     const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
     const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
     const totalArea = departments.reduce((sum, dept) => sum + (dept.totalArea || 0), 0);
