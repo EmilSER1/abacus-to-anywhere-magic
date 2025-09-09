@@ -7,6 +7,8 @@ import { Navigation } from '@/components/Navigation'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 // Типы данных
 interface ProjectorRoom {
@@ -185,6 +187,8 @@ export default function ConnectionsPage() {
     turarRoom: string
     projectorDept: string
   } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   // Загрузка данных
   useEffect(() => {
@@ -230,7 +234,110 @@ export default function ConnectionsPage() {
     }
     
     loadData()
+    loadConnectionsFromSupabase()
   }, [])
+
+  // Загрузка связей из Supabase
+  const loadConnectionsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('room_connections')
+        .select('*')
+      
+      if (error) {
+        console.error('Ошибка загрузки связей:', error)
+        return
+      }
+      
+      if (data) {
+        const connections = data.map(item => ({
+          id: item.id,
+          turarDepartment: item.turar_department,
+          turarRoom: item.turar_room,
+          projectorDepartment: item.projector_department,
+          projectorRoom: item.projector_room
+        }))
+        setRoomConnections(connections)
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки связей:', error)
+    }
+  }
+
+  // Сохранение связи в Supabase
+  const saveConnectionToSupabase = async (connection: RoomConnection) => {
+    try {
+      const { error } = await supabase
+        .from('room_connections')
+        .insert({
+          turar_department: connection.turarDepartment,
+          turar_room: connection.turarRoom,
+          projector_department: connection.projectorDepartment,
+          projector_room: connection.projectorRoom
+        })
+      
+      if (error) {
+        console.error('Ошибка сохранения связи:', error)
+        toast({
+          title: "Ошибка",
+          description: "Не удалось сохранить связь",
+          variant: "destructive"
+        })
+        return false
+      }
+      
+      toast({
+        title: "Успешно",
+        description: "Связь сохранена"
+      })
+      return true
+    } catch (error) {
+      console.error('Ошибка сохранения связи:', error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить связь",
+        variant: "destructive"
+      })
+      return false
+    }
+  }
+
+  // Удаление связи из Supabase
+  const removeConnectionFromSupabase = async (connection: RoomConnection) => {
+    try {
+      const { error } = await supabase
+        .from('room_connections')
+        .delete()
+        .eq('turar_department', connection.turarDepartment)
+        .eq('turar_room', connection.turarRoom)
+        .eq('projector_department', connection.projectorDepartment)
+        .eq('projector_room', connection.projectorRoom)
+      
+      if (error) {
+        console.error('Ошибка удаления связи:', error)
+        toast({
+          title: "Ошибка",
+          description: "Не удалось удалить связь",
+          variant: "destructive"
+        })
+        return false
+      }
+      
+      toast({
+        title: "Успешно",
+        description: "Связь удалена"
+      })
+      return true
+    } catch (error) {
+      console.error('Ошибка удаления связи:', error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить связь",
+        variant: "destructive"
+      })
+      return false
+    }
+  }
 
   // Получение структурированных данных для отделений
   const getProjectorDepartments = (turarDept: string): Department[] => {
@@ -347,9 +454,10 @@ export default function ConnectionsPage() {
     setLinkingRoom({ turarDept, turarRoom, projectorDept })
   }
 
-  const createConnection = (projectorRoom: string) => {
+  const createConnection = async (projectorRoom: string) => {
     if (!linkingRoom) return
 
+    setIsLoading(true)
     const newConnection: RoomConnection = {
       id: `${Date.now()}`,
       turarDepartment: linkingRoom.turarDept,
@@ -358,12 +466,24 @@ export default function ConnectionsPage() {
       projectorRoom: projectorRoom
     }
 
-    setRoomConnections(prev => [...prev, newConnection])
-    setLinkingRoom(null)
+    const success = await saveConnectionToSupabase(newConnection)
+    if (success) {
+      setRoomConnections(prev => [...prev, newConnection])
+      setLinkingRoom(null)
+    }
+    setIsLoading(false)
   }
 
-  const removeConnection = (connectionId: string) => {
-    setRoomConnections(prev => prev.filter(conn => conn.id !== connectionId))
+  const removeConnection = async (connectionId: string) => {
+    const connection = roomConnections.find(conn => conn.id === connectionId)
+    if (!connection) return
+
+    setIsLoading(true)
+    const success = await removeConnectionFromSupabase(connection)
+    if (success) {
+      setRoomConnections(prev => prev.filter(conn => conn.id !== connectionId))
+    }
+    setIsLoading(false)
   }
 
   // Проверка есть ли связь для кабинета
