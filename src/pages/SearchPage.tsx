@@ -169,13 +169,8 @@ const SearchPage: React.FC = () => {
         }
       });
 
-      // Remove duplicates based on displayValue
-      const uniqueFloorResults = filteredFloorResults.filter((item, index, arr) => 
-        arr.findIndex(x => x.displayValue === item.displayValue) === index
-      );
-
       setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
-      setFloorResults(uniqueFloorResults.slice(0, 50)); // Limit results
+      setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
     } catch (error) {
       console.error('Error searching data:', error);
     } finally {
@@ -292,29 +287,6 @@ const SearchPage: React.FC = () => {
 
         {searchTerm && !isLoading && (
           <div className="space-y-8">
-            {/* Turar Results */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-2xl font-semibold">Турар</h2>
-                <Badge variant="outline">{turarResults.length} результатов</Badge>
-              </div>
-              {turarResults.length === 0 ? (
-                <Card className="bg-card/50 backdrop-blur border-border/50">
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    Результаты не найдены в данных Турар
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {turarResults.map((result, index) => (
-                    <ResultCard key={`turar-${index}`} result={result} />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
             {/* Floor Results */}
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -328,9 +300,32 @@ const SearchPage: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
                   {floorResults.map((result, index) => (
                     <ResultCard key={`floor-${index}`} result={result} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Turar Results */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-2xl font-semibold">Турар</h2>
+                <Badge variant="outline">{turarResults.length} результатов</Badge>
+              </div>
+              {turarResults.length === 0 ? (
+                <Card className="bg-card/50 backdrop-blur border-border/50">
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Результаты не найдены в данных Турар
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {turarResults.map((result, index) => (
+                    <ResultCard key={`turar-${index}`} result={result} />
                   ))}
                 </div>
               )}
