@@ -33,6 +33,8 @@ interface SearchResult {
   name: string;
   quantity: number;
   source: 'turar' | 'floors';
+  searchType: SearchType;
+  displayValue: string; // What to display based on search type
 }
 
 type SearchType = 'equipment' | 'code' | 'department' | 'room';
@@ -74,14 +76,39 @@ const SearchPage: React.FC = () => {
               return item["Наименование"].toLowerCase().includes(searchLower);
           }
         })
-        .map(item => ({
-          department: item["Отделение/Блок"],
-          room: item["Помещение/Кабинет"],
-          code: item["Код оборудования"],
-          name: item["Наименование"],
-          quantity: typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(item["Кол-во"]) || 0,
-          source: 'turar' as const
-        }));
+        .map(item => {
+          let displayValue = '';
+          switch (type) {
+            case 'code':
+              displayValue = item["Код оборудования"];
+              break;
+            case 'department':
+              displayValue = item["Отделение/Блок"];
+              break;
+            case 'room':
+              displayValue = item["Помещение/Кабинет"];
+              break;
+            case 'equipment':
+            default:
+              displayValue = item["Наименование"];
+              break;
+          }
+          
+          return {
+            department: item["Отделение/Блок"],
+            room: item["Помещение/Кабинет"],
+            code: item["Код оборудования"],
+            name: item["Наименование"],
+            quantity: typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(item["Кол-во"]) || 0,
+            source: 'turar' as const,
+            searchType: type,
+            displayValue
+          };
+        })
+        // Remove duplicates based on displayValue
+        .filter((item, index, arr) => 
+          arr.findIndex(x => x.displayValue === item.displayValue) === index
+        );
 
       // Search Floor data  
       const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
@@ -116,19 +143,43 @@ const SearchPage: React.FC = () => {
         }
         
         if (matches) {
+          let displayValue = '';
+          switch (type) {
+            case 'code':
+              displayValue = String(item["Код оборудования"] || '');
+              break;
+            case 'department':
+              displayValue = item["ОТДЕЛЕНИЕ"] || '';
+              break;
+            case 'room':
+              displayValue = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '';
+              break;
+            case 'equipment':
+            default:
+              displayValue = item["Наименование оборудования"] || '';
+              break;
+          }
+          
           filteredFloorResults.push({
             department: item["ОТДЕЛЕНИЕ"] || '',
             room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
             code: String(item["Код оборудования"] || ''),
             name: item["Наименование оборудования"] || '',
             quantity: item["Кол-во"] || 1,
-            source: 'floors'
+            source: 'floors',
+            searchType: type,
+            displayValue
           });
         }
       });
 
+      // Remove duplicates based on displayValue
+      const uniqueFloorResults = filteredFloorResults.filter((item, index, arr) => 
+        arr.findIndex(x => x.displayValue === item.displayValue) === index
+      );
+
       setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
-      setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
+      setFloorResults(uniqueFloorResults.slice(0, 50)); // Limit results
 
       setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
       setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
@@ -150,9 +201,19 @@ const SearchPage: React.FC = () => {
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
       if (result.source === 'turar') {
-        navigate(`/turar?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        // For different search types, use different parameters
+        if (result.searchType === 'equipment') {
+          navigate(`/turar?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        } else {
+          navigate(`/turar`);
+        }
       } else {
-        navigate(`/floors?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        // For different search types, use different parameters  
+        if (result.searchType === 'equipment') {
+          navigate(`/floors?search=${encodeURIComponent(result.name)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        } else {
+          navigate(`/floors`);
+        }
       }
     };
 
@@ -164,23 +225,27 @@ const SearchPage: React.FC = () => {
         <CardContent className="p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-sm">{result.name}</h4>
-              <Badge variant="secondary">{result.quantity} шт.</Badge>
+              <h4 className="font-medium text-sm">{result.displayValue}</h4>
+              {result.searchType === 'equipment' && (
+                <Badge variant="secondary">{result.quantity} шт.</Badge>
+              )}
             </div>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div className="flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                {result.department}
+            {result.searchType === 'equipment' && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  {result.department}
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {result.room}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Package className="h-3 w-3" />
+                  {result.code}
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {result.room}
-              </div>
-              <div className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                {result.code}
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
