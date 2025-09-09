@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3 } from 'lucide-react'
+import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Navigation() {
@@ -37,6 +37,11 @@ export function Navigation() {
       name: 'Таблица соединения',
       href: '/connections',
       icon: Database,
+    },
+    {
+      name: 'Админ',
+      href: '/admin',
+      icon: Settings,
     },
   ]
 
