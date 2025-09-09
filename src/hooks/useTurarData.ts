@@ -16,7 +16,7 @@ export const useTurarData = () => {
   return useQuery({
     queryKey: ["turar-equipment"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("turar_equipment")
         .select("*")
         .order("department, room, name");

@@ -9,6 +9,12 @@ export interface ProjectorEquipment {
   department: string;
   room: string;
   floor: string;
+  block?: string;
+  room_code?: string;
+  room_name?: string;
+  area_m2?: number;
+  unit?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,7 +23,7 @@ export const useProjectorData = () => {
   return useQuery({
     queryKey: ["projector-equipment"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("projector_equipment")
         .select("*")
         .order("floor, department, room, name");
