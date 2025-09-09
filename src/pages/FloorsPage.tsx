@@ -450,11 +450,11 @@ export default function FloorsPage() {
                                                             <td className="p-2 font-mono text-xs">
                                                               {eq.code || '-'}
                                                             </td>
-                                                            <td className={`p-2 max-w-[200px] truncate transition-all duration-300 ${
-                                                              isHighlighted 
-                                                                ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
-                                                                : ''
-                                                            }`} title={eq.name || ''}>
+                                                             <td className={`p-2 break-words transition-all duration-300 ${
+                                                               isHighlighted 
+                                                                 ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
+                                                                 : ''
+                                                             }`}>
                                                               {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
                                                               {eq.name || '-'}
                                                             </td>
