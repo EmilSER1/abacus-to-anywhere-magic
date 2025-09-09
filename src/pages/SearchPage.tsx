@@ -53,7 +53,7 @@ const SearchPage: React.FC = () => {
 
     try {
       // Search Turar data
-      const turarResponse = await fetch('/turar_full.json');
+      const turarResponse = await fetch(`/turar_full.json?t=${Date.now()}`);
       const turarData: TurarEquipment[] = await turarResponse.json();
       
       const filteredTurarResults = turarData
@@ -73,7 +73,7 @@ const SearchPage: React.FC = () => {
         }));
 
       // Search Floor data  
-      const floorsResponse = await fetch('/combined_floors.json');
+      const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
       const allFloorData = await floorsResponse.json();
       
       const filteredFloorResults: SearchResult[] = [];

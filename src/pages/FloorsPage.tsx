@@ -146,7 +146,7 @@ export default function FloorsPage() {
   useEffect(() => {
     const loadFloorsData = async () => {
       try {
-        const response = await fetch('/combined_floors.json');
+        const response = await fetch(`/combined_floors.json?t=${Date.now()}`);
         const data: FloorData[] = await response.json();
         setAllData(data);
         const processedFloors = processFloorData(data);

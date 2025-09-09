@@ -40,15 +40,12 @@ const ConsolidationPage: React.FC = () => {
     setIsLoading(true);
     try {
       // Load Turar data
-      const turarResponse = await fetch('/src/data/turar_full.json');
+      const turarResponse = await fetch(`/turar_full.json?t=${Date.now()}`);
       const turarEquipment: TurarEquipment[] = await turarResponse.json();
 
       // Load Floor data
-      const floor1Response = await fetch('/src/data/1F_filled.json');
-      const floor2Response = await fetch('/src/data/2F_filled.json');
-      const floor1Data = await floor1Response.json();
-      const floor2Data = await floor2Response.json();
-      const floorsEquipment = [...floor1Data, ...floor2Data];
+      const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
+      const floorsEquipment = await floorsResponse.json();
 
       // Create maps for consolidation
       const turarMap = new Map<string, {
