@@ -66,7 +66,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     const floorNumber = String(item["ЭТАЖ"]);
     const blockName = item["БЛОК"];
     const departmentName = item["ОТДЕЛЕНИЕ"];
-    const roomArea = typeof item["Площадь (м2)"] === 'number' ? item["Площадь (м2)"] : 0;
+    const roomArea = parseFloat(String(item["Площадь (м2)"] || 0).replace(',', '.')) || 0;
     
     // Debug logging for area processing
     if (roomArea > 0) {
