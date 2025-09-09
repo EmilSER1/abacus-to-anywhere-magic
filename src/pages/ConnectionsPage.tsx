@@ -1066,103 +1066,117 @@ export default function ConnectionsPage() {
                     <Card key={deptIndex} className="medical-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-foreground">{dept.name}</h3>
-                            <span className="text-sm text-muted-foreground">{dept.rooms.length} кабинетов</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const deptKey = `projector-show-rooms-${mapping.id}-${deptIndex}`
+                                toggleDepartment(deptKey)
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              {expandedDepartments.has(`projector-show-rooms-${mapping.id}-${deptIndex}`) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </Button>
+                            <div>
+                              <h3 className="font-semibold text-foreground">{dept.name}</h3>
+                              <span className="text-sm text-muted-foreground">{dept.rooms.length} кабинетов</span>
+                            </div>
                           </div>
-                          <ChevronDown className="w-4 h-4" />
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2">
-                          {dept.rooms.map((room, roomIndex) => {
-                            const connectedToRooms = getConnectedToProjectorRoom(dept.name, room.name)
-                            return (
-                              <div key={roomIndex} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-                                <div className="flex items-center gap-2">
-                                  <Edit className="w-4 h-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{room.name}</span>
-                                  <span className="text-xs text-muted-foreground">{room.equipment.length} оборудования</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {connectedToRooms.length > 0 && (
-                                    <div className="flex gap-1">
-                                      {connectedToRooms.map(conn => (
-                                        <Badge key={conn.id} variant="secondary" className="text-xs">
-                                          {conn.turarRoom}
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => removeConnection(conn.id)}
-                                            className="p-0 ml-1 h-3 w-3"
-                                          >
-                                            <X className="w-2 h-2" />
-                                          </Button>
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Кнопка "Связать" всегда доступна */}
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button variant="outline" size="sm" className="text-xs">
-                                        <Link2 className="w-3 h-3 mr-1" />
-                                        Связать
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Связать кабинет</DialogTitle>
-                                        <DialogDescription>
-                                          Выберите кабинет из Турар для связи с "{room.name}"
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <div className="space-y-4 max-h-96 overflow-y-auto">
-                                        {(() => {
-                                          // Получаем все отделения из данных Турар
-                                          const allTurarDepartments = [...new Set(turarData.map(item => item.department))].filter(Boolean)
-                                          
-                                          return allTurarDepartments.map((turarDeptName, turarDeptIdx) => {
-                                            const turarDept = getTurarDepartment(turarDeptName)
-                                            
-                                            return (
-                                              <div key={turarDeptIdx} className="space-y-2">
-                                                <h5 className="font-medium text-emerald-600">{turarDeptName}</h5>
-                                                <div className="ml-4 space-y-1">
-                                                  {turarDept.rooms.map((turarRoom, turarRoomIdx) => (
-                                                    <Button
-                                                      key={turarRoomIdx}
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => {
-                                                        const newConnection: RoomConnection = {
-                                                          id: `${Date.now()}-${turarRoomIdx}`,
-                                                          turarDepartment: turarDeptName,
-                                                          turarRoom: turarRoom.name,
-                                                          projectorDepartment: dept.name,
-                                                          projectorRoom: room.name
-                                                        }
-                                                        setRoomConnections(prev => [...prev, newConnection])
-                                                      }}
-                                                      className="text-xs h-8 w-full justify-start"
-                                                    >
-                                                      {turarRoom.name}
-                                                    </Button>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            )
-                                          })
-                                        })()}
+                        {expandedDepartments.has(`projector-show-rooms-${mapping.id}-${deptIndex}`) && (
+                          <div className="space-y-2">
+                            {dept.rooms.map((room, roomIndex) => {
+                              const connectedToRooms = getConnectedToProjectorRoom(dept.name, room.name)
+                              return (
+                                <div key={roomIndex} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <Edit className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">{room.name}</span>
+                                    <span className="text-xs text-muted-foreground">{room.equipment.length} оборудования</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {connectedToRooms.length > 0 && (
+                                      <div className="flex gap-1">
+                                        {connectedToRooms.map(conn => (
+                                          <Badge key={conn.id} variant="secondary" className="text-xs">
+                                            {conn.turarRoom}
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => removeConnection(conn.id)}
+                                              className="p-0 ml-1 h-3 w-3"
+                                            >
+                                              <X className="w-2 h-2" />
+                                            </Button>
+                                          </Badge>
+                                        ))}
                                       </div>
-                                    </DialogContent>
-                                  </Dialog>
+                                    )}
+                                    
+                                    {/* Кнопка "Связать" всегда доступна */}
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-xs">
+                                          <Link2 className="w-3 h-3 mr-1" />
+                                          Связать
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>Связать кабинет</DialogTitle>
+                                          <DialogDescription>
+                                            Выберите кабинет из Турар для связи с "{room.name}"
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                                          {(() => {
+                                            // Получаем все отделения из данных Турар
+                                            const allTurarDepartments = [...new Set(turarData.map(item => item.department))].filter(Boolean)
+                                            
+                                            return allTurarDepartments.map((turarDeptName, turarDeptIdx) => {
+                                              const turarDept = getTurarDepartment(turarDeptName)
+                                              
+                                              return (
+                                                <div key={turarDeptIdx} className="space-y-2">
+                                                  <h5 className="font-medium text-emerald-600">{turarDeptName}</h5>
+                                                  <div className="ml-4 space-y-1">
+                                                    {turarDept.rooms.map((turarRoom, turarRoomIdx) => (
+                                                      <Button
+                                                        key={turarRoomIdx}
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                          const newConnection: RoomConnection = {
+                                                            id: `${Date.now()}-${turarRoomIdx}`,
+                                                            turarDepartment: turarDeptName,
+                                                            turarRoom: turarRoom.name,
+                                                            projectorDepartment: dept.name,
+                                                            projectorRoom: room.name
+                                                          }
+                                                          setRoomConnections(prev => [...prev, newConnection])
+                                                        }}
+                                                        className="text-xs h-8 w-full justify-start"
+                                                      >
+                                                        {turarRoom.name}
+                                                      </Button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )
+                                            })
+                                          })()}
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </div>
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
