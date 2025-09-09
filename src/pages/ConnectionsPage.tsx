@@ -28,6 +28,23 @@ interface TurarEquipment {
   quantity: number
 }
 
+interface Room {
+  name: string
+  equipment: Equipment[]
+}
+
+interface Equipment {
+  code?: string
+  name: string
+  quantity: number
+  unit?: string
+}
+
+interface Department {
+  name: string
+  rooms: Room[]
+}
+
 // Интерфейс для соответствий отделений
 interface DepartmentMapping {
   id: string
@@ -139,6 +156,7 @@ export default function ConnectionsPage() {
   const [selectedMapping, setSelectedMapping] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set())
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const [projectorData, setProjectorData] = useState<ProjectorRoom[]>([])
   const [turarData, setTurarData] = useState<TurarEquipment[]>([])
 
@@ -188,31 +206,73 @@ export default function ConnectionsPage() {
     loadData()
   }, [])
 
-  // Получение уникальных отделений из загруженных данных
-  const getProjectorDepartments = (turarDept: string) => {
+  // Получение структурированных данных для отделений
+  const getProjectorDepartments = (turarDept: string): Department[] => {
     const mapping = departmentMappings.find(m => m.turarDepartment === turarDept)
     if (!mapping) return []
     
     return mapping.projectorsDepartments.map(deptName => {
       const deptData = projectorData.filter(item => item.department === deptName)
-      const rooms = [...new Set(deptData.map(item => item.roomName))].filter(Boolean)
-      const equipment = deptData.filter(item => item.equipmentName).map(item => ({
-        roomName: item.roomName,
-        equipmentName: item.equipmentName,
-        quantity: item.quantity,
-        unit: item.unit
+      
+      // Группировка по помещениям
+      const roomsMap = new Map<string, Equipment[]>()
+      deptData.forEach(item => {
+        if (item.roomName) {
+          if (!roomsMap.has(item.roomName)) {
+            roomsMap.set(item.roomName, [])
+          }
+          if (item.equipmentName) {
+            roomsMap.get(item.roomName)!.push({
+              code: item.equipmentCode || undefined,
+              name: item.equipmentName,
+              quantity: item.quantity || 0,
+              unit: item.unit || undefined
+            })
+          }
+        }
+      })
+      
+      const rooms: Room[] = Array.from(roomsMap.entries()).map(([roomName, equipment]) => ({
+        name: roomName,
+        equipment
       }))
       
       return {
         name: deptName,
-        rooms,
-        equipment
+        rooms
       }
     })
   }
 
-  const getTurarEquipment = (deptName: string) => {
-    return turarData.filter(item => item.department === deptName)
+  const getTurarDepartment = (deptName: string): Department => {
+    const deptData = turarData.filter(item => item.department === deptName)
+    
+    // Группировка по помещениям
+    const roomsMap = new Map<string, Equipment[]>()
+    deptData.forEach(item => {
+      if (item.room) {
+        if (!roomsMap.has(item.room)) {
+          roomsMap.set(item.room, [])
+        }
+        if (item.equipmentName) {
+          roomsMap.get(item.room)!.push({
+            code: item.equipmentCode,
+            name: item.equipmentName,
+            quantity: item.quantity
+          })
+        }
+      }
+    })
+    
+    const rooms: Room[] = Array.from(roomsMap.entries()).map(([roomName, equipment]) => ({
+      name: roomName,
+      equipment
+    }))
+    
+    return {
+      name: deptName,
+      rooms
+    }
   }
 
   const toggleDepartment = (deptId: string) => {
@@ -223,6 +283,16 @@ export default function ConnectionsPage() {
       newExpanded.add(deptId)
     }
     setExpandedDepartments(newExpanded)
+  }
+
+  const toggleRoom = (roomId: string) => {
+    const newExpanded = new Set(expandedRooms)
+    if (newExpanded.has(roomId)) {
+      newExpanded.delete(roomId)
+    } else {
+      newExpanded.add(roomId)
+    }
+    setExpandedRooms(newExpanded)
   }
 
   const filteredMappings = departmentMappings.filter(mapping =>
@@ -382,6 +452,81 @@ export default function ConnectionsPage() {
                           </div>
                         </CardContent>
                       </Card>
+                      
+                      {/* Турар данные */}
+                      <div className="space-y-2">
+                        {(() => {
+                          const turarDept = getTurarDepartment(mapping.turarDepartment)
+                          const deptId = `turar-${mapping.id}`
+                          const isExpanded = expandedDepartments.has(deptId)
+                          
+                          return (
+                            <div>
+                              <Card 
+                                className="border-primary/20 bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer"
+                                onClick={() => toggleDepartment(deptId)}
+                              >
+                                <CardContent className="p-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="font-medium text-sm">Показать кабинеты ({turarDept.rooms.length})</div>
+                                    <div className="text-primary">
+                                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              
+                              {isExpanded && (
+                                <div className="ml-4 space-y-2">
+                                  {turarDept.rooms.map((room, roomIndex) => {
+                                    const roomId = `turar-${mapping.id}-room-${roomIndex}`
+                                    const isRoomExpanded = expandedRooms.has(roomId)
+                                    
+                                    return (
+                                      <div key={roomIndex} className="space-y-1">
+                                        <Card 
+                                          className="border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
+                                          onClick={() => toggleRoom(roomId)}
+                                        >
+                                          <CardContent className="p-3">
+                                            <div className="flex items-center justify-between">
+                                              <div className="text-sm font-medium">{room.name}</div>
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-xs">
+                                                  {room.equipment.length} оборудования
+                                                </Badge>
+                                                <div className="text-primary">
+                                                  {isRoomExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        
+                                        {isRoomExpanded && room.equipment.length > 0 && (
+                                          <div className="ml-4 p-3 bg-muted/50 rounded border border-border">
+                                            <h6 className="font-medium text-xs mb-2">Оборудование:</h6>
+                                            <ul className="text-xs space-y-1">
+                                              {room.equipment.map((equip, equipIndex) => (
+                                                <li key={equipIndex} className="flex justify-between items-center">
+                                                  <span>{equip.name}</span>
+                                                  <span className="text-muted-foreground">
+                                                    {equip.quantity} шт.
+                                                  </span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </div>
                     </div>
 
                     {/* Отделения Проектировщиков */}
@@ -392,8 +537,8 @@ export default function ConnectionsPage() {
                       </div>
                       <div className="space-y-3">
                         {getProjectorDepartments(mapping.turarDepartment).map((dept, index) => {
-                          const deptId = `${mapping.id}-${index}`
-                          const isExpanded = expandedDepartments.has(deptId)
+                          const deptId = `projector-${mapping.id}-${index}`
+                          const isDeptExpanded = expandedDepartments.has(deptId)
                           
                           return (
                             <div key={index} className="space-y-2">
@@ -404,41 +549,63 @@ export default function ConnectionsPage() {
                                 <CardContent className="p-4">
                                   <div className="flex items-center justify-between">
                                     <div className="font-medium text-foreground">{dept.name}</div>
-                                    <div className="text-blue-600 transition-transform">
-                                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {dept.rooms.length} кабинетов
+                                      </Badge>
+                                      <div className="text-blue-600">
+                                        {isDeptExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                      </div>
                                     </div>
                                   </div>
                                 </CardContent>
                               </Card>
                               
-                              {isExpanded && (
+                              {isDeptExpanded && (
                                 <div className="ml-4 space-y-2">
-                                  {dept.rooms.length > 0 && (
-                                    <div className="p-3 bg-muted/50 rounded border border-border">
-                                      <h5 className="font-medium text-sm mb-2">Помещения:</h5>
-                                      <ul className="text-sm text-muted-foreground space-y-1">
-                                        {dept.rooms.map((room, roomIndex) => (
-                                          <li key={roomIndex}>• {room}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  
-                                  {dept.equipment.length > 0 && (
-                                    <div className="p-3 bg-blue-50/50 rounded border border-blue-200">
-                                      <h5 className="font-medium text-sm mb-2">Оборудование:</h5>
-                                      <ul className="text-sm space-y-1">
-                                        {dept.equipment.map((equip, equipIndex) => (
-                                          <li key={equipIndex} className="flex justify-between">
-                                            <span>{equip.equipmentName}</span>
-                                            <span className="text-muted-foreground">
-                                              {equip.quantity} {equip.unit}
-                                            </span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
+                                  {dept.rooms.map((room, roomIndex) => {
+                                    const roomId = `projector-${mapping.id}-${index}-room-${roomIndex}`
+                                    const isRoomExpanded = expandedRooms.has(roomId)
+                                    
+                                    return (
+                                      <div key={roomIndex} className="space-y-1">
+                                        <Card 
+                                          className="border-blue-300 bg-blue-25 hover:bg-blue-50 transition-colors cursor-pointer"
+                                          onClick={() => toggleRoom(roomId)}
+                                        >
+                                          <CardContent className="p-3">
+                                            <div className="flex items-center justify-between">
+                                              <div className="text-sm font-medium">{room.name}</div>
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-xs">
+                                                  {room.equipment.length} оборудования
+                                                </Badge>
+                                                <div className="text-blue-600">
+                                                  {isRoomExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        
+                                        {isRoomExpanded && room.equipment.length > 0 && (
+                                          <div className="ml-4 p-3 bg-blue-50/50 rounded border border-blue-200">
+                                            <h6 className="font-medium text-xs mb-2">Оборудование:</h6>
+                                            <ul className="text-xs space-y-1">
+                                              {room.equipment.map((equip, equipIndex) => (
+                                                <li key={equipIndex} className="flex justify-between items-center">
+                                                  <span>{equip.name}</span>
+                                                  <span className="text-muted-foreground">
+                                                    {equip.quantity} {equip.unit || 'шт.'}
+                                                  </span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
                                 </div>
                               )}
                             </div>
