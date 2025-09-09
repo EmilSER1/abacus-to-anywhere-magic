@@ -145,28 +145,66 @@ Deno.serve(async (req) => {
     if (action === 'sync-all') {
       console.log('Syncing all data...')
 
+      let totalInserted = 0
+      let messages = []
+
       // Sync projector data
-      const projectorResponse = await fetch(req.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync-projector-data' })
-      })
-      const projectorResult = await projectorResponse.json()
+      try {
+        const { error: deleteError1 } = await supabase
+          .from('projector_floors')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000')
+
+        if (deleteError1) {
+          throw deleteError1
+        }
+
+        const { error: insertError1 } = await supabase
+          .from('projector_floors')
+          .insert(sampleProjectorData)
+
+        if (insertError1) {
+          throw insertError1
+        }
+
+        totalInserted += sampleProjectorData.length
+        messages.push(`${sampleProjectorData.length} projector records`)
+        console.log(`Inserted ${sampleProjectorData.length} projector records`)
+      } catch (error) {
+        console.error('Error syncing projector data:', error)
+      }
 
       // Sync turar data
-      const turarResponse = await fetch(req.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync-turar-data' })
-      })
-      const turarResult = await turarResponse.json()
+      try {
+        const { error: deleteError2 } = await supabase
+          .from('turar_medical')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000')
+
+        if (deleteError2) {
+          throw deleteError2
+        }
+
+        const { error: insertError2 } = await supabase
+          .from('turar_medical')
+          .insert(sampleTurarData)
+
+        if (insertError2) {
+          throw insertError2
+        }
+
+        totalInserted += sampleTurarData.length
+        messages.push(`${sampleTurarData.length} turar records`)
+        console.log(`Inserted ${sampleTurarData.length} turar records`)
+      } catch (error) {
+        console.error('Error syncing turar data:', error)
+      }
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Successfully synced all sample data',
-          projector: projectorResult,
-          turar: turarResult
+          message: `Successfully synced all data: ${messages.join(', ')}`,
+          inserted: totalInserted
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
