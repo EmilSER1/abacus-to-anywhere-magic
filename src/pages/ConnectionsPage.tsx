@@ -254,58 +254,57 @@ export default function ConnectionsPage() {
             {filteredMappings.map((mapping) => (
               <Card key={mapping.id} className="medical-card">
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     {/* Турар Отделение */}
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="flex items-center justify-center gap-2 mb-4">
                         <Database className="w-5 h-5 text-primary" />
                         <h3 className="text-lg font-semibold text-primary">Отделение Турар</h3>
                       </div>
                       <Card className="border-primary/20 bg-primary/5">
-                        <CardContent className="p-4">
+                        <CardContent className="p-4 text-center">
                           <div className="space-y-3">
                             <h4 className="font-medium text-foreground">
                               {mapping.turarDepartment}
                             </h4>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getStatusColor(mapping.status)}>
-                                {getStatusLabel(mapping.status)}
-                              </Badge>
-                              <Badge variant="outline">
-                                ID: {mapping.id}
-                              </Badge>
-                            </div>
+                            <Badge className={getStatusColor(mapping.status)}>
+                              {getStatusLabel(mapping.status)}
+                            </Badge>
                           </div>
                         </CardContent>
                       </Card>
                     </div>
 
-                    {/* Стрелка соединения */}
-                    <div className="hidden lg:flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <ArrowRight className="w-8 h-8 text-primary" />
-                        <Badge variant="outline" className="text-xs">
-                          {mapping.projectorsDepartments.length} отделений
-                        </Badge>
-                      </div>
-                    </div>
-
                     {/* Отделения Проектировщиков */}
-                    <div className="space-y-4 lg:col-start-2">
-                      <div className="flex items-center gap-2 mb-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center gap-2 mb-4">
                         <LinkIcon className="w-5 h-5 text-success" />
                         <h3 className="text-lg font-semibold text-success">Отделения Проектировщиков</h3>
                       </div>
                       <div className="space-y-3">
                         {mapping.projectorsDepartments.map((dept, index) => (
-                          <Card key={index} className="border-success/20 bg-success/5">
-                            <CardContent className="p-4">
-                              <div className="font-medium text-foreground">{dept}</div>
-                              <Badge variant="outline" className="mt-2 text-xs">
-                                #{index + 1}
-                              </Badge>
-                            </CardContent>
-                          </Card>
+                          <details key={index} className="group">
+                            <summary className="cursor-pointer">
+                              <Card className="border-success/20 bg-success/5 hover:bg-success/10 transition-colors">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="font-medium text-foreground">{dept}</div>
+                                    <div className="text-success group-open:rotate-180 transition-transform">
+                                      ▼
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </summary>
+                            <div className="mt-2 ml-4 p-3 bg-muted/50 rounded border border-border">
+                              <div className="text-sm text-muted-foreground">
+                                <p>Оборудование и детали отделения будут добавлены позже</p>
+                                <Badge variant="outline" className="mt-2 text-xs">
+                                  ID: {mapping.id}-{index + 1}
+                                </Badge>
+                              </div>
+                            </div>
+                          </details>
                         ))}
                       </div>
                     </div>
