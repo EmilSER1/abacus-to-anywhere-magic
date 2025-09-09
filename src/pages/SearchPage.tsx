@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Navigation } from '@/components/Navigation';
 import { Search, Package, MapPin, Building2 } from 'lucide-react';
@@ -34,14 +35,17 @@ interface SearchResult {
   source: 'turar' | 'floors';
 }
 
+type SearchType = 'equipment' | 'code' | 'department' | 'room';
+
 const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchType, setSearchType] = useState<SearchType>('equipment');
   const [turarResults, setTurarResults] = useState<SearchResult[]>([]);
   const [floorResults, setFloorResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const searchData = async (query: string) => {
+  const searchData = async (query: string, type: SearchType) => {
     if (!query.trim()) {
       setTurarResults([]);
       setFloorResults([]);
@@ -57,12 +61,19 @@ const SearchPage: React.FC = () => {
       const turarData: TurarEquipment[] = await turarResponse.json();
       
       const filteredTurarResults = turarData
-        .filter(item => 
-          item["Отделение/Блок"].toLowerCase().includes(searchLower) ||
-          item["Помещение/Кабинет"].toLowerCase().includes(searchLower) ||
-          item["Код оборудования"].toLowerCase().includes(searchLower) ||
-          item["Наименование"].toLowerCase().includes(searchLower)
-        )
+        .filter(item => {
+          switch (type) {
+            case 'code':
+              return item["Код оборудования"].toLowerCase().includes(searchLower);
+            case 'department':
+              return item["Отделение/Блок"].toLowerCase().includes(searchLower);
+            case 'room':
+              return item["Помещение/Кабинет"].toLowerCase().includes(searchLower);
+            case 'equipment':
+            default:
+              return item["Наименование"].toLowerCase().includes(searchLower);
+          }
+        })
         .map(item => ({
           department: item["Отделение/Блок"],
           room: item["Помещение/Кабинет"],
@@ -87,10 +98,24 @@ const SearchPage: React.FC = () => {
         const code = String(item["Код оборудования"] || '').toLowerCase();
         const name = (item["Наименование оборудования"] || '').toLowerCase();
         
-        if (department.includes(searchLower) ||
-            room.includes(searchLower) ||
-            code.includes(searchLower) ||
-            name.includes(searchLower)) {
+        let matches = false;
+        switch (type) {
+          case 'code':
+            matches = code.includes(searchLower);
+            break;
+          case 'department':
+            matches = department.includes(searchLower);
+            break;
+          case 'room':
+            matches = room.includes(searchLower);
+            break;
+          case 'equipment':
+          default:
+            matches = name.includes(searchLower);
+            break;
+        }
+        
+        if (matches) {
           filteredFloorResults.push({
             department: item["ОТДЕЛЕНИЕ"] || '',
             room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
@@ -104,6 +129,9 @@ const SearchPage: React.FC = () => {
 
       setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
       setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
+
+      setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
+      setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
     } catch (error) {
       console.error('Error searching data:', error);
     } finally {
@@ -113,11 +141,11 @@ const SearchPage: React.FC = () => {
 
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
-      searchData(searchTerm);
+      searchData(searchTerm, searchType);
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm]);
+  }, [searchTerm, searchType]);
 
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
@@ -173,16 +201,36 @@ const SearchPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Search Input */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Поиск по коду, наименованию, отделению или кабинету..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {/* Search Controls */}
+        <div className="mb-8 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+            <div className="flex-1">
+              <Select value={searchType} onValueChange={(value: SearchType) => setSearchType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите тип поиска" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="equipment">По оборудованию</SelectItem>
+                  <SelectItem value="code">По коду</SelectItem>
+                  <SelectItem value="department">По отделению</SelectItem>
+                  <SelectItem value="room">По кабинету</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-[2] relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={
+                  searchType === 'equipment' ? "Введите название оборудования..." :
+                  searchType === 'code' ? "Введите код оборудования..." :
+                  searchType === 'department' ? "Введите название отделения..." :
+                  "Введите название кабинета..."
+                }
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
         </div>
 
@@ -246,7 +294,7 @@ const SearchPage: React.FC = () => {
               <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Начните поиск</h3>
               <p className="text-muted-foreground">
-                Введите код оборудования, наименование, отделение или кабинет для поиска
+                Выберите тип поиска и введите запрос для поиска оборудования
               </p>
             </CardContent>
           </Card>
