@@ -19,7 +19,8 @@ export const useTurarMedicalData = () => {
       const { data, error } = await (supabase as any)
         .from("turar_medical")
         .select("*")
-        .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"');
+        .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
+        .limit(5000); // Увеличиваем лимит для отображения всех записей
 
       if (error) {
         throw error;

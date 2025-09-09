@@ -27,7 +27,8 @@ export const useFloorsData = () => {
       const { data, error } = await (supabase as any)
         .from("projector_floors")
         .select("*")
-        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"');
+        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"')
+        .limit(10000); // Увеличиваем лимит для отображения всех записей
 
       if (error) {
         throw error;
