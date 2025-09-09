@@ -68,6 +68,11 @@ const processFloorData = (data: FloorData[]): Floor[] => {
     const departmentName = item["ОТДЕЛЕНИЕ"];
     const roomArea = typeof item["Площадь (м2)"] === 'number' ? item["Площадь (м2)"] : 0;
     
+    // Debug logging for area processing
+    if (roomArea > 0) {
+      console.log(`Processing room: ${item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]} with area: ${roomArea} м²`);
+    }
+    
     if (!floorsMap.has(floorNumber)) {
       floorsMap.set(floorNumber, new Map());
     }
@@ -95,10 +100,9 @@ const processFloorData = (data: FloorData[]): Floor[] => {
         equipment: []
       };
       department.rooms.push(room);
-      department.totalArea = (department.totalArea || 0) + roomArea;
     } else {
-      // Update area if it's not set or if current value is larger
-      if (!room.area || roomArea > room.area) {
+      // Update area if current record has a non-zero area value
+      if (roomArea > 0 && (!room.area || room.area === 0)) {
         room.area = roomArea;
       }
     }
