@@ -74,8 +74,31 @@ export const DataSyncPanel: React.FC = () => {
         throw new Error('Не удалось загрузить JSON файлы');
       }
 
-      const projectorData = await projectorResponse.json();
-      const turarData = await turarResponse.json();
+      const rawProjectorData = await projectorResponse.json();
+      const rawTurarData = await turarResponse.json();
+
+      // Функция для конвертации числовых полей с запятыми в точки
+      const fixNumericField = (value) => {
+        if (typeof value === 'string' && value.includes(',')) {
+          const fixed = value.replace(',', '.');
+          return isNaN(parseFloat(fixed)) ? value : parseFloat(fixed);
+        }
+        return value;
+      };
+
+      // Исправляем числовые поля в данных проектировщиков
+      const projectorData = rawProjectorData.map(item => ({
+        ...item,
+        "ЭТАЖ": fixNumericField(item["ЭТАЖ"]),
+        "Площадь (м2)": fixNumericField(item["Площадь (м2)"]),
+        "Кол-во": item["Кол-во"] === null ? null : fixNumericField(item["Кол-во"])
+      }));
+
+      // Исправляем числовые поля в данных турар
+      const turarData = rawTurarData.map(item => ({
+        ...item,
+        "Кол-во": fixNumericField(item["Кол-во"])
+      }));
 
       setSyncStatus({
         type: 'all',
