@@ -1102,62 +1102,62 @@ export default function ConnectionsPage() {
                                       ))}
                                     </div>
                                   )}
-                                  {connectedToRooms.length === 0 && (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="text-xs">
-                                          <Link2 className="w-3 h-3 mr-1" />
-                                          Связать
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                        <DialogHeader>
-                                          <DialogTitle>Связать кабинет</DialogTitle>
-                                          <DialogDescription>
-                                            Выберите кабинет из Турар для связи с "{room.name}"
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                                          {(() => {
-                                            // Получаем все отделения из данных Турар
-                                            const allTurarDepartments = [...new Set(turarData.map(item => item.department))].filter(Boolean)
+                                  
+                                  {/* Кнопка "Связать" всегда доступна */}
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button variant="outline" size="sm" className="text-xs">
+                                        <Link2 className="w-3 h-3 mr-1" />
+                                        Связать
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Связать кабинет</DialogTitle>
+                                        <DialogDescription>
+                                          Выберите кабинет из Турар для связи с "{room.name}"
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                                        {(() => {
+                                          // Получаем все отделения из данных Турар
+                                          const allTurarDepartments = [...new Set(turarData.map(item => item.department))].filter(Boolean)
+                                          
+                                          return allTurarDepartments.map((turarDeptName, turarDeptIdx) => {
+                                            const turarDept = getTurarDepartment(turarDeptName)
                                             
-                                            return allTurarDepartments.map((turarDeptName, turarDeptIdx) => {
-                                              const turarDept = getTurarDepartment(turarDeptName)
-                                              
-                                              return (
-                                                <div key={turarDeptIdx} className="space-y-2">
-                                                  <h5 className="font-medium text-emerald-600">{turarDeptName}</h5>
-                                                  <div className="ml-4 space-y-1">
-                                                    {turarDept.rooms.map((turarRoom, turarRoomIdx) => (
-                                                      <Button
-                                                        key={turarRoomIdx}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          const newConnection: RoomConnection = {
-                                                            id: `${Date.now()}-${turarRoomIdx}`,
-                                                            turarDepartment: turarDeptName,
-                                                            turarRoom: turarRoom.name,
-                                                            projectorDepartment: dept.name,
-                                                            projectorRoom: room.name
-                                                          }
-                                                          setRoomConnections(prev => [...prev, newConnection])
-                                                        }}
-                                                        className="text-xs h-8 w-full justify-start"
-                                                      >
-                                                        {turarRoom.name}
-                                                      </Button>
-                                                    ))}
-                                                  </div>
+                                            return (
+                                              <div key={turarDeptIdx} className="space-y-2">
+                                                <h5 className="font-medium text-emerald-600">{turarDeptName}</h5>
+                                                <div className="ml-4 space-y-1">
+                                                  {turarDept.rooms.map((turarRoom, turarRoomIdx) => (
+                                                    <Button
+                                                      key={turarRoomIdx}
+                                                      variant="outline"
+                                                      size="sm"
+                                                      onClick={() => {
+                                                        const newConnection: RoomConnection = {
+                                                          id: `${Date.now()}-${turarRoomIdx}`,
+                                                          turarDepartment: turarDeptName,
+                                                          turarRoom: turarRoom.name,
+                                                          projectorDepartment: dept.name,
+                                                          projectorRoom: room.name
+                                                        }
+                                                        setRoomConnections(prev => [...prev, newConnection])
+                                                      }}
+                                                      className="text-xs h-8 w-full justify-start"
+                                                    >
+                                                      {turarRoom.name}
+                                                    </Button>
+                                                  ))}
                                                 </div>
-                                              )
-                                            })
-                                          })()}
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  )}
+                                              </div>
+                                            )
+                                          })
+                                        })()}
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
                                 </div>
                               </div>
                             )
