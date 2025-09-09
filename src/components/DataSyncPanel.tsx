@@ -60,6 +60,97 @@ export const DataSyncPanel: React.FC = () => {
     }
   };
 
+  const loadLargeDataset = async () => {
+    setSyncStatus({ type: 'all', status: 'loading' });
+
+    try {
+      // Загружаем данные из public JSON файлов напрямую
+      const [projectorResponse, turarResponse] = await Promise.all([
+        fetch('/combined_floors.json'),
+        fetch('/turar_full.json')
+      ]);
+
+      if (!projectorResponse.ok || !turarResponse.ok) {
+        throw new Error('Не удалось загрузить JSON файлы');
+      }
+
+      const projectorData = await projectorResponse.json();
+      const turarData = await turarResponse.json();
+
+      setSyncStatus({
+        type: 'all',
+        status: 'loading',
+        message: `Загружено из JSON: ${projectorData.length + turarData.length} записей. Сохраняем в БД...`
+      });
+
+      // Очищаем существующие данные
+      await Promise.all([
+        supabase.from('projector_floors').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('turar_medical').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      ]);
+
+      // Загружаем данные батчами для избежания лимитов
+      const batchSize = 1000;
+      let totalInserted = 0;
+
+      // Загружаем projector данные батчами
+      for (let i = 0; i < projectorData.length; i += batchSize) {
+        const batch = projectorData.slice(i, i + batchSize);
+        const { error } = await supabase.from('projector_floors').insert(batch);
+        if (error) throw error;
+        totalInserted += batch.length;
+        
+        setSyncStatus({
+          type: 'all',
+          status: 'loading',
+          message: `Загружено проектировщиков: ${totalInserted}/${projectorData.length}`,
+          inserted: totalInserted
+        });
+      }
+
+      // Загружаем turar данные батчами
+      for (let i = 0; i < turarData.length; i += batchSize) {
+        const batch = turarData.slice(i, i + batchSize);
+        const { error } = await supabase.from('turar_medical').insert(batch);
+        if (error) throw error;
+        totalInserted += batch.length;
+        
+        setSyncStatus({
+          type: 'all',
+          status: 'loading',
+          message: `Загружено турар: ${totalInserted - projectorData.length}/${turarData.length}`,
+          inserted: totalInserted
+        });
+      }
+
+      setSyncStatus({
+        type: 'all',
+        status: 'success',
+        message: `Успешно загружено ${totalInserted.toLocaleString()} записей!`,
+        inserted: totalInserted
+      });
+
+      toast({
+        title: "Полная загрузка завершена",
+        description: `Загружено ${totalInserted.toLocaleString()} записей из JSON файлов`,
+      });
+
+    } catch (error) {
+      console.error('Large dataset load error:', error);
+      setSyncStatus({
+        type: 'all',
+        status: 'error',
+        message: error.message || 'Ошибка загрузки большого набора данных'
+      });
+
+      toast({
+        title: "Ошибка загрузки",
+        description: error.message || 'Не удалось загрузить большой набор данных',
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleRealDataSync = async () => {
     setSyncStatus({ type: 'all', status: 'loading' });
 
@@ -204,7 +295,7 @@ export const DataSyncPanel: React.FC = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <Button
             variant="outline"
             onClick={() => handleSync('sync-projector-data')}
@@ -235,13 +326,23 @@ export const DataSyncPanel: React.FC = () => {
           </Button>
 
           <Button
-            variant="default"
+            variant="secondary"
             onClick={() => handleRealDataSync()}
             disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2 bg-primary"
+            className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Реальные данные
+            Малый набор
+          </Button>
+
+          <Button
+            variant="default"
+            onClick={() => loadLargeDataset()}
+            disabled={syncStatus.status === 'loading'}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <Database className="h-4 w-4" />
+            Полный набор
           </Button>
         </div>
 
