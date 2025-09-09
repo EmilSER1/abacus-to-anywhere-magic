@@ -314,15 +314,27 @@ const TurarPage: React.FC = () => {
                                     const urlDepartment = searchParams.get('department');
                                     const urlRoom = searchParams.get('room');
                                     
-                                     const isHighlighted = urlSearchTerm && 
-                                       urlDepartment === department.name && 
-                                       urlRoom === room.name && 
-                                       equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
-                                       !highlightTimeout;
+                                      const isHighlighted = urlSearchTerm && 
+                                        urlDepartment === department.name && 
+                                        urlRoom === room.name && 
+                                        (equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
+                                         equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
+                                        !highlightTimeout;
 
-                                     const equipmentId = isHighlighted ? 
-                                       `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
-                                       undefined;
+                                      if (urlSearchTerm && urlDepartment === department.name && urlRoom === room.name) {
+                                        console.log('TurarPage highlighting check:', {
+                                          equipmentName: equipment["Наименование"],
+                                          equipmentCode: equipment["Код оборудования"],
+                                          searchTerm: urlSearchTerm,
+                                          nameMatches: equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()),
+                                          codeMatches: equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase()),
+                                          isHighlighted
+                                        });
+                                      }
+
+                                      const equipmentId = isHighlighted ? 
+                                        `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                        undefined;
 
                                     return (
                                        <div
