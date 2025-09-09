@@ -79,21 +79,53 @@ export const DataSyncPanel: React.FC = () => {
 
       // Функция для конвертации числовых полей с запятыми в точки
       const fixNumericField = (value) => {
-        if (typeof value === 'string' && value.includes(',')) {
-          const fixed = value.replace(',', '.');
-          return isNaN(parseFloat(fixed)) ? value : parseFloat(fixed);
+        if (value === null || value === undefined || value === '') {
+          return null;
         }
-        return value;
+        
+        // Если это уже число, возвращаем как есть
+        if (typeof value === 'number') {
+          return value;
+        }
+        
+        // Если это строка, пытаемся преобразовать
+        if (typeof value === 'string') {
+          // Удаляем пробелы
+          const cleaned = value.trim();
+          
+          // Если содержит буквы, это точно не число
+          if (/[a-zA-Zа-яА-Я]/.test(cleaned)) {
+            return null;
+          }
+          
+          // Заменяем запятые на точки
+          const withDots = cleaned.replace(',', '.');
+          const parsed = parseFloat(withDots);
+          
+          // Проверяем, что результат валидный
+          return isNaN(parsed) ? null : parsed;
+        }
+        
+        return null;
       };
 
       // Исправляем числовые поля в данных проектировщиков и фильтруем некорректные записи
       const projectorData = rawProjectorData
-        .map(item => ({
-          ...item,
-          "ЭТАЖ": fixNumericField(item["ЭТАЖ"]),
-          "Площадь (м2)": fixNumericField(item["Площадь (м2)"]),
-          "Кол-во": item["Кол-во"] === null ? null : fixNumericField(item["Кол-во"])
-        }))
+        .map(item => {
+          const fixedItem = {
+            ...item,
+            "ЭТАЖ": fixNumericField(item["ЭТАЖ"]),
+            "Площадь (м2)": fixNumericField(item["Площадь (м2)"]),
+            "Кол-во": item["Кол-во"] === null ? null : item["Кол-во"] // Кол-во - это text поле
+          };
+          
+          // Дополнительная проверка: если ЭТАЖ не число, выводим в лог
+          if (fixedItem["ЭТАЖ"] === null && item["ЭТАЖ"] !== null) {
+            console.warn('Некорректное значение ЭТАЖ:', item["ЭТАЖ"]);
+          }
+          
+          return fixedItem;
+        })
         .filter(item => 
           // Фильтруем записи с пустыми обязательными полями
           item["КОД ПОМЕЩЕНИЯ"] && 
