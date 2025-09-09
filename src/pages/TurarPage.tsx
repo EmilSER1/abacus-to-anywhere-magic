@@ -9,31 +9,22 @@ import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Navigation } from '@/components/Navigation';
 import { Building2, Users, MapPin, Download, Search, Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTurarData } from '@/hooks/useTurarData';
 import * as XLSX from 'xlsx';
-
-// Define the interface for Turar equipment data
-interface TurarEquipment {
-  "Отделение/Блок": string;
-  "Помещение/Кабинет": string;
-  "Код оборудования": string;
-  "Наименование": string;
-  "Кол-во": number;
-}
 
 // Define the interface for a processed department
 interface TurarDepartment {
   name: string;
   rooms: {
     name: string;
-    equipment: TurarEquipment[];
+    equipment: any[];
   }[];
 }
-
-let turarData: TurarEquipment[] = [];
 
 const TurarPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { data: turarData, isLoading, error } = useTurarData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -42,14 +33,9 @@ const TurarPage: React.FC = () => {
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadTurarData = async () => {
-      try {
-        const response = await fetch(`/turar_full.json?t=${Date.now()}`);
-        const data: TurarEquipment[] = await response.json();
-        turarData = data;
-        
-        // Process data to group by departments and rooms
-        const processedData = processTurarData(data);
+    if (turarData) {
+      // Process data to group by departments and rooms
+      const processedData = processTurarData(turarData);
       setDepartments(processedData);
 
       // Handle search params from URL
@@ -102,21 +88,16 @@ const TurarPage: React.FC = () => {
         // Auto-remove highlight after 3 seconds
         setTimeout(() => setHighlightTimeout(true), 3000);
       }
-      } catch (error) {
-        console.error('Error loading turar data:', error);
-      }
-    };
+    }
+  }, [turarData, searchParams]);
 
-    loadTurarData();
-  }, [searchParams]);
-
-  const processTurarData = (data: TurarEquipment[]): TurarDepartment[] => {
-    const departmentMap = new Map<string, Map<string, TurarEquipment[]>>();
+  const processTurarData = (data: any[]): TurarDepartment[] => {
+    const departmentMap = new Map<string, Map<string, any[]>>();
 
     // Group equipment by department and room
     data.forEach(item => {
-      const deptName = item["Отделение/Блок"];
-      const roomName = item["Помещение/Кабинет"];
+      const deptName = item.department;
+      const roomName = item.room;
 
       if (!departmentMap.has(deptName)) {
         departmentMap.set(deptName, new Map());
@@ -146,7 +127,7 @@ const TurarPage: React.FC = () => {
   const totalEquipment = departments.reduce((acc, dept) => 
     acc + dept.rooms.reduce((roomAcc, room) => 
       roomAcc + room.equipment.reduce((eqAcc, eq) => {
-        const count = typeof eq["Кол-во"] === 'number' ? eq["Кол-во"] : parseInt(eq["Кол-во"]) || 0;
+        const count = typeof eq.quantity === 'number' ? eq.quantity : parseInt(eq.quantity) || 0;
         return eqAcc + count;
       }, 0), 0), 0);
   const totalEquipmentTypes = departments.reduce((acc, dept) => 
@@ -158,19 +139,21 @@ const TurarPage: React.FC = () => {
     dept.rooms.some(room => 
       room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room.equipment.some(eq => 
-        eq["Наименование"].toLowerCase().includes(searchTerm.toLowerCase()) ||
-        eq["Код оборудования"].toLowerCase().includes(searchTerm.toLowerCase())
+        eq.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.code?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     )
   );
 
   const exportData = () => {
+    if (!turarData) return;
+    
     const exportData = turarData.map(item => ({
-      'Отделение/Блок': item["Отделение/Блок"],
-      'Помещение/Кабинет': item["Помещение/Кабинет"],
-      'Код оборудования': item["Код оборудования"],
-      'Наименование': item["Наименование"],
-      'Количество': item["Кол-во"]
+      'Отделение/Блок': item.department,
+      'Помещение/Кабинет': item.room,
+      'Код оборудования': item.code,
+      'Наименование': item.name,
+      'Количество': item.quantity
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -178,6 +161,37 @@ const TurarPage: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Турар');
     XLSX.writeFile(workbook, 'turar_equipment.xlsx');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p>Загрузка данных турар...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center text-red-500">
+              <p>Ошибка загрузки данных: {error.message}</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -309,17 +323,17 @@ const TurarPage: React.FC = () => {
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
                                 <div className="space-y-2">
-                                  {room.equipment.map((equipment, eqIndex) => {
-                                    const urlSearchTerm = searchParams.get('search');
-                                    const urlDepartment = searchParams.get('department');
-                                    const urlRoom = searchParams.get('room');
-                                    
-                                      const isHighlighted = urlSearchTerm && 
-                                        urlDepartment === department.name && 
-                                        urlRoom === room.name && 
-                                        (equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
-                                         equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
-                                        !highlightTimeout;
+                                   {room.equipment.map((equipment, eqIndex) => {
+                                     const urlSearchTerm = searchParams.get('search');
+                                     const urlDepartment = searchParams.get('department');
+                                     const urlRoom = searchParams.get('room');
+                                     
+                                       const isHighlighted = urlSearchTerm && 
+                                         urlDepartment === department.name && 
+                                         urlRoom === room.name && 
+                                         (equipment.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
+                                          equipment.code?.toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
+                                         !highlightTimeout;
 
                                       const equipmentId = isHighlighted ? 
                                         `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
@@ -342,20 +356,20 @@ const TurarPage: React.FC = () => {
                                                isHighlighted 
                                                  ? 'text-yellow-800 dark:text-yellow-200 font-bold' 
                                                  : ''
-                                             }`}>
-                                               {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
-                                               {equipment["Наименование"]}
-                                             </div>
-                                             <div className="text-sm text-muted-foreground">
-                                               Код: {equipment["Код оборудования"]}
-                                             </div>
-                                           </div>
-                                         </div>
-                                         <Badge 
-                                           variant={isHighlighted ? "default" : "secondary"} 
-                                           className={`font-medium ${isHighlighted ? 'bg-yellow-500 text-yellow-900' : ''}`}
-                                         >
-                                           {equipment["Кол-во"]} шт.
+                                              }`}>
+                                                {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                                {equipment.name}
+                                              </div>
+                                              <div className="text-sm text-muted-foreground">
+                                                Код: {equipment.code}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <Badge 
+                                            variant={isHighlighted ? "default" : "secondary"} 
+                                            className={`font-medium ${isHighlighted ? 'bg-yellow-500 text-yellow-900' : ''}`}
+                                          >
+                                            {equipment.quantity} шт.
                                          </Badge>
                                        </div>
                                     );

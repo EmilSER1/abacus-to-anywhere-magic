@@ -6,25 +6,10 @@ import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
+import { useProjectorDataByFloor } from '@/hooks/useProjectorData';
 import * as XLSX from 'xlsx';
 
-// Interface definitions
-interface FloorData {
-  "ЭТАЖ": number;
-  "БЛОК": string;
-  "ОТДЕЛЕНИЕ": string;
-  "КОД ПОМЕЩЕНИЯ": string;
-  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
-  "Код помещения": string;
-  "Наименование помещения": string;
-  "Площадь (м2)": number;
-  "Код оборудования": string | null;
-  "Наименование оборудования": string | null;
-  "Ед. изм.": string | null;
-  "Кол-во": number | string | null;
-  "Примечания": string | null;
-}
-
+// Interface definitions from Supabase data
 interface Equipment {
   code: string | null;
   name: string | null;
@@ -59,81 +44,56 @@ interface Floor {
   };
 }
 
-// Process floor data to group by floors -> departments -> rooms (with block markers)
-const processFloorData = (data: FloorData[]): Floor[] => {
-  const floorsMap = new Map<string, Map<string, Department>>();
-
-  data.forEach(item => {
-    const floorNumber = String(item["ЭТАЖ"]);
-    const blockName = item["БЛОК"];
-    const departmentName = item["ОТДЕЛЕНИЕ"];
-    const roomArea = parseFloat(String(item["Площадь (м2)"] || 0).replace(',', '.')) || 0;
-    
-    // Debug logging for area processing
-    if (roomArea > 0) {
-      console.log(`Processing room: ${item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]} with area: ${roomArea} м²`);
-    }
-    
-    if (!floorsMap.has(floorNumber)) {
-      floorsMap.set(floorNumber, new Map());
-    }
-    
-    const floor = floorsMap.get(floorNumber)!;
-    
-    if (!floor.has(departmentName)) {
-      floor.set(departmentName, {
-        name: departmentName,
-        block: blockName,
-        rooms: [],
-        equipmentCount: 0,
-        totalArea: 0
-      });
-    }
-
-    const department = floor.get(departmentName)!;
-    let room = department.rooms.find(r => r.code === item["КОД ПОМЕЩЕНИЯ"]);
-    
-    if (!room) {
-      room = {
-        code: item["КОД ПОМЕЩЕНИЯ"],
-        name: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-        area: roomArea,
-        equipment: []
-      };
-      department.rooms.push(room);
-    } else {
-      // Update area if current record has a non-zero area value
-      if (roomArea > 0 && (!room.area || room.area === 0)) {
-        room.area = roomArea;
-      }
-    }
-
-    if (item["Наименование оборудования"]) {
-      room.equipment.push({
-        code: item["Код оборудования"],
-        name: item["Наименование оборудования"],
-        unit: item["Ед. изм."],
-        quantity: item["Кол-во"],
-        notes: item["Примечания"]
-      });
-      department.equipmentCount++;
-    }
-  });
-
-  // Convert to Floor[] structure and recalculate areas
+// Process projector data from Supabase to group by floors -> departments -> rooms
+const processProjectorData = (data: Record<string, Record<string, any[]>>): Floor[] => {
   const floors: Floor[] = [];
   
-  floorsMap.forEach((departmentsMap, floorNumber) => {
-    const departments = Array.from(departmentsMap.values());
+  Object.entries(data).forEach(([floorNumber, departmentsData]) => {
+    const departments: Department[] = [];
     
-    // Recalculate department areas based on actual room areas
-    departments.forEach(dept => {
-      dept.totalArea = dept.rooms.reduce((sum, room) => sum + (room.area || 0), 0);
+    Object.entries(departmentsData).forEach(([deptName, equipmentItems]) => {
+      const roomsMap = new Map<string, Room>();
+      let equipmentCount = 0;
+      
+      equipmentItems.forEach(item => {
+        const roomKey = item.room_code || item.room;
+        const roomName = item.room_name || item.room;
+        
+        if (!roomsMap.has(roomKey)) {
+          roomsMap.set(roomKey, {
+            code: roomKey,
+            name: roomName,
+            area: item.area_m2 || 0,
+            equipment: []
+          });
+        }
+        
+        const room = roomsMap.get(roomKey)!;
+        room.equipment.push({
+          code: item.code,
+          name: item.name,
+          unit: item.unit,
+          quantity: item.quantity,
+          notes: item.notes
+        });
+        equipmentCount++;
+      });
+      
+      const rooms = Array.from(roomsMap.values());
+      const totalArea = rooms.reduce((sum, room) => sum + (room.area || 0), 0);
+      
+      departments.push({
+        name: deptName,
+        block: equipmentItems[0]?.block || '',
+        rooms,
+        equipmentCount,
+        totalArea
+      });
     });
     
     const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
     const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
-    const totalArea = departments.reduce((sum, dept) => sum + (dept.totalArea || 0), 0);
+    const totalArea = departments.reduce((sum, dept) => sum + dept.totalArea, 0);
     
     floors.push({
       number: floorNumber,
@@ -152,7 +112,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
-  const [allData, setAllData] = useState<FloorData[]>([]);
+  const { data: projectorDataByFloor, isLoading, error } = useProjectorDataByFloor();
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -161,20 +121,11 @@ export default function FloorsPage() {
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadFloorsData = async () => {
-      try {
-        const response = await fetch(`/combined_floors.json?t=${Date.now()}`);
-        const data: FloorData[] = await response.json();
-        setAllData(data);
-        const processedFloors = processFloorData(data);
-        setFloors(processedFloors);
-      } catch (error) {
-        console.error('Error loading floors data:', error);
-      }
-    };
-
-    loadFloorsData();
-  }, []);
+    if (projectorDataByFloor) {
+      const processedFloors = processProjectorData(projectorDataByFloor);
+      setFloors(processedFloors);
+    }
+  }, [projectorDataByFloor]);
 
   useEffect(() => {
     // Handle search params from URL
@@ -248,7 +199,7 @@ export default function FloorsPage() {
   }, [searchParams, floors]);
 
   const exportData = () => {
-    // Prepare data for Excel export
+    // Prepare data for Excel export from Supabase data
     const excelData: any[] = [];
     
     floors.forEach(floor => {
@@ -296,6 +247,33 @@ export default function FloorsPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Проектировщики');
     XLSX.writeFile(workbook, 'floors_data.xlsx');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Загрузка данных проектировщиков...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
+          <div className="text-center text-red-500">
+            <p>Ошибка загрузки данных: {error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate total statistics
   const totalStats = floors.reduce((acc, floor) => ({
