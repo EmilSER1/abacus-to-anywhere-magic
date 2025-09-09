@@ -145,7 +145,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
-  const { data: allData, isLoading, error } = useFloorsData();
+  const { data: allData, isLoading, error, refetch } = useFloorsData();
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
