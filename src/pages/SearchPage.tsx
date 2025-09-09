@@ -104,11 +104,7 @@ const SearchPage: React.FC = () => {
             searchType: type,
             displayValue
           };
-        })
-        // Remove duplicates based on displayValue
-        .filter((item, index, arr) => 
-          arr.findIndex(x => x.displayValue === item.displayValue) === index
-        );
+        });
 
       // Search Floor data  
       const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
