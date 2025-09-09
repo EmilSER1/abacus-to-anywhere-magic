@@ -14,57 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      projector_equipment: {
+      projector_floors: {
         Row: {
-          area_m2: number | null
-          block: string | null
-          code: string
-          created_at: string | null
-          department: string
-          floor: string
+          created_at: string
           id: string
-          name: string
-          notes: string | null
-          quantity: number
-          room: string
-          room_code: string | null
-          room_name: string | null
-          unit: string | null
-          updated_at: string | null
+          updated_at: string
+          БЛОК: string
+          "Ед. изм.": string | null
+          "Код оборудования": string | null
+          "Код помещения": string | null
+          "КОД ПОМЕЩЕНИЯ": string
+          "Кол-во": string | null
+          "Наименование оборудования": string | null
+          "Наименование помещения": string | null
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string
+          ОТДЕЛЕНИЕ: string
+          "Площадь (м2)": number | null
+          Примечания: string | null
+          ЭТАЖ: number
         }
         Insert: {
-          area_m2?: number | null
-          block?: string | null
-          code: string
-          created_at?: string | null
-          department: string
-          floor: string
+          created_at?: string
           id?: string
-          name: string
-          notes?: string | null
-          quantity?: number
-          room: string
-          room_code?: string | null
-          room_name?: string | null
-          unit?: string | null
-          updated_at?: string | null
+          updated_at?: string
+          БЛОК: string
+          "Ед. изм."?: string | null
+          "Код оборудования"?: string | null
+          "Код помещения"?: string | null
+          "КОД ПОМЕЩЕНИЯ": string
+          "Кол-во"?: string | null
+          "Наименование оборудования"?: string | null
+          "Наименование помещения"?: string | null
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string
+          ОТДЕЛЕНИЕ: string
+          "Площадь (м2)"?: number | null
+          Примечания?: string | null
+          ЭТАЖ: number
         }
         Update: {
-          area_m2?: number | null
-          block?: string | null
-          code?: string
-          created_at?: string | null
-          department?: string
-          floor?: string
+          created_at?: string
           id?: string
-          name?: string
-          notes?: string | null
-          quantity?: number
-          room?: string
-          room_code?: string | null
-          room_name?: string | null
-          unit?: string | null
-          updated_at?: string | null
+          updated_at?: string
+          БЛОК?: string
+          "Ед. изм."?: string | null
+          "Код оборудования"?: string | null
+          "Код помещения"?: string | null
+          "КОД ПОМЕЩЕНИЯ"?: string
+          "Кол-во"?: string | null
+          "Наименование оборудования"?: string | null
+          "Наименование помещения"?: string | null
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"?: string
+          ОТДЕЛЕНИЕ?: string
+          "Площадь (м2)"?: number | null
+          Примечания?: string | null
+          ЭТАЖ?: number
         }
         Relationships: []
       }
@@ -98,36 +101,36 @@ export type Database = {
         }
         Relationships: []
       }
-      turar_equipment: {
+      turar_medical: {
         Row: {
-          code: string
-          created_at: string | null
-          department: string
+          created_at: string
           id: string
-          name: string
-          quantity: number
-          room: string
-          updated_at: string | null
+          updated_at: string
+          "Код оборудования": string
+          "Кол-во": number
+          Наименование: string
+          "Отделение/Блок": string
+          "Помещение/Кабинет": string
         }
         Insert: {
-          code: string
-          created_at?: string | null
-          department: string
+          created_at?: string
           id?: string
-          name: string
-          quantity?: number
-          room: string
-          updated_at?: string | null
+          updated_at?: string
+          "Код оборудования": string
+          "Кол-во": number
+          Наименование: string
+          "Отделение/Блок": string
+          "Помещение/Кабинет": string
         }
         Update: {
-          code?: string
-          created_at?: string | null
-          department?: string
+          created_at?: string
           id?: string
-          name?: string
-          quantity?: number
-          room?: string
-          updated_at?: string | null
+          updated_at?: string
+          "Код оборудования"?: string
+          "Кол-во"?: number
+          Наименование?: string
+          "Отделение/Блок"?: string
+          "Помещение/Кабинет"?: string
         }
         Relationships: []
       }

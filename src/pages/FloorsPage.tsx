@@ -6,7 +6,7 @@ import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
-import { useProjectorDataByFloor } from '@/hooks/useProjectorData';
+import { useFloorsData } from '@/hooks/useFloorsData';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -59,56 +59,74 @@ interface Floor {
   };
 }
 
-// Process projector data from Supabase to group by floors -> departments -> rooms
-const processProjectorData = (data: Record<string, Record<string, any[]>>): Floor[] => {
+// Process floor data to group by floors -> departments -> rooms (with block markers)
+const processFloorData = (data: FloorData[]): Floor[] => {
+  const floorsMap = new Map<string, Map<string, Department>>();
+
+  data.forEach(item => {
+    const floorNumber = String(item["ЭТАЖ"]);
+    const blockName = item["БЛОК"];
+    const departmentName = item["ОТДЕЛЕНИЕ"];
+    const roomArea = parseFloat(String(item["Площадь (м2)"] || 0).replace(',', '.')) || 0;
+    
+    if (!floorsMap.has(floorNumber)) {
+      floorsMap.set(floorNumber, new Map());
+    }
+    
+    const floor = floorsMap.get(floorNumber)!;
+    
+    if (!floor.has(departmentName)) {
+      floor.set(departmentName, {
+        name: departmentName,
+        block: blockName,
+        rooms: [],
+        equipmentCount: 0,
+        totalArea: 0
+      });
+    }
+
+    const department = floor.get(departmentName)!;
+    let room = department.rooms.find(r => r.code === item["КОД ПОМЕЩЕНИЯ"]);
+    
+    if (!room) {
+      room = {
+        code: item["КОД ПОМЕЩЕНИЯ"],
+        name: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+        area: roomArea,
+        equipment: []
+      };
+      department.rooms.push(room);
+    } else {
+      if (roomArea > 0 && (!room.area || room.area === 0)) {
+        room.area = roomArea;
+      }
+    }
+
+    if (item["Наименование оборудования"]) {
+      room.equipment.push({
+        code: item["Код оборудования"],
+        name: item["Наименование оборудования"],
+        unit: item["Ед. изм."],
+        quantity: item["Кол-во"],
+        notes: item["Примечания"]
+      });
+      department.equipmentCount++;
+    }
+  });
+
+  // Convert to Floor[] structure and recalculate areas
   const floors: Floor[] = [];
   
-  Object.entries(data).forEach(([floorNumber, departmentsData]) => {
-    const departments: Department[] = [];
+  floorsMap.forEach((departmentsMap, floorNumber) => {
+    const departments = Array.from(departmentsMap.values());
     
-    Object.entries(departmentsData).forEach(([deptName, equipmentItems]) => {
-      const roomsMap = new Map<string, Room>();
-      let equipmentCount = 0;
-      
-      equipmentItems.forEach(item => {
-        const roomKey = item.room_code || item.room;
-        const roomName = item.room_name || item.room;
-        
-        if (!roomsMap.has(roomKey)) {
-          roomsMap.set(roomKey, {
-            code: roomKey,
-            name: roomName,
-            area: item.area_m2 || 0,
-            equipment: []
-          });
-        }
-        
-        const room = roomsMap.get(roomKey)!;
-        room.equipment.push({
-          code: item.code,
-          name: item.name,
-          unit: item.unit,
-          quantity: item.quantity,
-          notes: item.notes
-        });
-        equipmentCount++;
-      });
-      
-      const rooms = Array.from(roomsMap.values());
-      const totalArea = rooms.reduce((sum, room) => sum + (room.area || 0), 0);
-      
-      departments.push({
-        name: deptName,
-        block: equipmentItems[0]?.block || '',
-        rooms,
-        equipmentCount,
-        totalArea
-      });
+    departments.forEach(dept => {
+      dept.totalArea = dept.rooms.reduce((sum, room) => sum + (room.area || 0), 0);
     });
     
     const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
     const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
-    const totalArea = departments.reduce((sum, dept) => sum + dept.totalArea, 0);
+    const totalArea = departments.reduce((sum, dept) => sum + (dept.totalArea || 0), 0);
     
     floors.push({
       number: floorNumber,
@@ -127,7 +145,7 @@ const processProjectorData = (data: Record<string, Record<string, any[]>>): Floo
 
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
-  const { data: projectorDataByFloor, isLoading, error } = useProjectorDataByFloor();
+  const { data: allData, isLoading, error } = useFloorsData();
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -136,11 +154,11 @@ export default function FloorsPage() {
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (projectorDataByFloor) {
-      const processedFloors = processProjectorData(projectorDataByFloor);
+    if (allData) {
+      const processedFloors = processFloorData(allData);
       setFloors(processedFloors);
     }
-  }, [projectorDataByFloor]);
+  }, [allData]);
 
   useEffect(() => {
     // Handle search params from URL

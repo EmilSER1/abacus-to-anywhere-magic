@@ -46,12 +46,12 @@ Deno.serve(async (req) => {
     if (action === 'sync-projector-data') {
       console.log('Starting projector data sync...')
       
-      // Fetch JSON data from public URL
-      const response = await fetch(`${supabaseUrl.replace('//', '//').replace('supabase.co', 'supabase.co')}/storage/v1/object/public/combined_floors.json`)
+      // Fetch JSON data from public URL  
+      const response = await fetch(`${supabaseUrl}/storage/v1/object/public/combined_floors.json`)
       
       if (!response.ok) {
-        // Try alternative URL
-        const altResponse = await fetch(`${supabaseUrl}/storage/v1/object/public/data/combined_floors.json`)
+        // Try direct fetch from the deployed app
+        const altResponse = await fetch('https://yfmxvrpiqmwrcnkeskqc.supabase.co/storage/v1/object/public/combined_floors.json')
         if (!altResponse.ok) {
           throw new Error(`Failed to fetch projector data: ${response.status}`)
         }
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
       // Clear existing data
       const { error: deleteError } = await supabase
-        .from('projector_equipment')
+        .from('projector_floors')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
 
@@ -73,38 +73,37 @@ Deno.serve(async (req) => {
         throw deleteError
       }
 
-      // Transform and insert data in batches
+      // Insert data directly without transformation (keeping Russian field names)
       const batchSize = 1000
       let inserted = 0
 
       for (let i = 0; i < jsonData.length; i += batchSize) {
         const batch = jsonData.slice(i, i + batchSize)
         
-        const transformedBatch = batch.map(item => ({
-          code: item["Код оборудования"] || '',
-          name: item["Наименование оборудования"] || '',
-          quantity: typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(String(item["Кол-во"])) || 0,
-          department: item["ОТДЕЛЕНИЕ"],
-          room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-          floor: String(item["ЭТАЖ"]),
-          block: item["БЛОК"],
-          room_code: item["КОД ПОМЕЩЕНИЯ"],
-          room_name: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-          area_m2: item["Площадь (м2)"] || 0,
-          unit: item["Ед. изм."],
-          notes: item["Примечания"]
-        }))
-
         const { error: insertError } = await supabase
-          .from('projector_equipment')
-          .insert(transformedBatch)
+          .from('projector_floors')
+          .insert(batch.map(item => ({
+            "ЭТАЖ": item["ЭТАЖ"],
+            "БЛОК": item["БЛОК"],
+            "ОТДЕЛЕНИЕ": item["ОТДЕЛЕНИЕ"],
+            "КОД ПОМЕЩЕНИЯ": item["КОД ПОМЕЩЕНИЯ"],
+            "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+            "Код помещения": item["Код помещения"],
+            "Наименование помещения": item["Наименование помещения"],
+            "Площадь (м2)": item["Площадь (м2)"],
+            "Код оборудования": item["Код оборудования"],
+            "Наименование оборудования": item["Наименование оборудования"],
+            "Ед. изм.": item["Ед. изм."],
+            "Кол-во": item["Кол-во"],
+            "Примечания": item["Примечания"]
+          })))
 
         if (insertError) {
           console.error(`Error inserting projector batch ${i}:`, insertError)
           throw insertError
         }
 
-        inserted += transformedBatch.length
+        inserted += batch.length
         console.log(`Inserted ${inserted}/${jsonData.length} projector records`)
       }
 
@@ -125,8 +124,8 @@ Deno.serve(async (req) => {
       const response = await fetch(`${supabaseUrl}/storage/v1/object/public/turar_full.json`)
       
       if (!response.ok) {
-        // Try alternative URL
-        const altResponse = await fetch(`${supabaseUrl}/storage/v1/object/public/data/turar_full.json`)
+        // Try direct fetch from the deployed app
+        const altResponse = await fetch('https://yfmxvrpiqmwrcnkeskqc.supabase.co/storage/v1/object/public/turar_full.json')
         if (!altResponse.ok) {
           throw new Error(`Failed to fetch turar data: ${response.status}`)
         }
@@ -139,7 +138,7 @@ Deno.serve(async (req) => {
 
       // Clear existing data
       const { error: deleteError } = await supabase
-        .from('turar_equipment')
+        .from('turar_medical')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
 
@@ -148,31 +147,29 @@ Deno.serve(async (req) => {
         throw deleteError
       }
 
-      // Transform and insert data in batches
+      // Insert data directly without transformation (keeping Russian field names)
       const batchSize = 1000
       let inserted = 0
 
       for (let i = 0; i < jsonData.length; i += batchSize) {
         const batch = jsonData.slice(i, i + batchSize)
         
-        const transformedBatch = batch.map(item => ({
-          code: item["Код оборудования"],
-          name: item["Наименование"],
-          quantity: item["Кол-во"],
-          department: item["Отделение/Блок"],
-          room: item["Помещение/Кабинет"]
-        }))
-
         const { error: insertError } = await supabase
-          .from('turar_equipment')
-          .insert(transformedBatch)
+          .from('turar_medical')
+          .insert(batch.map(item => ({
+            "Отделение/Блок": item["Отделение/Блок"],
+            "Помещение/Кабинет": item["Помещение/Кабинет"],
+            "Код оборудования": item["Код оборудования"],
+            "Наименование": item["Наименование"],
+            "Кол-во": item["Кол-во"]
+          })))
 
         if (insertError) {
           console.error(`Error inserting turar batch ${i}:`, insertError)
           throw insertError
         }
 
-        inserted += transformedBatch.length
+        inserted += batch.length
         console.log(`Inserted ${inserted}/${jsonData.length} turar records`)
       }
 
