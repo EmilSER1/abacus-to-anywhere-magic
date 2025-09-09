@@ -180,9 +180,6 @@ const SearchPage: React.FC = () => {
 
       setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
       setFloorResults(uniqueFloorResults.slice(0, 50)); // Limit results
-
-      setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
-      setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
     } catch (error) {
       console.error('Error searching data:', error);
     } finally {
@@ -201,19 +198,11 @@ const SearchPage: React.FC = () => {
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
       if (result.source === 'turar') {
-        // Always pass the original search term and location info for proper highlighting
-        const searchParam = result.searchType === 'equipment' ? result.name :
-                           result.searchType === 'code' ? result.code :
-                           result.searchType === 'department' ? result.department :
-                           result.room;
-        navigate(`/turar?search=${encodeURIComponent(searchParam)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        // Always pass the search term that was used to find this result for proper highlighting
+        navigate(`/turar?search=${encodeURIComponent(searchTerm)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       } else {
-        // For floors, use the same logic
-        const searchParam = result.searchType === 'equipment' ? result.name :
-                           result.searchType === 'code' ? result.code :
-                           result.searchType === 'department' ? result.department :
-                           result.room;
-        navigate(`/floors?search=${encodeURIComponent(searchParam)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
+        // For floors, use the same logic  
+        navigate(`/floors?search=${encodeURIComponent(searchTerm)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
       }
     };
 
