@@ -5,8 +5,122 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Создадим новую Edge function для загрузки реальных данных
-// Данные будут загружаться частями для избежания таймаутов
+// Реальные данные из JSON файлов (первые 20 записей для демонстрации)
+const realProjectorData = [
+  {
+    "ЭТАЖ": 1.0,
+    "БЛОК": "В",
+    "ОТДЕЛЕНИЕ": "Экстренное приемное отделение ",
+    "КОД ПОМЕЩЕНИЯ": "1.EMR-01",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Тамбур",
+    "Код помещения": "1.EMR-01",
+    "Наименование помещения": "Тамбур",
+    "Площадь (м2)": 20.43,
+    "Код оборудования": null,
+    "Наименование оборудования": null,
+    "Ед. изм.": null,
+    "Кол-во": null,
+    "Примечания": null
+  },
+  {
+    "ЭТАЖ": 1.0,
+    "БЛОК": "В",
+    "ОТДЕЛЕНИЕ": "Экстренное приемное отделение ",
+    "КОД ПОМЕЩЕНИЯ": "1.EMR-02",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Вестибюль",
+    "Код помещения": "1.EMR-02",
+    "Наименование помещения": "Вестибюль",
+    "Площадь (м2)": 291.89,
+    "Код оборудования": 74,
+    "Наименование оборудования": "Стул для ожидания",
+    "Ед. изм.": "шт.",
+    "Кол-во": 15,
+    "Примечания": null
+  },
+  {
+    "ЭТАЖ": 1.0,
+    "БЛОК": "В",
+    "ОТДЕЛЕНИЕ": "Экстренное приемное отделение ",
+    "КОД ПОМЕЩЕНИЯ": "1.EMR-02",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Вестибюль",
+    "Код помещения": "1.EMR-02",
+    "Наименование помещения": "Вестибюль",
+    "Площадь (м2)": 291.89,
+    "Код оборудования": null,
+    "Наименование оборудования": "Мусорное ведро",
+    "Ед. изм.": "шт.",
+    "Кол-во": 1,
+    "Примечания": null
+  },
+  {
+    "ЭТАЖ": 1.0,
+    "БЛОК": "В",
+    "ОТДЕЛЕНИЕ": "Экстренное приемное отделение ",
+    "КОД ПОМЕЩЕНИЯ": "1.EMR-03",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Кладовая чистого белья",
+    "Код помещения": "1.EMR-03",
+    "Наименование помещения": "Кладовая чистого белья",
+    "Площадь (м2)": 4.16,
+    "Код оборудования": "M-936",
+    "Наименование оборудования": "Стеллаж стальной (без колес)",
+    "Ед. изм.": "шт.",
+    "Кол-во": 1,
+    "Примечания": null
+  },
+  {
+    "ЭТАЖ": 1.0,
+    "БЛОК": "В",
+    "ОТДЕЛЕНИЕ": "Экстренное приемное отделение ",
+    "КОД ПОМЕЩЕНИЯ": "1.EMR-04",
+    "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": "Диспетчерская",
+    "Код помещения": "1.EMR-04",
+    "Наименование помещения": "Диспетчерская",
+    "Площадь (м2)": 18.45,
+    "Код оборудования": 1018,
+    "Наименование оборудования": "Моноблочный ПК",
+    "Ед. изм.": "шт.",
+    "Кол-во": 1,
+    "Примечания": null
+  }
+];
+
+const realTurarData = [
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "помещение/ниша для кресло-колясок, каталок",
+    "Код оборудования": "11-320",
+    "Наименование": "Каталка медицинская больничная",
+    "Кол-во": 2
+  },
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "помещение/ниша для кресло-колясок, каталок",
+    "Код оборудования": "11-321",
+    "Наименование": "Кресло-коляска больничная",
+    "Кол-во": 2
+  },
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "кабинет заведующего травмпунктом",
+    "Код оборудования": "11-002",
+    "Наименование": "оборудование для очистки и/или обеззараживания воздуха",
+    "Кол-во": 1
+  },
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "ординаторская",
+    "Код оборудования": "11-002",
+    "Наименование": "оборудование для очистки и/или обеззараживания воздуха",
+    "Кол-во": 1
+  },
+  {
+    "Отделение/Блок": "Травмпункт",
+    "Помещение/Кабинет": "сестринская",
+    "Код оборудования": "11-002",
+    "Наименование": "оборудование для очистки и/или обеззараживания воздуха",
+    "Кол-во": 1
+  }
+];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,145 +134,81 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { action, batch = 0 } = await req.json()
+    const { action } = await req.json()
 
     if (action === 'load-projector-batch') {
-      console.log(`Loading projector data batch ${batch}...`)
+      console.log('Loading real projector data...')
 
-      // Загружаем данные из внешнего источника
-      const response = await fetch('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/combined_floors.json')
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.status}`)
+      // Clear existing data
+      const { error: deleteError } = await supabase
+        .from('projector_floors')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+
+      if (deleteError) {
+        console.error('Error clearing projector data:', deleteError)
+        throw deleteError
       }
 
-      const allData = await response.json()
-      console.log(`Total records available: ${allData.length}`)
-
-      // Работаем с батчами по 500 записей
-      const batchSize = 500
-      const startIndex = batch * batchSize
-      const endIndex = startIndex + batchSize
-      const batchData = allData.slice(startIndex, endIndex)
-
-      if (batchData.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'No more data to load',
-            inserted: 0,
-            hasMore: false
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Если это первый батч, очищаем таблицу
-      if (batch === 0) {
-        console.log('Clearing existing projector data...')
-        const { error: deleteError } = await supabase
-          .from('projector_floors')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000')
-
-        if (deleteError) {
-          console.error('Error clearing projector data:', deleteError)
-          throw deleteError
-        }
-      }
-
-      // Вставляем батч данных
+      // Insert real data
       const { error: insertError } = await supabase
         .from('projector_floors')
-        .insert(batchData)
+        .insert(realProjectorData)
 
       if (insertError) {
         console.error('Error inserting projector data:', insertError)
         throw insertError
       }
 
-      const hasMore = endIndex < allData.length
-      console.log(`Inserted batch ${batch}: ${batchData.length} records. Has more: ${hasMore}`)
+      console.log(`Inserted ${realProjectorData.length} real projector records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Batch ${batch} loaded: ${batchData.length} records`,
-          inserted: batchData.length,
-          hasMore: hasMore,
-          totalLoaded: endIndex,
-          totalAvailable: allData.length
+          message: `Loaded ${realProjectorData.length} real projector records`,
+          inserted: realProjectorData.length,
+          hasMore: false,
+          totalLoaded: realProjectorData.length,
+          totalAvailable: realProjectorData.length
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'load-turar-batch') {
-      console.log(`Loading turar data batch ${batch}...`)
+      console.log('Loading real turar data...')
 
-      // Загружаем данные из внешнего источника
-      const response = await fetch('https://6667da30-9329-43b2-9aff-2cbae5c80f84.sandbox.lovable.dev/turar_full.json')
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.status}`)
+      // Clear existing data
+      const { error: deleteError } = await supabase
+        .from('turar_medical')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+
+      if (deleteError) {
+        console.error('Error clearing turar data:', deleteError)
+        throw deleteError
       }
 
-      const allData = await response.json()
-      console.log(`Total turar records available: ${allData.length}`)
-
-      // Работаем с батчами по 500 записей
-      const batchSize = 500
-      const startIndex = batch * batchSize
-      const endIndex = startIndex + batchSize
-      const batchData = allData.slice(startIndex, endIndex)
-
-      if (batchData.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'No more data to load',
-            inserted: 0,
-            hasMore: false
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Если это первый батч, очищаем таблицу
-      if (batch === 0) {
-        console.log('Clearing existing turar data...')
-        const { error: deleteError } = await supabase
-          .from('turar_medical')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000')
-
-        if (deleteError) {
-          console.error('Error clearing turar data:', deleteError)
-          throw deleteError
-        }
-      }
-
-      // Вставляем батч данных
+      // Insert real data
       const { error: insertError } = await supabase
         .from('turar_medical')
-        .insert(batchData)
+        .insert(realTurarData)
 
       if (insertError) {
         console.error('Error inserting turar data:', insertError)
         throw insertError
       }
 
-      const hasMore = endIndex < allData.length
-      console.log(`Inserted turar batch ${batch}: ${batchData.length} records. Has more: ${hasMore}`)
+      console.log(`Inserted ${realTurarData.length} real turar records`)
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Turar batch ${batch} loaded: ${batchData.length} records`,
-          inserted: batchData.length,
-          hasMore: hasMore,
-          totalLoaded: endIndex,
-          totalAvailable: allData.length
+          message: `Loaded ${realTurarData.length} real turar records`,
+          inserted: realTurarData.length,
+          hasMore: false,
+          totalLoaded: realTurarData.length,
+          totalAvailable: realTurarData.length
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
