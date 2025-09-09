@@ -6,6 +6,7 @@ import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 // Interface definitions
 interface FloorData {
@@ -247,15 +248,53 @@ export default function FloorsPage() {
   }, [searchParams, floors]);
 
   const exportData = () => {
-    const dataStr = JSON.stringify(floors, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    // Prepare data for Excel export
+    const excelData: any[] = [];
     
-    const exportFileDefaultName = 'floors_data.json';
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    floors.forEach(floor => {
+      floor.departments.forEach(department => {
+        department.rooms.forEach(room => {
+          if (room.equipment.length > 0) {
+            room.equipment.forEach(equipment => {
+              excelData.push({
+                'Этаж': floor.number,
+                'Блок': department.block,
+                'Отделение': department.name,
+                'Код помещения': room.code,
+                'Наименование помещения': room.name,
+                'Площадь (м2)': room.area,
+                'Код оборудования': equipment.code || '',
+                'Наименование оборудования': equipment.name || '',
+                'Единица измерения': equipment.unit || '',
+                'Количество': equipment.quantity || '',
+                'Примечания': equipment.notes || ''
+              });
+            });
+          } else {
+            // Add room without equipment
+            excelData.push({
+              'Этаж': floor.number,
+              'Блок': department.block,
+              'Отделение': department.name,
+              'Код помещения': room.code,
+              'Наименование помещения': room.name,
+              'Площадь (м2)': room.area,
+              'Код оборудования': '',
+              'Наименование оборудования': '',
+              'Единица измерения': '',
+              'Количество': '',
+              'Примечания': ''
+            });
+          }
+        });
+      });
+    });
+
+    // Create and download Excel file
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Проектировщики');
+    XLSX.writeFile(workbook, 'floors_data.xlsx');
   };
 
   // Calculate total statistics
