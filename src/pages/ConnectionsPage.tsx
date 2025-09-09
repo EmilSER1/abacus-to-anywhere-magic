@@ -249,83 +249,70 @@ export default function ConnectionsPage() {
             </CardContent>
           </Card>
 
-          {/* Two Panel Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Турар Panel (Right) */}
-            <Card className="medical-card">
-              <CardHeader>
-                <CardTitle className="text-xl text-primary">Отделения Турар</CardTitle>
-                <CardDescription>Источник данных</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {filteredMappings.map((mapping) => (
-                  <div
-                    key={mapping.id}
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                      selectedMapping === mapping.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                    onClick={() => setSelectedMapping(selectedMapping === mapping.id ? null : mapping.id)}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-foreground mb-2">
-                          {mapping.turarDepartment}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(mapping.status)}>
-                            {getStatusLabel(mapping.status)}
-                          </Badge>
-                          <Badge variant="outline">
-                            {mapping.projectorsDepartments.length} соответствий
-                          </Badge>
-                        </div>
+          {/* Mappings Display */}
+          <div className="space-y-6">
+            {filteredMappings.map((mapping) => (
+              <Card key={mapping.id} className="medical-card">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Турар Отделение */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Database className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-primary">Отделение Турар</h3>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-primary mt-1" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Проектировщики Panel (Left) */}
-            <Card className="medical-card">
-              <CardHeader>
-                <CardTitle className="text-xl text-success">Отделения Проектировщиков</CardTitle>
-                <CardDescription>Целевые отделения</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {filteredMappings.map((mapping) => (
-                  <div
-                    key={`proj-${mapping.id}`}
-                    className={`p-4 rounded-lg border transition-all ${
-                      selectedMapping === mapping.id 
-                        ? 'border-success bg-success/5' 
-                        : 'border-border'
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ArrowRight className="w-4 h-4" />
-                        Соответствует: {mapping.turarDepartment}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {mapping.projectorsDepartments.map((dept, index) => (
-                          <div
-                            key={index}
-                            className="p-3 bg-background rounded border border-border"
-                          >
-                            <div className="font-medium text-foreground">{dept}</div>
+                      <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-foreground">
+                              {mapping.turarDepartment}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getStatusColor(mapping.status)}>
+                                {getStatusLabel(mapping.status)}
+                              </Badge>
+                              <Badge variant="outline">
+                                ID: {mapping.id}
+                              </Badge>
+                            </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Стрелка соединения */}
+                    <div className="hidden lg:flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <ArrowRight className="w-8 h-8 text-primary" />
+                        <Badge variant="outline" className="text-xs">
+                          {mapping.projectorsDepartments.length} отделений
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Отделения Проектировщиков */}
+                    <div className="space-y-4 lg:col-start-2">
+                      <div className="flex items-center gap-2 mb-4">
+                        <LinkIcon className="w-5 h-5 text-success" />
+                        <h3 className="text-lg font-semibold text-success">Отделения Проектировщиков</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {mapping.projectorsDepartments.map((dept, index) => (
+                          <Card key={index} className="border-success/20 bg-success/5">
+                            <CardContent className="p-4">
+                              <div className="font-medium text-foreground">{dept}</div>
+                              <Badge variant="outline" className="mt-2 text-xs">
+                                #{index + 1}
+                              </Badge>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Unmapped Departments */}
