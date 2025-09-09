@@ -9,22 +9,31 @@ import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Navigation } from '@/components/Navigation';
 import { Building2, Users, MapPin, Download, Search, Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTurarData } from '@/hooks/useTurarData';
 import * as XLSX from 'xlsx';
+
+// Define the interface for Turar equipment data
+interface TurarEquipment {
+  "Отделение/Блок": string;
+  "Помещение/Кабинет": string;
+  "Код оборудования": string;
+  "Наименование": string;
+  "Кол-во": number;
+}
 
 // Define the interface for a processed department
 interface TurarDepartment {
   name: string;
   rooms: {
     name: string;
-    equipment: any[];
+    equipment: TurarEquipment[];
   }[];
 }
+
+let turarData: TurarEquipment[] = [];
 
 const TurarPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { data: turarData, isLoading, error } = useTurarData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -33,71 +42,81 @@ const TurarPage: React.FC = () => {
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (turarData) {
-      // Process data to group by departments and rooms
-      const processedData = processTurarData(turarData);
-      setDepartments(processedData);
+    const loadTurarData = async () => {
+      try {
+        const response = await fetch(`/turar_full.json?t=${Date.now()}`);
+        const data: TurarEquipment[] = await response.json();
+        turarData = data;
+        
+        // Process data to group by departments and rooms
+        const processedData = processTurarData(data);
+        setDepartments(processedData);
 
-      // Handle search params from URL
-      const urlSearchTerm = searchParams.get('search');
-      const urlDepartment = searchParams.get('department');
-      const urlRoom = searchParams.get('room');
-      
-      console.log('TurarPage URL params:', { urlSearchTerm, urlDepartment, urlRoom });
-      
-      if (urlSearchTerm && urlDepartment) {
-        setSearchTerm(urlSearchTerm);
-        setHighlightTimeout(false); // Reset highlight
+        // Handle search params from URL
+        const urlSearchTerm = searchParams.get('search');
+        const urlDepartment = searchParams.get('department');
+        const urlRoom = searchParams.get('room');
         
-        // Auto-expand relevant sections based on original data, not filtered
-        const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
-        console.log('Found department index:', deptIndex, 'for department:', urlDepartment);
-        console.log('Available departments:', processedData.map(d => d.name));
+        console.log('TurarPage URL params:', { urlSearchTerm, urlDepartment, urlRoom });
         
-        if (deptIndex !== -1) {
-          setExpandedDepartments([`dept-${deptIndex}`]);
-          console.log('Expanded departments:', [`dept-${deptIndex}`]);
+        if (urlSearchTerm && urlDepartment) {
+          setSearchTerm(urlSearchTerm);
+          setHighlightTimeout(false); // Reset highlight
           
-          if (urlRoom) {
-            const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
-            console.log('Found room index:', roomIndex, 'for room:', urlRoom);
-            console.log('Available rooms:', processedData[deptIndex]?.rooms.map(r => r.name));
-            if (roomIndex !== -1) {
-              setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
-              console.log('Expanded rooms:', [`room-${deptIndex}-${roomIndex}`]);
-              
-              // Set target equipment for scrolling
-              const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
-              setTargetEquipmentId(targetId);
-              
-              // Scroll to element after animations complete
-              setTimeout(() => {
-                const element = document.getElementById(targetId);
-                if (element) {
-                  element.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center',
-                    inline: 'nearest'
-                  });
-                }
-              }, 800);
+          // Auto-expand relevant sections based on original data, not filtered
+          const deptIndex = processedData.findIndex(dept => dept.name === urlDepartment);
+          console.log('Found department index:', deptIndex, 'for department:', urlDepartment);
+          console.log('Available departments:', processedData.map(d => d.name));
+          
+          if (deptIndex !== -1) {
+            setExpandedDepartments([`dept-${deptIndex}`]);
+            console.log('Expanded departments:', [`dept-${deptIndex}`]);
+            
+            if (urlRoom) {
+              const roomIndex = processedData[deptIndex]?.rooms.findIndex(room => room.name === urlRoom);
+              console.log('Found room index:', roomIndex, 'for room:', urlRoom);
+              console.log('Available rooms:', processedData[deptIndex]?.rooms.map(r => r.name));
+              if (roomIndex !== -1) {
+                setExpandedRooms([`room-${deptIndex}-${roomIndex}`]);
+                console.log('Expanded rooms:', [`room-${deptIndex}-${roomIndex}`]);
+                
+                // Set target equipment for scrolling
+                const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
+                setTargetEquipmentId(targetId);
+                
+                // Scroll to element after animations complete
+                setTimeout(() => {
+                  const element = document.getElementById(targetId);
+                  if (element) {
+                    element.scrollIntoView({ 
+                      behavior: 'smooth', 
+                      block: 'center',
+                      inline: 'nearest'
+                    });
+                  }
+                }, 800);
+              }
             }
           }
+          
+          // Auto-remove highlight after 3 seconds
+          setTimeout(() => setHighlightTimeout(true), 3000);
         }
-        
-        // Auto-remove highlight after 3 seconds
-        setTimeout(() => setHighlightTimeout(true), 3000);
+      } catch (error) {
+        console.error('Error loading turar data:', error);
       }
-    }
-  }, [turarData, searchParams]);
+    };
 
-  const processTurarData = (data: any[]): TurarDepartment[] => {
-    const departmentMap = new Map<string, Map<string, any[]>>();
+    loadTurarData();
+  }, [searchParams]);
+
+  const processTurarData = (data: TurarEquipment[]): TurarDepartment[] => {
+    const departmentMap = new Map<string, Map<string, TurarEquipment[]>>();
 
     // Group equipment by department and room
     data.forEach(item => {
-      const deptName = item.department;
-      const roomName = item.room;
+      const deptName = item["Отделение/Блок"];
+      const roomName = item["Помещение/Кабинет"];
 
       if (!departmentMap.has(deptName)) {
         departmentMap.set(deptName, new Map());
@@ -127,7 +146,7 @@ const TurarPage: React.FC = () => {
   const totalEquipment = departments.reduce((acc, dept) => 
     acc + dept.rooms.reduce((roomAcc, room) => 
       roomAcc + room.equipment.reduce((eqAcc, eq) => {
-        const count = typeof eq.quantity === 'number' ? eq.quantity : parseInt(eq.quantity) || 0;
+        const count = typeof eq["Кол-во"] === 'number' ? eq["Кол-во"] : parseInt(eq["Кол-во"]) || 0;
         return eqAcc + count;
       }, 0), 0), 0);
   const totalEquipmentTypes = departments.reduce((acc, dept) => 
@@ -139,21 +158,19 @@ const TurarPage: React.FC = () => {
     dept.rooms.some(room => 
       room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room.equipment.some(eq => 
-        eq.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        eq.code?.toLowerCase().includes(searchTerm.toLowerCase())
+        eq["Наименование"].toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq["Код оборудования"].toLowerCase().includes(searchTerm.toLowerCase())
       )
     )
   );
 
   const exportData = () => {
-    if (!turarData) return;
-    
     const exportData = turarData.map(item => ({
-      'Отделение/Блок': item.department,
-      'Помещение/Кабинет': item.room,
-      'Код оборудования': item.code,
-      'Наименование': item.name,
-      'Количество': item.quantity
+      'Отделение/Блок': item["Отделение/Блок"],
+      'Помещение/Кабинет': item["Помещение/Кабинет"],
+      'Код оборудования': item["Код оборудования"],
+      'Наименование': item["Наименование"],
+      'Количество': item["Кол-во"]
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -161,37 +178,6 @@ const TurarPage: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Турар');
     XLSX.writeFile(workbook, 'turar_equipment.xlsx');
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Загрузка данных турар...</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center text-red-500">
-              <p>Ошибка загрузки данных: {error.message}</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -331,8 +317,8 @@ const TurarPage: React.FC = () => {
                                        const isHighlighted = urlSearchTerm && 
                                          urlDepartment === department.name && 
                                          urlRoom === room.name && 
-                                         (equipment.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
-                                          equipment.code?.toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
+                                         (equipment["Наименование"].toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
+                                          equipment["Код оборудования"].toLowerCase().includes(urlSearchTerm.toLowerCase())) &&
                                          !highlightTimeout;
 
                                       const equipmentId = isHighlighted ? 
@@ -358,10 +344,10 @@ const TurarPage: React.FC = () => {
                                                  : ''
                                               }`}>
                                                 {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
-                                                {equipment.name}
+                                                {equipment["Наименование"]}
                                               </div>
                                               <div className="text-sm text-muted-foreground">
-                                                Код: {equipment.code}
+                                                Код: {equipment["Код оборудования"]}
                                               </div>
                                             </div>
                                           </div>
@@ -369,7 +355,7 @@ const TurarPage: React.FC = () => {
                                             variant={isHighlighted ? "default" : "secondary"} 
                                             className={`font-medium ${isHighlighted ? 'bg-yellow-500 text-yellow-900' : ''}`}
                                           >
-                                            {equipment.quantity} шт.
+                                            {equipment["Кол-во"]} шт.
                                          </Badge>
                                        </div>
                                     );
