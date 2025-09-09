@@ -240,7 +240,7 @@ export default function ConnectionsPage() {
   // Загрузка связей из Supabase
   const loadConnectionsFromSupabase = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('room_connections')
         .select('*')
       
@@ -250,7 +250,7 @@ export default function ConnectionsPage() {
       }
       
       if (data) {
-        const connections = data.map(item => ({
+        const connections = data.map((item: any) => ({
           id: item.id,
           turarDepartment: item.turar_department,
           turarRoom: item.turar_room,
@@ -267,7 +267,7 @@ export default function ConnectionsPage() {
   // Сохранение связи в Supabase
   const saveConnectionToSupabase = async (connection: RoomConnection) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('room_connections')
         .insert({
           turar_department: connection.turarDepartment,
@@ -305,7 +305,7 @@ export default function ConnectionsPage() {
   // Удаление связи из Supabase
   const removeConnectionFromSupabase = async (connection: RoomConnection) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('room_connections')
         .delete()
         .eq('turar_department', connection.turarDepartment)

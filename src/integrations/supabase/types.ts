@@ -14,7 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      projector_equipment: {
+        Row: {
+          area_m2: number | null
+          block: string | null
+          code: string
+          created_at: string | null
+          department: string
+          floor: string
+          id: string
+          name: string
+          notes: string | null
+          quantity: number
+          room: string
+          room_code: string | null
+          room_name: string | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area_m2?: number | null
+          block?: string | null
+          code: string
+          created_at?: string | null
+          department: string
+          floor: string
+          id?: string
+          name: string
+          notes?: string | null
+          quantity?: number
+          room: string
+          room_code?: string | null
+          room_name?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area_m2?: number | null
+          block?: string | null
+          code?: string
+          created_at?: string | null
+          department?: string
+          floor?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          quantity?: number
+          room?: string
+          room_code?: string | null
+          room_name?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      room_connections: {
+        Row: {
+          created_at: string
+          id: string
+          projector_department: string
+          projector_room: string
+          turar_department: string
+          turar_room: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          projector_department: string
+          projector_room: string
+          turar_department: string
+          turar_room: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          projector_department?: string
+          projector_room?: string
+          turar_department?: string
+          turar_room?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      turar_equipment: {
+        Row: {
+          code: string
+          created_at: string | null
+          department: string
+          id: string
+          name: string
+          quantity: number
+          room: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          department: string
+          id?: string
+          name: string
+          quantity?: number
+          room: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          department?: string
+          id?: string
+          name?: string
+          quantity?: number
+          room?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
