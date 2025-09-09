@@ -24,19 +24,33 @@ export const useFloorsData = () => {
   return useQuery({
     queryKey: ["projector-floors"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("projector_floors")
-        .select("*")
-        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"')
-        .limit(100000); // Максимально возможный лимит
+      let allData: FloorData[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      console.log(`Loaded ${data?.length || 0} projector records`);
+      while (hasMore) {
+        const { data, error } = await (supabase as any)
+          .from("projector_floors")
+          .select("*")
+          .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"')
+          .range(from, from + limit - 1);
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          from += limit;
+          hasMore = data.length === limit;
+        } else {
+          hasMore = false;
+        }
       }
 
-      return data as FloorData[];
+      console.log(`Loaded ${allData.length} total projector records`);
+      return allData as FloorData[];
     },
   });
 };
