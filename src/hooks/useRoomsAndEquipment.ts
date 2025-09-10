@@ -32,7 +32,7 @@ export interface TurarRoomData {
 }
 
 export const useProjectorRoomsAndEquipment = () => {
-  return useQuery({
+  return useQuery<ProjectorRoomData[]>({
     queryKey: ["projector-rooms-equipment"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -47,11 +47,13 @@ export const useProjectorRoomsAndEquipment = () => {
       console.log(`📊 Загружено ${data?.length || 0} записей проектировщиков с кабинетами и оборудованием`);
       return (data || []) as ProjectorRoomData[];
     },
+    staleTime: 0, // Данные всегда считаются устаревшими
+    gcTime: 0, // Не кешировать данные
   });
 };
 
 export const useTurarRoomsAndEquipment = () => {
-  return useQuery({
+  return useQuery<TurarRoomData[]>({
     queryKey: ["turar-rooms-equipment"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -66,6 +68,8 @@ export const useTurarRoomsAndEquipment = () => {
       console.log(`🏥 Загружено ${data?.length || 0} записей турар с кабинетами и оборудованием`);
       return (data || []) as TurarRoomData[];
     },
+    staleTime: 0, // Данные всегда считаются устаревшими
+    gcTime: 0, // Не кешировать данные
   });
 };
 
