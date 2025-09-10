@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Download, Plus, MapPin, Users } from 'lucide-react';
+import { Building2, Download, Plus, MapPin, Users, Link } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navigation } from '@/components/Navigation';
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData } from '@/hooks/useFloorsData';
+import { useRoomConnections } from '@/hooks/useRoomConnections';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -146,6 +147,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 export default function FloorsPage() {
   const [searchParams] = useSearchParams();
   const { data: allData, isLoading, error, refetch } = useFloorsData();
+  const { data: roomConnections } = useRoomConnections();
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -444,19 +446,30 @@ export default function FloorsPage() {
                                         >
                                          <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
                                            <AccordionTrigger className="px-3 py-2 text-xs hover:no-underline hover:bg-muted/30">
-                                             <div className="flex justify-between items-center w-full mr-4">
-                                               <div className="flex items-center gap-2">
-                                                 <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                 <span className="font-medium">{room.name}</span>
-                                                 <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
-                                               </div>
-                                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                 <span>{(room.area || 0).toFixed(1)} м²</span>
-                                                 <Badge variant="secondary" className="text-xs">
-                                                   {room.equipment.length} ед.
-                                                 </Badge>
-                                               </div>
-                                             </div>
+                                              <div className="flex justify-between items-center w-full mr-4">
+                                                <div className="flex items-center gap-2 flex-1">
+                                                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                  <span className="font-medium">{room.name}</span>
+                                                  <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
+                                                  {roomConnections && (() => {
+                                                    const connections = roomConnections.filter(conn => 
+                                                      conn.projector_department === department.name && conn.projector_room === room.name
+                                                    );
+                                                    return connections.length > 0 ? (
+                                                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                                                        <Link className="h-2 w-2 mr-1" />
+                                                        Связано с {connections[0].turar_department}
+                                                      </Badge>
+                                                    ) : null;
+                                                  })()}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                  <span>{(room.area || 0).toFixed(1)} м²</span>
+                                                  <Badge variant="secondary" className="text-xs">
+                                                    {room.equipment.length} ед.
+                                                  </Badge>
+                                                </div>
+                                              </div>
                                            </AccordionTrigger>
                                             <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (

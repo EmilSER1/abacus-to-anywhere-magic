@@ -7,9 +7,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
 import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Navigation } from '@/components/Navigation';
-import { Building2, Users, MapPin, Download, Search, Package } from 'lucide-react';
+import { Building2, Users, MapPin, Download, Search, Package, Link } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
+import { useRoomConnections } from '@/hooks/useRoomConnections';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -34,6 +35,7 @@ const TurarPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
+  const { data: roomConnections } = useRoomConnections();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -320,14 +322,31 @@ const TurarPage: React.FC = () => {
                           <AccordionItem key={roomIndex} value={`room-${deptIndex}-${roomIndex}`}>
                             <Card className="bg-muted/30 border-border/50">
                               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-1">
                                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                                  <div className="text-left">
+                                  <div className="text-left flex-1">
                                     <div className="font-medium">{room.name}</div>
                                     <div className="text-sm text-muted-foreground">
                                       {room.equipment.length} типов оборудования
+                                      {roomConnections && (() => {
+                                        const connections = roomConnections.filter(conn => 
+                                          conn.turar_department === department.name && conn.turar_room === room.name
+                                        );
+                                        return connections.length > 0 ? ` • ${connections.length} связь(ей)` : '';
+                                      })()}
                                     </div>
                                   </div>
+                                  {roomConnections && (() => {
+                                    const connections = roomConnections.filter(conn => 
+                                      conn.turar_department === department.name && conn.turar_room === room.name
+                                    );
+                                    return connections.length > 0 ? (
+                                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                        <Link className="h-3 w-3 mr-1" />
+                                        Связано с {connections[0].projector_department}
+                                      </Badge>
+                                    ) : null;
+                                  })()}
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
