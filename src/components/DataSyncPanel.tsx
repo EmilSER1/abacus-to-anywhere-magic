@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Database, Download, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { RefreshCw, Database, Download, Upload, AlertCircle, CheckCircle, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useBulkPopulateMappedDepartments } from '@/hooks/useBulkPopulateMappedDepartments';
 import { useToast } from '@/hooks/use-toast';
 
 interface SyncStatus {
@@ -16,6 +17,7 @@ interface SyncStatus {
 export const DataSyncPanel: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ type: 'all', status: 'idle' });
   const { toast } = useToast();
+  const bulkPopulateMutation = useBulkPopulateMappedDepartments();
 
   const handleSync = async (action: 'sync-projector-data' | 'sync-turar-data' | 'sync-all') => {
     const type = action === 'sync-projector-data' ? 'projector' : 
@@ -371,6 +373,28 @@ export const DataSyncPanel: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Bulk Populate Button */}
+        <div className="mt-4 p-3 border rounded-lg bg-blue-50/50">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h4 className="font-medium text-blue-900">Промежуточные таблицы</h4>
+              <p className="text-sm text-blue-700">Заполнить промежуточные таблицы для всех существующих сопоставлений отделений</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => bulkPopulateMutation.mutate()}
+              disabled={bulkPopulateMutation.isPending}
+              className="flex items-center gap-2 border-blue-200 hover:bg-blue-100"
+            >
+              <Copy className={`h-4 w-4 ${bulkPopulateMutation.isPending ? 'animate-spin' : ''}`} />
+              {bulkPopulateMutation.isPending ? 'Копируем...' : 'Заполнить промежуточные таблицы'}
+            </Button>
+          </div>
+          <div className="text-xs text-blue-600">
+            Эта операция скопирует данные из основных таблиц в промежуточные для быстрой работы с кабинетами
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
