@@ -48,11 +48,6 @@ export const useProjectorRoomsAndEquipment = () => {
 
       console.log(`📊 Загружено ${data?.length || 0} записей проектировщиков с кабинетами и оборудованием`);
       
-      // Проверим уникальные отделения сразу при загрузке
-      const allDepartments = data?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
-      const uniqueDepartments = [...new Set(allDepartments)];
-      console.log(`🏢 Уникальные отделения в загруженных данных (${uniqueDepartments.length}):`, uniqueDepartments);
-      
       return (data || []) as ProjectorRoomData[];
     },
   });
@@ -75,11 +70,6 @@ export const useTurarRoomsAndEquipment = () => {
 
       console.log(`🏥 Загружено ${data?.length || 0} записей турар с кабинетами и оборудованием`);
       
-      // Проверим уникальные отделения сразу при загрузке
-      const allDepartments = data?.map(item => item["Отделение/Блок"]).filter(Boolean);
-      const uniqueDepartments = [...new Set(allDepartments)];
-      console.log(`🏥 Уникальные отделения Турар в загруженных данных (${uniqueDepartments.length}):`, uniqueDepartments);
-      
       return (data || []) as TurarRoomData[];
     },
   });
@@ -90,31 +80,19 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
   const { data: projectorData } = useProjectorRoomsAndEquipment();
 
   console.log(`🔍 useProjectorDepartmentRooms вызван для: "${projectorDepartmentName}"`);
-  console.log(`📊 Всего данных проектировщиков:`, projectorData?.length);
   
   if (!projectorData || projectorData.length === 0) {
     console.log(`❌ Нет данных проектировщиков для поиска`);
     return {};
   }
   
-  // Нормализуем название отделения для поиска - убираем все лишние пробелы
-  const normalizedSearchDept = projectorDepartmentName.replace(/\s+/g, ' ').trim().toLowerCase();
-  console.log(`🎯 Нормализованное название для поиска: "${normalizedSearchDept}"`);
-  
+  // Простая фильтрация - ищем отделения, которые содержат искомое название
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
     if (!itemDept) return false;
     
-    // Нормализуем название отделения из БД
-    const normalizedItemDept = itemDept.replace(/\s+/g, ' ').trim().toLowerCase();
-    
-    // Проверяем точное совпадение нормализованных названий
-    const match = normalizedItemDept === normalizedSearchDept;
-    
-    if (match) {
-      console.log(`✅ Найдено совпадение: "${itemDept}" -> "${normalizedItemDept}"`);
-    }
-    
+    // Простое включение - если название отделения содержит искомую строку
+    const match = itemDept.toLowerCase().includes(projectorDepartmentName.toLowerCase());
     return match;
   }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
@@ -161,12 +139,7 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
     }>;
   }>);
 
-  console.log(`📈 Результат для "${projectorDepartmentName}":`, {
-    organizedData,
-    roomsCount: Object.keys(organizedData || {}).length,
-    foundRooms: Object.keys(organizedData || {}),
-    isEmpty: Object.keys(organizedData || {}).length === 0
-  });
+  console.log(`📈 Найдено кабинетов: ${Object.keys(organizedData || {}).length}`);
 
   return organizedData || {};
 };
@@ -175,31 +148,19 @@ export const useTurarDepartmentRooms = (departmentName: string) => {
   const { data: turarData } = useTurarRoomsAndEquipment();
 
   console.log(`🔍 useTurarDepartmentRooms вызван для: "${departmentName}"`);
-  console.log(`📊 Всего данных Турар:`, turarData?.length);
   
   if (!turarData || turarData.length === 0) {
     console.log(`❌ Нет данных Турар для поиска`);
     return {};
   }
 
-  // Нормализуем название отделения для поиска
-  const normalizedSearchDept = departmentName.replace(/\s+/g, ' ').trim().toLowerCase();
-  console.log(`🎯 Нормализованное название Турар для поиска: "${normalizedSearchDept}"`);
-
+  // Простая фильтрация - ищем отделения, которые содержат искомое название  
   const organizedData = turarData?.filter(item => {
     const itemDept = item["Отделение/Блок"];
     if (!itemDept) return false;
     
-    // Нормализуем название отделения из БД
-    const normalizedItemDept = itemDept.replace(/\s+/g, ' ').trim().toLowerCase();
-    
-    // Проверяем точное совпадение нормализованных названий
-    const match = normalizedItemDept === normalizedSearchDept;
-    
-    if (match) {
-      console.log(`✅ Найдено совпадение Турар: "${itemDept}" -> "${normalizedItemDept}"`);
-    }
-    
+    // Простое включение - если название отделения содержит искомую строку
+    const match = itemDept.toLowerCase().includes(departmentName.toLowerCase());
     return match;
   }).reduce((acc, item) => {
     const roomName = item["Помещение/Кабинет"];
@@ -234,12 +195,7 @@ export const useTurarDepartmentRooms = (departmentName: string) => {
     }>;
   }>);
 
-  console.log(`📈 Результат Турар для "${departmentName}":`, {
-    organizedData,
-    roomsCount: Object.keys(organizedData || {}).length,
-    foundRooms: Object.keys(organizedData || {}),
-    isEmpty: Object.keys(organizedData || {}).length === 0
-  });
+  console.log(`📈 Найдено кабинетов Турар: ${Object.keys(organizedData || {}).length}`);
 
   return organizedData || {};
 };
