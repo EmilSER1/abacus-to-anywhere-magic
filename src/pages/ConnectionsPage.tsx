@@ -13,6 +13,8 @@ import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentM
 import { usePopulateMappedDepartments } from '@/hooks/useMappedDepartments'
 import TurarDepartmentDisplay from '@/components/TurarDepartmentDisplay'
 import ProjectorDepartmentDisplay from '@/components/ProjectorDepartmentDisplay'
+import MappedTurarDepartmentDisplay from '@/components/MappedTurarDepartmentDisplay'
+import MappedProjectorDepartmentDisplay from '@/components/MappedProjectorDepartmentDisplay'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
@@ -396,61 +398,51 @@ export default function ConnectionsPage() {
                       {isExpanded && (
                         <CardContent className="pt-0">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Turar Department */}
-                            <TurarDepartmentDisplay 
-                              departmentName={turarDept}
-                              onLinkRoom={(room) => setLinkingRoom({
-                                turarDept: turarDept,
-                                turarRoom: room,
-                                projectorDept: ''
-                              })}
-                              onRemoveConnection={removeConnection}
-                              roomConnections={roomConnections || []}
-                              expandedRooms={expandedRooms}
-                              onToggleRoom={(roomKey) => {
-                                if (expandedRooms.has(roomKey)) {
-                                  expandedRooms.delete(roomKey)
-                                } else {
-                                  expandedRooms.add(roomKey)
-                                }
-                                setExpandedRooms(new Set(expandedRooms))
-                              }}
-                            />
+                            {/* Turar Department - используем новый компонент с промежуточными таблицами */}
+                            {projectorDepts.map((projDept) => {
+                              // Находим ID сопоставления для этой пары отделений
+                              const mapping = departmentMappings?.find(m => 
+                                m.turar_department === turarDept && m.projector_department === projDept
+                              );
+                              
+                              if (!mapping) {
+                                console.warn(`Не найдено сопоставление для ${turarDept} - ${projDept}`);
+                                return null;
+                              }
 
-                            {/* Projector Departments */}
-                            <div className="space-y-4">
-                              <h3 className="font-semibold text-secondary flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                Проектировщики
-                              </h3>
-                               {projectorDepts.map((projDept) => {
-                                 console.log(`🔧 Передаю в ProjectorDepartmentDisplay:`, {
-                                   projDept,
-                                   turarDept,
-                                   projectorDepts
-                                 });
-                                 return (
-                                 <ProjectorDepartmentDisplay
-                                   key={projDept}
-                                   departmentName={projDept}
-                                  turarDept={turarDept}
-                                  linkingRoom={linkingRoom}
-                                  onCreateConnection={createConnection}
-                                  onRemoveConnection={removeConnection}
-                                  roomConnections={roomConnections || []}
-                                  expandedRooms={expandedRooms}
-                                  onToggleRoom={(roomKey) => {
-                                    if (expandedRooms.has(roomKey)) {
-                                      expandedRooms.delete(roomKey)
-                                    } else {
-                                      expandedRooms.add(roomKey)
-                                    }
-                                    setExpandedRooms(new Set(expandedRooms))
-                                   }}
-                                 />
-                                 )
-                               })}
-                            </div>
+                              return (
+                                <div key={projDept} className="space-y-4">
+                                  {/* Отображаем Турар только один раз для первого проектировщика */}
+                                  {projDept === projectorDepts[0] && (
+                                    <MappedTurarDepartmentDisplay 
+                                      departmentMappingId={mapping.id}
+                                      departmentName={turarDept}
+                                      onLinkRoom={(room) => setLinkingRoom({
+                                        turarDept: turarDept,
+                                        turarRoom: room,
+                                        projectorDept: projDept
+                                      })}
+                                      onRemoveConnection={removeConnection}
+                                      roomConnections={roomConnections || []}
+                                      expandedRooms={expandedRooms}
+                                      setExpandedRooms={setExpandedRooms}
+                                    />
+                                  )}
+
+                                  {/* Проектировщики */}
+                                  <MappedProjectorDepartmentDisplay
+                                    departmentMappingId={mapping.id}
+                                    departmentName={projDept}
+                                    linkingRoom={linkingRoom}
+                                    onCreateConnection={createConnection}
+                                    onRemoveConnection={removeConnection}
+                                    roomConnections={roomConnections || []}
+                                    expandedRooms={expandedRooms}
+                                    setExpandedRooms={setExpandedRooms}
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
                         </CardContent>
                       )}
