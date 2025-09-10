@@ -215,10 +215,11 @@ export default function ConnectionsPage() {
         equipmentCode: item["Код оборудования"],
         equipmentName: item["Наименование оборудования"],
         unit: item["Ед. изм."],
-        quantity: parseInt(item["Кол-во"]) || 0,
+        quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
         notes: item["Примечания"]
       }))
       setProjectorData(projectorProcessed)
+      console.log('Processed projector data:', projectorProcessed.slice(0, 5))
     }
   }, [projectorDataRaw])
 
@@ -228,10 +229,12 @@ export default function ConnectionsPage() {
     if (!mapping) return []
     
     return mapping.projectorsDepartments.map(deptName => {
-      const deptRooms = projectorData.filter(item => item.department === deptName)
+      // Фильтруем все записи для этого отделения
+      const deptItems = projectorData.filter(item => item.department === deptName)
       const roomsMap = new Map<string, Room>()
       
-      deptRooms.forEach(item => {
+      // Группируем по комнатам
+      deptItems.forEach(item => {
         if (!roomsMap.has(item.roomName)) {
           roomsMap.set(item.roomName, {
             name: item.roomName,
@@ -239,7 +242,8 @@ export default function ConnectionsPage() {
           })
         }
         
-        if (item.equipmentName) {
+        // Добавляем оборудование только если оно есть
+        if (item.equipmentName && item.equipmentName.trim()) {
           roomsMap.get(item.roomName)!.equipment.push({
             code: item.equipmentCode || undefined,
             name: item.equipmentName,
