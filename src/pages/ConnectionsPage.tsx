@@ -59,16 +59,22 @@ interface DepartmentMapping {
   status: 'mapped' | 'partial' | 'unmapped'
 }
 
-// Данные соответствий отделений
+// Данные соответствий отделений (обновленные на основе реальных данных)
 const departmentMappings: DepartmentMapping[] = [
   {
     id: '1',
+    turarDepartment: 'Травмпункт',
+    projectorsDepartments: ['Травматологический пункт'],
+    status: 'mapped'
+  },
+  {
+    id: '2',
     turarDepartment: 'Диагностические подразделения/лабораторный блок',
     projectorsDepartments: ['Экспресс-лаборатория'],
     status: 'mapped'
   },
   {
-    id: '2',
+    id: '3',
     turarDepartment: 'Дневной стационар (30 коек)',
     projectorsDepartments: [
       'Дневной стационар терапевтический профиль (12 коек)',
@@ -77,49 +83,49 @@ const departmentMappings: DepartmentMapping[] = [
     status: 'mapped'
   },
   {
-    id: '3',
+    id: '4',
     turarDepartment: 'КДЦ. Кабинеты врачебного приема',
     projectorsDepartments: ['Консультативно-диагностическое отделение на 150 посещений'],
     status: 'mapped'
   },
   {
-    id: '4',
+    id: '5',
     turarDepartment: 'Отделение гинекологии (25 коек)',
     projectorsDepartments: ['Отделение гинекологии (25 коек)'],
     status: 'mapped'
   },
   {
-    id: '5',
+    id: '6',
     turarDepartment: 'Отделение диагностики',
     projectorsDepartments: ['Отделение лучевой диагностики'],
     status: 'mapped'
   },
   {
-    id: '6',
+    id: '7',
     turarDepartment: 'Отделение диализа',
     projectorsDepartments: ['Отделение гемодиализа на 4 койки'],
     status: 'mapped'
   },
   {
-    id: '7',
+    id: '8',
     turarDepartment: 'Отделение лучевой диагностики',
     projectorsDepartments: ['Отделение ударно-волновой литотрипсии'],
     status: 'mapped'
   },
   {
-    id: '8',
+    id: '9',
     turarDepartment: 'Отделение нейрохирургии (20 коек)',
     projectorsDepartments: ['Отделение нейрохирургии на 20 коек'],
     status: 'mapped'
   },
   {
-    id: '9',
+    id: '10',
     turarDepartment: 'Отделение травматологии (20 коек)',
     projectorsDepartments: ['Отделение травматологии на 20 коек'],
     status: 'mapped'
   },
   {
-    id: '10',
+    id: '11',
     turarDepartment: 'Приемное отделение',
     projectorsDepartments: [
       'Экстренное приемное отделение',
@@ -132,12 +138,6 @@ const departmentMappings: DepartmentMapping[] = [
       'Отделение реанимации, хирургический профиль на 12 коек',
       'Отделение реанимации терапевтический профиль на 6 коек'
     ],
-    status: 'mapped'
-  },
-  {
-    id: '11',
-    turarDepartment: 'Травмпункт',
-    projectorsDepartments: ['Травматологический пункт'],
     status: 'mapped'
   },
   {
