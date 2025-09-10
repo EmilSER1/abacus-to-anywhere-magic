@@ -83,12 +83,15 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
   // Получаем все уникальные отделения для отладки
   const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
   const uniqueDepartments = [...new Set(allDepartments)];
-  console.log(`🏢 Все уникальные отделения проектировщиков (первые 10):`, uniqueDepartments.slice(0, 10));
-  console.log(`🎯 Ищем отделение проектировщиков:`, {
-    search: projectorDepartmentName,
-    searchTrimmed: projectorDepartmentName.trim(),
-    exactMatches: uniqueDepartments.filter(dept => dept.trim() === projectorDepartmentName.trim())
-  });
+  console.log(`🏢 Все уникальные отделения проектировщиков (всего ${uniqueDepartments.length}):`, uniqueDepartments);
+  console.log(`🎯 Ищем отделение проектировщиков: "${projectorDepartmentName}"`);
+  
+  // Проверяем частичные совпадения
+  const partialMatches = uniqueDepartments.filter(dept => 
+    dept.toLowerCase().includes(projectorDepartmentName.toLowerCase()) || 
+    projectorDepartmentName.toLowerCase().includes(dept.toLowerCase())
+  );
+  console.log(`🔍 Частичные совпадения для "${projectorDepartmentName}":`, partialMatches);
 
   
   const organizedData = projectorData?.filter(item => {
