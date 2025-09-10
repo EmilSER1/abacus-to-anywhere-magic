@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       projector_floors: {
         Row: {
+          connected_turar_department: string | null
+          connected_turar_room: string | null
           created_at: string
           id: string
           updated_at: string
@@ -34,6 +36,8 @@ export type Database = {
           ЭТАЖ: number
         }
         Insert: {
+          connected_turar_department?: string | null
+          connected_turar_room?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -52,6 +56,8 @@ export type Database = {
           ЭТАЖ: number
         }
         Update: {
+          connected_turar_department?: string | null
+          connected_turar_room?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -103,6 +109,8 @@ export type Database = {
       }
       turar_medical: {
         Row: {
+          connected_projector_department: string | null
+          connected_projector_room: string | null
           created_at: string
           id: string
           updated_at: string
@@ -113,6 +121,8 @@ export type Database = {
           "Помещение/Кабинет": string
         }
         Insert: {
+          connected_projector_department?: string | null
+          connected_projector_room?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -123,6 +133,8 @@ export type Database = {
           "Помещение/Кабинет": string
         }
         Update: {
+          connected_projector_department?: string | null
+          connected_projector_room?: string | null
           created_at?: string
           id?: string
           updated_at?: string

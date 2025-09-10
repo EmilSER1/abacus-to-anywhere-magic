@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
+import { useTurarMedicalData } from '@/hooks/useTurarMedicalData'
+import { useProjectorData } from '@/hooks/useProjectorData'
 import { useToast } from '@/hooks/use-toast'
 
 // Типы данных
@@ -184,51 +186,41 @@ export default function ConnectionsPage() {
   const deleteRoomConnectionMutation = useDeleteRoomConnection()
   const { toast } = useToast()
 
-  // Загрузка данных
+  const { data: turarDataRaw } = useTurarMedicalData()
+  const { data: projectorDataRaw } = useProjectorData()
+  
+  // Process data for display
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [projectorResponse, turarResponse] = await Promise.all([
-          fetch('/combined_floors.json'),
-          fetch('/turar_full.json')
-        ])
-        
-        const projectorRaw = await projectorResponse.json()
-        const turarRaw = await turarResponse.json()
-        
-        // Преобразование данных проектировщиков
-        const projectorProcessed = projectorRaw.map((item: any) => ({
-          floor: item['ЭТАЖ'],
-          block: item['БЛОК'],
-          department: item['ОТДЕЛЕНИЕ']?.trim(),
-          roomCode: item['КОД ПОМЕЩЕНИЯ'],
-          roomName: item['НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ'],
-          area: item['Площадь (м2)'],
-          equipmentCode: item['Код оборудования'],
-          equipmentName: item['Наименование оборудования'],
-          unit: item['Ед. изм.'],
-          quantity: item['Кол-во'],
-          notes: item['Примечания']
-        }))
-        
-        // Преобразование данных Турар
-        const turarProcessed = turarRaw.map((item: any) => ({
-          department: item['Отделение/Блок'],
-          room: item['Помещение/Кабинет'],
-          equipmentCode: item['Код оборудования'],
-          equipmentName: item['Наименование'],
-          quantity: item['Кол-во']
-        }))
-        
-        setProjectorData(projectorProcessed)
-        setTurarData(turarProcessed)
-      } catch (error) {
-        console.error('Ошибка загрузки данных:', error)
-      }
+    if (turarDataRaw) {
+      const turarProcessed = turarDataRaw.map((item: any) => ({
+        department: item['Отделение/Блок'],
+        room: item['Помещение/Кабинет'],
+        equipmentCode: item['Код оборудования'],
+        equipmentName: item['Наименование'],
+        quantity: item['Кол-во']
+      }))
+      setTurarData(turarProcessed)
     }
-    
-    loadData()
-  }, [])
+  }, [turarDataRaw])
+
+  useEffect(() => {
+    if (projectorDataRaw) {
+      const projectorProcessed = projectorDataRaw.map((item: any) => ({
+        floor: item.floor,
+        block: item.block,
+        department: item.department?.trim(),
+        roomCode: item.room_code,
+        roomName: item.room_name,
+        area: item.area_m2,
+        equipmentCode: item.code,
+        equipmentName: item.name,
+        unit: item.unit,
+        quantity: item.quantity,
+        notes: item.notes
+      }))
+      setProjectorData(projectorProcessed)
+    }
+  }, [projectorDataRaw])
 
   // Получение структурированных данных для отделений
   const getProjectorDepartments = (turarDept: string): Department[] => {
