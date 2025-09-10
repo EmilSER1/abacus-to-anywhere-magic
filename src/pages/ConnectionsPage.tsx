@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
-import { useTurarMedicalData } from '@/hooks/useTurarMedicalData'
+import { useTurarData } from '@/hooks/useTurarData'
 import { useProjectorData } from '@/hooks/useProjectorData'
 import { useToast } from '@/hooks/use-toast'
 
@@ -186,18 +186,18 @@ export default function ConnectionsPage() {
   const deleteRoomConnectionMutation = useDeleteRoomConnection()
   const { toast } = useToast()
 
-  const { data: turarDataRaw } = useTurarMedicalData()
+  const { data: turarDataRaw } = useTurarData()
   const { data: projectorDataRaw } = useProjectorData()
   
   // Process data for display
   useEffect(() => {
     if (turarDataRaw) {
       const turarProcessed = turarDataRaw.map((item: any) => ({
-        department: item['Отделение/Блок'],
-        room: item['Помещение/Кабинет'],
-        equipmentCode: item['Код оборудования'],
-        equipmentName: item['Наименование'],
-        quantity: item['Кол-во']
+        department: item.department,
+        room: item.room,
+        equipmentCode: item.code,
+        equipmentName: item.name,
+        quantity: item.quantity
       }))
       setTurarData(turarProcessed)
     }
@@ -210,7 +210,7 @@ export default function ConnectionsPage() {
         block: item.block,
         department: item.department?.trim(),
         roomCode: item.room_code,
-        roomName: item.room_name,
+        roomName: item.room_name || item.room,
         area: item.area_m2,
         equipmentCode: item.code,
         equipmentName: item.name,
