@@ -209,7 +209,10 @@ export default function ConnectionsPage() {
           }))
           setTurarData(processed)
           console.log('Loaded turar data:', processed.length, 'records')
-          console.log('Sample turar data:', processed.slice(0, 3))
+          
+          // Проверяем уникальные отделения
+          const departments = [...new Set(processed.map(item => item.department))]
+          console.log('Turar departments found:', departments)
         }
       } catch (error) {
         console.error('Failed to load turar data:', error)
@@ -244,7 +247,10 @@ export default function ConnectionsPage() {
           }))
           setProjectorData(processed)
           console.log('Loaded projector data:', processed.length, 'records')
-          console.log('Sample projector data:', processed.slice(0, 3))
+          
+          // Проверяем уникальные отделения
+          const departments = [...new Set(processed.map(item => item.department).filter(Boolean))]
+          console.log('Projector departments found:', departments)
         }
       } catch (error) {
         console.error('Failed to load projector data:', error)
@@ -257,10 +263,17 @@ export default function ConnectionsPage() {
   // Получение структурированных данных для отделений
   const getProjectorDepartments = (turarDept: string): Department[] => {
     const mapping = departmentMappings.find(m => m.turarDepartment === turarDept)
-    if (!mapping) return []
+    if (!mapping) {
+      console.log('No mapping found for turar dept:', turarDept)
+      return []
+    }
+    
+    console.log(`Processing projector departments for: ${turarDept}`)
+    console.log('Mapped to:', mapping.projectorsDepartments)
     return mapping.projectorsDepartments.map(deptName => {
       // Фильтруем все записи для этого отделения
       const deptItems = projectorData.filter(item => item.department === deptName)
+      console.log(`Found ${deptItems.length} items for projector dept: ${deptName}`)
       const roomsMap = new Map<string, Room>()
       
       // Группируем по комнатам
@@ -283,15 +296,20 @@ export default function ConnectionsPage() {
         }
       })
       
-      return {
+      const department = {
         name: deptName,
         rooms: Array.from(roomsMap.values())
       }
+      
+      console.log(`Department ${deptName} has ${department.rooms.length} rooms`)
+      return department
     })
   }
 
   const getTurarDepartment = (deptName: string): Department | null => {
     const deptEquipment = turarData.filter(item => item.department === deptName)
+    console.log(`Found ${deptEquipment.length} items for turar dept: ${deptName}`)
+    
     if (deptEquipment.length === 0) return null
     
     const roomsMap = new Map<string, Room>()
