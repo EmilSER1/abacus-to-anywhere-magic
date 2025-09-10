@@ -21,6 +21,11 @@ export default function TurarDepartmentDisplay({
   onToggleRoom
 }: TurarDepartmentDisplayProps) {
   const roomsData = useTurarDepartmentRooms(departmentName)
+  
+  console.log(`🏥 TurarDepartmentDisplay для ${departmentName}:`, {
+    roomsData,
+    roomsCount: Object.keys(roomsData || {}).length
+  })
 
   const getConnectedRooms = (turarDepartment: string, turarRoom: string) => {
     return roomConnections?.filter(conn => 

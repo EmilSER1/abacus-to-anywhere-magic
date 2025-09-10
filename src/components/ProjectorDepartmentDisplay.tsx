@@ -25,6 +25,11 @@ export default function ProjectorDepartmentDisplay({
   onToggleRoom
 }: ProjectorDepartmentDisplayProps) {
   const roomsData = useProjectorDepartmentRooms(departmentName)
+  
+  console.log(`🏗️ ProjectorDepartmentDisplay для ${departmentName}:`, {
+    roomsData,
+    roomsCount: Object.keys(roomsData || {}).length
+  })
 
   const getConnectedToProjectorRoom = (projectorDepartment: string, projectorRoom: string) => {
     return roomConnections?.filter(conn => 
@@ -41,7 +46,12 @@ export default function ProjectorDepartmentDisplay({
         </h4>
         
         <div className="space-y-2">
-          {Object.entries(roomsData).map(([roomName, roomData]) => {
+          {Object.keys(roomsData).length === 0 ? (
+            <div className="text-sm text-muted-foreground italic p-2">
+              Нет данных о кабинетах для этого отделения
+            </div>
+          ) : (
+            Object.entries(roomsData).map(([roomName, roomData]) => {
             const roomKey = `projector-${departmentName}-${roomName}`
             const isRoomExpanded = expandedRooms.has(roomKey)
             const connections = getConnectedToProjectorRoom(departmentName, roomName)
@@ -163,7 +173,8 @@ export default function ProjectorDepartmentDisplay({
                 </div>
               </div>
             )
-          })}
+            })
+          )}
         </div>
       </div>
     </div>
