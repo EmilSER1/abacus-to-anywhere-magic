@@ -38,6 +38,158 @@ export type Database = {
         }
         Relationships: []
       }
+      mapped_projector_rooms: {
+        Row: {
+          block_name: string
+          created_at: string
+          department_mapping_id: string
+          department_name: string
+          equipment_code: string | null
+          equipment_name: string | null
+          equipment_notes: string | null
+          equipment_quantity: string | null
+          equipment_unit: string | null
+          floor_number: number
+          id: string
+          is_linked: boolean
+          linked_turar_room_id: string | null
+          original_record_id: string
+          room_area: number | null
+          room_code: string
+          room_name: string
+          updated_at: string
+        }
+        Insert: {
+          block_name: string
+          created_at?: string
+          department_mapping_id: string
+          department_name: string
+          equipment_code?: string | null
+          equipment_name?: string | null
+          equipment_notes?: string | null
+          equipment_quantity?: string | null
+          equipment_unit?: string | null
+          floor_number: number
+          id?: string
+          is_linked?: boolean
+          linked_turar_room_id?: string | null
+          original_record_id: string
+          room_area?: number | null
+          room_code: string
+          room_name: string
+          updated_at?: string
+        }
+        Update: {
+          block_name?: string
+          created_at?: string
+          department_mapping_id?: string
+          department_name?: string
+          equipment_code?: string | null
+          equipment_name?: string | null
+          equipment_notes?: string | null
+          equipment_quantity?: string | null
+          equipment_unit?: string | null
+          floor_number?: number
+          id?: string
+          is_linked?: boolean
+          linked_turar_room_id?: string | null
+          original_record_id?: string
+          room_area?: number | null
+          room_code?: string
+          room_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_linked_turar_room"
+            columns: ["linked_turar_room_id"]
+            isOneToOne: false
+            referencedRelation: "mapped_turar_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapped_projector_rooms_department_mapping_id_fkey"
+            columns: ["department_mapping_id"]
+            isOneToOne: false
+            referencedRelation: "department_mappings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapped_projector_rooms_original_record_id_fkey"
+            columns: ["original_record_id"]
+            isOneToOne: false
+            referencedRelation: "projector_floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mapped_turar_rooms: {
+        Row: {
+          created_at: string
+          department_mapping_id: string
+          department_name: string
+          equipment_code: string
+          equipment_name: string
+          equipment_quantity: number
+          id: string
+          is_linked: boolean
+          linked_projector_room_id: string | null
+          original_record_id: string
+          room_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_mapping_id: string
+          department_name: string
+          equipment_code: string
+          equipment_name: string
+          equipment_quantity: number
+          id?: string
+          is_linked?: boolean
+          linked_projector_room_id?: string | null
+          original_record_id: string
+          room_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_mapping_id?: string
+          department_name?: string
+          equipment_code?: string
+          equipment_name?: string
+          equipment_quantity?: number
+          id?: string
+          is_linked?: boolean
+          linked_projector_room_id?: string | null
+          original_record_id?: string
+          room_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_linked_projector_room"
+            columns: ["linked_projector_room_id"]
+            isOneToOne: false
+            referencedRelation: "mapped_projector_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapped_turar_rooms_department_mapping_id_fkey"
+            columns: ["department_mapping_id"]
+            isOneToOne: false
+            referencedRelation: "department_mappings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapped_turar_rooms_original_record_id_fkey"
+            columns: ["original_record_id"]
+            isOneToOne: false
+            referencedRelation: "turar_medical"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projector_floors: {
         Row: {
           connected_turar_department: string | null

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
 import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping, useGetAllDepartments } from '@/hooks/useDepartmentMappings'
+import { usePopulateMappedDepartments } from '@/hooks/useMappedDepartments'
 import TurarDepartmentDisplay from '@/components/TurarDepartmentDisplay'
 import ProjectorDepartmentDisplay from '@/components/ProjectorDepartmentDisplay'
 import { supabase } from '@/integrations/supabase/client'
@@ -39,6 +40,7 @@ export default function ConnectionsPage() {
   const deleteRoomConnectionMutation = useDeleteRoomConnection()
   const createDepartmentMappingMutation = useCreateDepartmentMapping()
   const deleteDepartmentMappingMutation = useDeleteDepartmentMapping()
+  const populateMappedDepartmentsMutation = usePopulateMappedDepartments()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -66,21 +68,30 @@ export default function ConnectionsPage() {
 
     try {
       for (const projectorDept of selectedProjectorDepts) {
-        await createDepartmentMappingMutation.mutateAsync({
+        // Создаем сопоставление отделений
+        const newMapping = await createDepartmentMappingMutation.mutateAsync({
           turar_department: selectedTurarDept,
           projector_department: projectorDept
+        })
+        
+        // Заполняем промежуточные таблицы данными
+        await populateMappedDepartmentsMutation.mutateAsync({
+          departmentMappingId: newMapping.id,
+          projectorDepartment: projectorDept,
+          turarDepartment: selectedTurarDept
         })
       }
       
       toast({
         title: "Связи отделений созданы",
-        description: `${selectedTurarDept} связан с ${selectedProjectorDepts.length} отделением(ями)`,
+        description: `${selectedTurarDept} связан с ${selectedProjectorDepts.length} отделением(ями) и данные скопированы`,
       })
       
       setSelectedTurarDept('')
       setSelectedProjectorDepts([])
       setShowMappingDialog(false)
     } catch (error) {
+      console.error('Ошибка создания связи отделений:', error)
       toast({
         title: "Ошибка",
         description: "Не удалось создать связи отделений",
