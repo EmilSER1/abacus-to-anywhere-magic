@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench } from 'lucide-react'
+import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench, RefreshCw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import TurarDepartmentDisplay from '@/components/TurarDepartmentDisplay'
 import ProjectorDepartmentDisplay from '@/components/ProjectorDepartmentDisplay'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function ConnectionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -39,6 +40,20 @@ export default function ConnectionsPage() {
   const createDepartmentMappingMutation = useCreateDepartmentMapping()
   const deleteDepartmentMappingMutation = useDeleteDepartmentMapping()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  // Функция для принудительного обновления данных
+  const refreshAllData = () => {
+    queryClient.invalidateQueries({ queryKey: ["projector-rooms-equipment"] })
+    queryClient.invalidateQueries({ queryKey: ["turar-rooms-equipment"] })
+    queryClient.invalidateQueries({ queryKey: ["room-connections"] })
+    queryClient.invalidateQueries({ queryKey: ["department-mappings"] })
+    queryClient.invalidateQueries({ queryKey: ["all-departments"] })
+    toast({
+      title: "Данные обновляются",
+      description: "Пожалуйста, подождите..."
+    })
+  }
 
   // Загрузка данных из Supabase
   useEffect(() => {
@@ -183,9 +198,20 @@ export default function ConnectionsPage() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Связи между отделениями
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Связи между отделениями
+            </h1>
+            <Button 
+              onClick={refreshAllData}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Обновить данные
+            </Button>
+          </div>
           <p className="text-muted-foreground text-lg">
             Двухэтапный процесс создания связей: сначала отделения, затем кабинеты
           </p>
