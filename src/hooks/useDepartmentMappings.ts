@@ -73,7 +73,7 @@ export const useDeleteDepartmentMapping = () => {
 // Хук для получения уникальных отделений из базы данных
 export const useGetAllDepartments = () => {
   return useQuery({
-    queryKey: ["all-departments"],
+    queryKey: ["all-departments", "v2"], // Изменил ключ для сброса кеша
     queryFn: async () => {
       try {
         // Получаем уникальные отделения Турар

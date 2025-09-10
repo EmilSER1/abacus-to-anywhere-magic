@@ -397,6 +397,14 @@ export default function ConnectionsPage() {
               <div>Отделений Турар: {allDepartments?.turarDepartments?.length || 0}</div>
               <div>Отделений Проектировщиков: {allDepartments?.projectorDepartments?.length || 0}</div>
               <div>Состояние загрузки: {isLoading ? 'загружается' : 'готово'}</div>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                size="sm"
+                className="mt-2"
+              >
+                Обновить данные
+              </Button>
             </div>
 
             {/* Отображение связанных отделений */}
