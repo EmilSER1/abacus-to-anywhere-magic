@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
-import { useTurarData } from '@/hooks/useTurarData'
-import { useProjectorData } from '@/hooks/useProjectorData'
+import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 
 // Типы данных
@@ -186,48 +185,59 @@ export default function ConnectionsPage() {
   const deleteRoomConnectionMutation = useDeleteRoomConnection()
   const { toast } = useToast()
 
-  const { data: turarDataRaw } = useTurarData()
-  const { data: projectorDataRaw } = useProjectorData()
-  
-  // Process data for display
+  // Загрузка данных напрямую из Supabase
   useEffect(() => {
-    if (turarDataRaw) {
-      const turarProcessed = turarDataRaw.map((item: any) => ({
-        department: item["Отделение/Блок"],
-        room: item["Помещение/Кабинет"],
-        equipmentCode: item["Код оборудования"],
-        equipmentName: item["Наименование"],
-        quantity: item["Кол-во"]
-      }))
-      setTurarData(turarProcessed)
+    const loadTurarData = async () => {
+      const { data, error } = await supabase
+        .from('turar_medical')
+        .select('*')
+        .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
+      
+      if (data && !error) {
+        const processed = data.map((item: any) => ({
+          department: item["Отделение/Блок"],
+          room: item["Помещение/Кабинет"],
+          equipmentCode: item["Код оборудования"],
+          equipmentName: item["Наименование"],
+          quantity: item["Кол-во"]
+        }))
+        setTurarData(processed)
+        console.log('Loaded turar data:', processed.length, 'records')
+      }
     }
-  }, [turarDataRaw])
 
-  useEffect(() => {
-    if (projectorDataRaw) {
-      const projectorProcessed = projectorDataRaw.map((item: any) => ({
-        floor: item["ЭТАЖ"],
-        block: item["БЛОК"],
-        department: item["ОТДЕЛЕНИЕ"]?.trim(),
-        roomCode: item["КОД ПОМЕЩЕНИЯ"],
-        roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-        area: item["Площадь (м2)"],
-        equipmentCode: item["Код оборудования"],
-        equipmentName: item["Наименование оборудования"],
-        unit: item["Ед. изм."],
-        quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
-        notes: item["Примечания"]
-      }))
-      setProjectorData(projectorProcessed)
-      console.log('Processed projector data:', projectorProcessed.slice(0, 5))
+    const loadProjectorData = async () => {
+      const { data, error } = await supabase
+        .from('projector_floors')
+        .select('*')
+        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"')
+      
+      if (data && !error) {
+        const processed = data.map((item: any) => ({
+          floor: item["ЭТАЖ"],
+          block: item["БЛОК"],
+          department: item["ОТДЕЛЕНИЕ"]?.trim(),
+          roomCode: item["КОД ПОМЕЩЕНИЯ"],
+          roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+          area: item["Площадь (м2)"],
+          equipmentCode: item["Код оборудования"],
+          equipmentName: item["Наименование оборудования"],
+          unit: item["Ед. изм."],
+          quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
+          notes: item["Примечания"]
+        }))
+        setProjectorData(processed)
+        console.log('Loaded projector data:', processed.length, 'records')
+      }
     }
-  }, [projectorDataRaw])
 
+    loadTurarData()
+    loadProjectorData()
+  }, [])
   // Получение структурированных данных для отделений
   const getProjectorDepartments = (turarDept: string): Department[] => {
     const mapping = departmentMappings.find(m => m.turarDepartment === turarDept)
     if (!mapping) return []
-    
     return mapping.projectorsDepartments.map(deptName => {
       // Фильтруем все записи для этого отделения
       const deptItems = projectorData.filter(item => item.department === deptName)
