@@ -91,8 +91,13 @@ export const useGetAllDepartments = () => {
 
         if (projectorError) throw projectorError;
 
-        const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].sort();
-        const uniqueProjectorDepts = [...new Set(projectorData?.map(item => item["ОТДЕЛЕНИЕ"]?.trim()) || [])].filter(Boolean).sort();
+        const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].filter(Boolean).sort();
+        const uniqueProjectorDepts = [...new Set(projectorData?.map(item => {
+          const dept = item["ОТДЕЛЕНИЕ"];
+          if (!dept) return null;
+          // Убираем лишние пробелы и переносы строк
+          return dept.replace(/\s+/g, ' ').trim();
+        }) || [])].filter(Boolean).sort();
 
         console.log('Загружены отделения Турар:', uniqueTurarDepts);
         console.log('Загружены отделения Проектировщиков:', uniqueProjectorDepts);
