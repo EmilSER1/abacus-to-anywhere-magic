@@ -1,11 +1,31 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3, Settings } from 'lucide-react'
+import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 export function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
   const pathname = location.pathname
+  const { toast } = useToast()
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка выхода",
+        description: error.message,
+      })
+    } else {
+      toast({
+        title: "Выход выполнен",
+        description: "Вы успешно вышли из системы",
+      })
+      navigate('/auth')
+    }
+  }
 
   const navItems = [
     {
@@ -87,7 +107,14 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Mobile menu button can be added here */}
+          {/* Logout button */}
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Выйти</span>
+          </button>
         </div>
       </div>
     </nav>

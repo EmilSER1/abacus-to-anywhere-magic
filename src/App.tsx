@@ -11,6 +11,8 @@ import ConnectionsPage from "./pages/ConnectionsPage";
 import SearchPage from "./pages/SearchPage";
 import ConsolidationPage from "./pages/ConsolidationPage";
 import AdminPage from "./pages/AdminPage";
+import AuthPage from "./pages/AuthPage";
+import AuthWrapper from "./components/AuthWrapper";
 
 const queryClient = new QueryClient();
 
@@ -20,17 +22,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/floors" element={<FloorsPage />} />
-          <Route path="/turar" element={<TurarPage />} />
-          <Route path="/connections" element={<ConnectionsPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/consolidation" element={<ConsolidationPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthWrapper>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/floors" element={<FloorsPage />} />
+            <Route path="/turar" element={<TurarPage />} />
+            <Route path="/connections" element={<ConnectionsPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/consolidation" element={<ConsolidationPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthWrapper>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
