@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench, RefreshCw, Users } from 'lucide-react'
+import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench, RefreshCw, Users, ArrowLeft, Edit } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,10 @@ export default function ConnectionsPage() {
     turarRoom: string
     projectorDept: string
   } | null>(null)
+  
+  // Состояния для многоуровневой навигации связывания
+  const [linkingStep, setLinkingStep] = useState<'none' | 'departments' | 'rooms'>('none')
+  const [selectedLinkingDept, setSelectedLinkingDept] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   
   // Состояние для первого этапа
@@ -409,62 +413,188 @@ export default function ConnectionsPage() {
                                 <h3 className="font-medium text-orange-800 dark:text-orange-300 mb-2">
                                   Кабинеты {turarDept}
                                 </h3>
-                                <MappedTurarDepartmentDisplay 
-                                  departmentMappingId={mapping.id}
-                                  departmentName={turarDept}
-                                  onLinkRoom={(room) => setLinkingRoom({
-                                    turarDept: turarDept,
-                                    turarRoom: room,
-                                    projectorDept: projectorDepts[0]
-                                  })}
-                                  onRemoveConnection={removeConnection}
-                                  roomConnections={roomConnections || []}
-                                  expandedRooms={expandedRooms}
-                                  setExpandedRooms={setExpandedRooms}
-                                />
+                                 <MappedTurarDepartmentDisplay 
+                                   departmentMappingId={mapping.id}
+                                   departmentName={turarDept}
+                                   onLinkRoom={(room) => {
+                                     setLinkingRoom({
+                                       turarDept: turarDept,
+                                       turarRoom: room,
+                                       projectorDept: ''
+                                     })
+                                     setLinkingStep('departments')
+                                   }}
+                                   onRemoveConnection={removeConnection}
+                                   roomConnections={roomConnections || []}
+                                   expandedRooms={expandedRooms}
+                                   setExpandedRooms={setExpandedRooms}
+                                 />
                               </div>
                             </div>
 
-                            {/* Кабинеты Проектировщиков */}
-                            <div className="space-y-4">
-                              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                                  Кабинеты связанных отделений
-                                  {linkingRoom && linkingRoom.turarDept === turarDept && (
-                                    <span className="block text-sm text-blue-600 dark:text-blue-400 mt-1">
-                                      Выберите кабинет для связи с "{linkingRoom.turarRoom}"
-                                    </span>
-                                  )}
-                                </h3>
-                                <div className="space-y-3">
-                                  {projectorDepts.map(projectorDept => {
-                                    const projectorMapping = departmentMappings?.find(m => 
-                                      m.turar_department === turarDept && m.projector_department === projectorDept
-                                    );
-                                    
-                                    if (!projectorMapping) return null;
+                             {/* Кабинеты Проектировщиков или навигация связывания */}
+                             <div className="space-y-4">
+                               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                 <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center justify-between">
+                                   <span>Кабинеты связанных отделений</span>
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     className="text-blue-700 border-blue-200 hover:bg-blue-100"
+                                   >
+                                     <Edit className="h-4 w-4 mr-1" />
+                                     Редактировать связки
+                                   </Button>
+                                 </h3>
+                                 
+                                 {/* Многоуровневая навигация для связывания */}
+                                 {linkingStep === 'departments' && linkingRoom && linkingRoom.turarDept === turarDept && (
+                                   <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 rounded-lg">
+                                     <div className="flex items-center justify-between mb-3">
+                                       <div className="flex items-center gap-2">
+                                         <Link2 className="h-4 w-4 text-yellow-700" />
+                                         <span className="font-medium text-yellow-800">
+                                           Связывание: {linkingRoom.turarRoom}
+                                         </span>
+                                       </div>
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={() => {
+                                           setLinkingStep('none')
+                                           setLinkingRoom(null)
+                                           setSelectedLinkingDept('')
+                                         }}
+                                         className="text-yellow-700 hover:bg-yellow-200"
+                                       >
+                                         <X className="h-4 w-4" />
+                                       </Button>
+                                     </div>
+                                     <div className="text-sm text-yellow-700 mb-3">
+                                       Шаг 1: Выберите отделение проектировщиков
+                                     </div>
+                                     <div className="grid grid-cols-1 gap-2">
+                                       {projectorDepts.map(projectorDept => (
+                                         <Button
+                                           key={projectorDept}
+                                           variant="outline"
+                                           size="sm"
+                                           onClick={() => {
+                                             setSelectedLinkingDept(projectorDept)
+                                             setLinkingStep('rooms')
+                                           }}
+                                           className="justify-start text-left h-auto p-3"
+                                         >
+                                           <div>
+                                             <div className="font-medium">{projectorDept}</div>
+                                             <div className="text-xs text-muted-foreground">
+                                               Нажмите для выбора кабинетов
+                                             </div>
+                                           </div>
+                                         </Button>
+                                       ))}
+                                     </div>
+                                   </div>
+                                 )}
 
-                                    return (
-                                      <div key={projectorDept} className="border rounded-lg p-2">
-                                        <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
-                                          {projectorDept}
-                                        </div>
-                                        <MappedProjectorDepartmentDisplay 
-                                          departmentMappingId={projectorMapping.id}
-                                          departmentName={projectorDept}
-                                          linkingRoom={linkingRoom && linkingRoom.turarDept === turarDept ? linkingRoom : undefined}
-                                          onCreateConnection={createConnection}
-                                          onRemoveConnection={removeConnection}
-                                          roomConnections={roomConnections || []}
-                                          expandedRooms={expandedRooms}
-                                          setExpandedRooms={setExpandedRooms}
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
+                                 {linkingStep === 'rooms' && linkingRoom && selectedLinkingDept && (
+                                   <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/20 border border-green-300 rounded-lg">
+                                     <div className="flex items-center justify-between mb-3">
+                                       <div className="flex items-center gap-2">
+                                         <Button
+                                           size="sm"
+                                           variant="ghost"
+                                           onClick={() => {
+                                             setLinkingStep('departments')
+                                             setSelectedLinkingDept('')
+                                           }}
+                                           className="text-green-700 hover:bg-green-200 mr-2"
+                                         >
+                                           <ArrowLeft className="h-4 w-4" />
+                                         </Button>
+                                         <span className="font-medium text-green-800">
+                                           {selectedLinkingDept} → {linkingRoom.turarRoom}
+                                         </span>
+                                       </div>
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={() => {
+                                           setLinkingStep('none')
+                                           setLinkingRoom(null)
+                                           setSelectedLinkingDept('')
+                                         }}
+                                         className="text-green-700 hover:bg-green-200"
+                                       >
+                                         <X className="h-4 w-4" />
+                                       </Button>
+                                     </div>
+                                     <div className="text-sm text-green-700 mb-3">
+                                       Шаг 2: Выберите кабинет в {selectedLinkingDept}
+                                     </div>
+                                     
+                                     {(() => {
+                                       const projectorMapping = departmentMappings?.find(m => 
+                                         m.turar_department === turarDept && m.projector_department === selectedLinkingDept
+                                       );
+                                       
+                                       if (!projectorMapping) return null;
+
+                                       return (
+                                         <MappedProjectorDepartmentDisplay 
+                                           departmentMappingId={projectorMapping.id}
+                                           departmentName={selectedLinkingDept}
+                                           linkingRoom={{
+                                             turarDept: linkingRoom.turarDept,
+                                             turarRoom: linkingRoom.turarRoom,
+                                             projectorDept: selectedLinkingDept
+                                           }}
+                                           onCreateConnection={(turarDept, turarRoom, projectorDept, projectorRoom) => {
+                                             createConnection(turarDept, turarRoom, projectorDept, projectorRoom)
+                                             setLinkingStep('none')
+                                             setSelectedLinkingDept('')
+                                           }}
+                                           onRemoveConnection={removeConnection}
+                                           roomConnections={roomConnections || []}
+                                           expandedRooms={expandedRooms}
+                                           setExpandedRooms={setExpandedRooms}
+                                         />
+                                       );
+                                     })()}
+                                   </div>
+                                 )}
+
+                                 {/* Обычное отображение когда не в режиме связывания */}
+                                 {linkingStep === 'none' && (
+                                   <div className="space-y-3">
+                                     {projectorDepts.map(projectorDept => {
+                                       const projectorMapping = departmentMappings?.find(m => 
+                                         m.turar_department === turarDept && m.projector_department === projectorDept
+                                       );
+                                       
+                                       if (!projectorMapping) return null;
+
+                                       return (
+                                         <div key={projectorDept} className="border rounded-lg p-2">
+                                           <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+                                             {projectorDept}
+                                           </div>
+                                           <MappedProjectorDepartmentDisplay 
+                                             departmentMappingId={projectorMapping.id}
+                                             departmentName={projectorDept}
+                                             onCreateConnection={createConnection}
+                                             onRemoveConnection={removeConnection}
+                                             roomConnections={roomConnections || []}
+                                             expandedRooms={expandedRooms}
+                                             setExpandedRooms={setExpandedRooms}
+                                           />
+                                         </div>
+                                       );
+                                     })}
+                                   </div>
+                                 )}
+                               </div>
+                             </div>
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -541,17 +671,21 @@ export default function ConnectionsPage() {
         </Dialog>
 
         {/* Индикатор режима связывания */}
-        {linkingRoom && (
+        {linkingStep !== 'none' && linkingRoom && (
           <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground p-4 rounded-lg shadow-lg">
             <div className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
               <span className="text-sm">
-                Режим связывания: {linkingRoom.turarDept} → {linkingRoom.turarRoom}
+                {linkingStep === 'departments' ? 'Выберите отделение' : 'Выберите кабинет'}: {linkingRoom.turarDept} → {linkingRoom.turarRoom}
               </span>
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setLinkingRoom(null)}
+                onClick={() => {
+                  setLinkingStep('none')
+                  setLinkingRoom(null)
+                  setSelectedLinkingDept('')
+                }}
               >
                 <X className="h-3 w-3" />
               </Button>
