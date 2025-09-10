@@ -40,7 +40,7 @@ export default function ProjectorDepartmentDisplay({
   return (
     <div className="space-y-3">
       <div className="p-3 border rounded-lg bg-muted/20">
-        <h4 className="font-medium text-secondary flex items-center gap-2 mb-3">
+        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
           <Home className="h-4 w-4" />
           {departmentName} ({Object.keys(roomsData).length} кабинетов)
         </h4>
@@ -66,16 +66,16 @@ export default function ProjectorDepartmentDisplay({
                   <div className="flex items-center gap-2 flex-1">
                     {isRoomExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                     <Home className="h-3 w-3 text-muted-foreground" />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{roomName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Этаж {roomData.roomInfo.floor} • Блок {roomData.roomInfo.block}
-                        {roomData.roomInfo.area && ` • ${roomData.roomInfo.area} м²`}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {roomData.equipment.length} единиц оборудования
-                      </div>
-                    </div>
+                     <div className="flex-1">
+                       <div className="text-sm font-medium text-foreground">{roomName}</div>
+                       <div className="text-xs text-muted-foreground">
+                         Этаж {roomData.roomInfo.floor} • Блок {roomData.roomInfo.block}
+                         {roomData.roomInfo.area && ` • ${roomData.roomInfo.area} м²`}
+                       </div>
+                       <div className="text-xs text-muted-foreground">
+                         {roomData.equipment.length} единиц оборудования
+                       </div>
+                     </div>
                     {connections.length > 0 && (
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                         <Link2 className="h-3 w-3 mr-1" />
@@ -122,16 +122,16 @@ export default function ProjectorDepartmentDisplay({
                       {roomData.equipment.length > 0 ? (
                         <div className="grid gap-1">
                           {roomData.equipment.map((equipment, eqIndex) => (
-                            <div key={eqIndex} className="flex items-center justify-between p-2 bg-muted/20 rounded border text-xs">
-                              <div className="flex-1">
-                                <div className="font-medium">{equipment.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {equipment.code && `Код: ${equipment.code} • `}
-                                  Количество: {equipment.quantity}
-                                  {equipment.unit && ` ${equipment.unit}`}
-                                </div>
-                              </div>
-                            </div>
+                             <div key={eqIndex} className="flex items-center justify-between p-2 bg-muted/20 rounded border text-xs">
+                               <div className="flex-1">
+                                 <div className="font-medium text-foreground">{equipment.name}</div>
+                                 <div className="text-xs text-muted-foreground">
+                                   {equipment.code && `Код: ${equipment.code} • `}
+                                   Количество: {equipment.quantity}
+                                   {equipment.unit && ` ${equipment.unit}`}
+                                 </div>
+                               </div>
+                             </div>
                           ))}
                         </div>
                       ) : (

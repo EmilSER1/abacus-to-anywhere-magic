@@ -112,6 +112,11 @@ export const useProjectorDepartmentRooms = (departmentName: string) => {
   const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
   const uniqueDepartments = [...new Set(allDepartments)];
   console.log(`🏢 Все уникальные отделения:`, uniqueDepartments);
+  console.log(`🎯 Ищем точное совпадение для:`, {
+    search: departmentName,
+    searchTrimmed: departmentName.trim(),
+    searchLower: departmentName.trim().toLowerCase()
+  });
 
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
