@@ -97,9 +97,7 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
     const match = itemDept && itemDept.trim() === projectorDepartmentName.trim();
-    if (match) {
-      console.log(`✅ Найдено совпадение: "${itemDept}" === "${projectorDepartmentName}"`);
-    }
+    console.log(`🔍 Проверяем: "${itemDept}" === "${projectorDepartmentName}" = ${match}`);
     return match;
   }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
