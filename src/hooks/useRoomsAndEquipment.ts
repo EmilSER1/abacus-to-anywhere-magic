@@ -49,6 +49,8 @@ export const useProjectorRoomsAndEquipment = () => {
     },
     staleTime: 0, // Данные всегда считаются устаревшими
     gcTime: 0, // Не кешировать данные
+    refetchOnMount: 'always', // Всегда перезагружать при монтировании
+    refetchOnWindowFocus: false, // Не перезагружать при фокусе окна
   });
 };
 
@@ -70,6 +72,8 @@ export const useTurarRoomsAndEquipment = () => {
     },
     staleTime: 0, // Данные всегда считаются устаревшими
     gcTime: 0, // Не кешировать данные
+    refetchOnMount: 'always', // Всегда перезагружать при монтировании
+    refetchOnWindowFocus: false, // Не перезагружать при фокусе окна
   });
 };
 
