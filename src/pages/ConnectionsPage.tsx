@@ -254,7 +254,12 @@ export default function ConnectionsPage() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => removeDepartmentMapping(mapping.id)}
+                                      className="hover:bg-red-100 hover:text-red-600"
+                                      onClick={() => {
+                                        if (confirm('Удалить связь отделений?')) {
+                                          removeDepartmentMapping(mapping.id)
+                                        }
+                                      }}
                                     >
                                       <X className="h-3 w-3" />
                                     </Button>
@@ -362,6 +367,7 @@ export default function ConnectionsPage() {
                                 turarRoom: room,
                                 projectorDept: ''
                               })}
+                              onRemoveConnection={removeConnection}
                               roomConnections={roomConnections || []}
                               expandedRooms={expandedRooms}
                               onToggleRoom={(roomKey) => {

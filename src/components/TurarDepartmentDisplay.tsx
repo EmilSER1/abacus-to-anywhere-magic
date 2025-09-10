@@ -1,11 +1,12 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronRight, Home, Link2, Wrench } from 'lucide-react'
+import { ChevronDown, ChevronRight, Home, Link2, Wrench, X } from 'lucide-react'
 import { useTurarDepartmentRooms } from '@/hooks/useRoomsAndEquipment'
 
 interface TurarDepartmentDisplayProps {
   departmentName: string
   onLinkRoom: (roomName: string) => void
+  onRemoveConnection: (turarDept: string, turarRoom: string, projectorDept: string, projectorRoom: string) => void
   roomConnections: any[]
   expandedRooms: Set<string>
   onToggleRoom: (roomKey: string) => void
@@ -14,6 +15,7 @@ interface TurarDepartmentDisplayProps {
 export default function TurarDepartmentDisplay({ 
   departmentName, 
   onLinkRoom, 
+  onRemoveConnection,
   roomConnections,
   expandedRooms,
   onToggleRoom
@@ -117,8 +119,21 @@ export default function TurarDepartmentDisplay({
                     </div>
                     <div className="space-y-1">
                       {connections.map((conn, connIndex) => (
-                        <div key={connIndex} className="text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded">
-                          {conn.projector_department} → {conn.projector_room}
+                        <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded">
+                          <span className="text-xs">{conn.projector_department} → {conn.projector_room}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-auto p-1 hover:bg-red-100 hover:text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (confirm('Удалить эту связь?')) {
+                                onRemoveConnection(conn.turar_department, conn.turar_room, conn.projector_department, conn.projector_room)
+                              }
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
                       ))}
                     </div>
