@@ -76,47 +76,49 @@ export const useGetAllDepartments = () => {
     queryKey: ["all-departments", "v3"], // Сброс кеша
     queryFn: async () => {
       try {
-        console.log('🔍 Начинаем загрузку отделений...');
+        console.log('🔍 НАЧИНАЕМ ЗАГРУЗКУ ОТДЕЛЕНИЙ В ХУКЕ');
         
         // Получаем уникальные отделения Турар
-        const { data: turarData, error: turarError } = await supabase
+        console.log('📋 Запрашиваем данные Турар...');
+        const { data: turarData, error: turarError, count: turarCount } = await supabase
           .from("turar_medical")
-          .select('"Отделение/Блок"')
-          .limit(10000); // Явно устанавливаем большой лимит
+          .select('"Отделение/Блок"', { count: 'exact' })
+          .limit(10000);
 
-        if (turarError) {
-          console.error('❌ Ошибка загрузки Турар:', turarError);
-          throw turarError;
-        }
+        console.log('📋 РЕЗУЛЬТАТ ЗАПРОСА ТУРАР:');
+        console.log('- data length:', turarData?.length);
+        console.log('- count:', turarCount);
+        console.log('- error:', turarError);
+        console.log('- первые 5 записей:', turarData?.slice(0, 5));
 
-        console.log('📋 Сырые данные Турар:', turarData?.length, 'записей');
-        console.log('📋 Образец данных Турар:', turarData?.slice(0, 3));
+        if (turarError) throw turarError;
 
         // Получаем уникальные отделения Проектировщиков
-        const { data: projectorData, error: projectorError } = await supabase
+        console.log('🏗️ Запрашиваем данные Проектировщиков...');
+        const { data: projectorData, error: projectorError, count: projectorCount } = await supabase
           .from("projector_floors")
-          .select('"ОТДЕЛЕНИЕ"')
+          .select('"ОТДЕЛЕНИЕ"', { count: 'exact' })
           .not('"ОТДЕЛЕНИЕ"', 'is', null)
-          .limit(10000); // Явно устанавливаем большой лимит
+          .limit(10000);
 
-        if (projectorError) {
-          console.error('❌ Ошибка загрузки Проектировщиков:', projectorError);
-          throw projectorError;
-        }
+        console.log('🏗️ РЕЗУЛЬТАТ ЗАПРОСА ПРОЕКТИРОВЩИКОВ:');
+        console.log('- data length:', projectorData?.length);
+        console.log('- count:', projectorCount);
+        console.log('- error:', projectorError);
+        console.log('- первые 5 записей:', projectorData?.slice(0, 5));
 
-        console.log('🏗️ Сырые данные Проектировщиков:', projectorData?.length, 'записей');
-        console.log('🏗️ Образец данных Проектировщиков:', projectorData?.slice(0, 3));
+        if (projectorError) throw projectorError;
 
         const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].filter(Boolean).sort();
         const uniqueProjectorDepts = [...new Set(projectorData?.map(item => {
           const dept = item["ОТДЕЛЕНИЕ"];
           if (!dept) return null;
-          // Убираем лишние пробелы и переносы строк
           return dept.replace(/\s+/g, ' ').trim();
         }) || [])].filter(Boolean).sort();
 
-        console.log('✅ Обработанные отделения Турар:', uniqueTurarDepts.length, uniqueTurarDepts);
-        console.log('✅ Обработанные отделения Проектировщиков:', uniqueProjectorDepts.length, uniqueProjectorDepts);
+        console.log('✅ ФИНАЛЬНЫЙ РЕЗУЛЬТАТ:');
+        console.log('- Уникальные Турар:', uniqueTurarDepts.length, uniqueTurarDepts);
+        console.log('- Уникальные Проектировщики:', uniqueProjectorDepts.length, uniqueProjectorDepts);
 
         return {
           turarDepartments: uniqueTurarDepts,
