@@ -35,34 +35,17 @@ export const useProjectorRoomsAndEquipment = () => {
   return useQuery({
     queryKey: ["projector-rooms-equipment"],
     queryFn: async () => {
-      let allData: ProjectorRoomData[] = [];
-      let from = 0;
-      const limit = 10000;
-      let hasMore = true;
+      const { data, error } = await (supabase as any)
+        .from("projector_floors")
+        .select("*")
+        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"');
 
-      while (hasMore) {
-        const { data, error } = await (supabase as any)
-          .from("projector_floors")
-          .select("*")
-          .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"')
-          .range(from, from + limit - 1);
-
-        if (error) {
-          throw error;
-        }
-
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          from += limit;
-          hasMore = data.length === limit;
-          console.log(`📊 Загружено ${allData.length} записей проектировщиков (батч ${Math.floor(from/limit)})`);
-        } else {
-          hasMore = false;
-        }
+      if (error) {
+        throw error;
       }
 
-      console.log(`📊 Итого загружено ${allData.length} записей проектировщиков с кабинетами и оборудованием`);
-      return allData as ProjectorRoomData[];
+      console.log(`📊 Загружено ${data?.length || 0} записей проектировщиков с кабинетами и оборудованием`);
+      return (data || []) as ProjectorRoomData[];
     },
   });
 };
@@ -71,34 +54,17 @@ export const useTurarRoomsAndEquipment = () => {
   return useQuery({
     queryKey: ["turar-rooms-equipment"],
     queryFn: async () => {
-      let allData: TurarRoomData[] = [];
-      let from = 0;
-      const limit = 10000;
-      let hasMore = true;
+      const { data, error } = await (supabase as any)
+        .from("turar_medical")
+        .select("*")
+        .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"');
 
-      while (hasMore) {
-        const { data, error } = await (supabase as any)
-          .from("turar_medical")
-          .select("*")
-          .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
-          .range(from, from + limit - 1);
-
-        if (error) {
-          throw error;
-        }
-
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          from += limit;
-          hasMore = data.length === limit;
-          console.log(`🏥 Загружено ${allData.length} записей турар (батч ${Math.floor(from/limit)})`);
-        } else {
-          hasMore = false;
-        }
+      if (error) {
+        throw error;
       }
 
-      console.log(`🏥 Итого загружено ${allData.length} записей турар с кабинетами и оборудованием`);
-      return allData as TurarRoomData[];
+      console.log(`🏥 Загружено ${data?.length || 0} записей турар с кабинетами и оборудованием`);
+      return (data || []) as TurarRoomData[];
     },
   });
 };
