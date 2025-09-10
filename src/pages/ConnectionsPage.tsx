@@ -394,9 +394,12 @@ export default function ConnectionsPage() {
 
             {/* Отладочная информация */}
             <div className="mb-4 p-3 bg-muted/50 rounded-lg text-sm">
-              <div>Отделений Турар: {allDepartments?.turarDepartments?.length || 0}</div>
-              <div>Отделений Проектировщиков: {allDepartments?.projectorDepartments?.length || 0}</div>
+              <div>Отделений Турар: {allDepartments?.turarDepartments?.length || 0} (ожидается 22)</div>
+              <div>Отделений Проектировщиков: {allDepartments?.projectorDepartments?.length || 0} (ожидается 29)</div>
               <div>Состояние загрузки: {isLoading ? 'загружается' : 'готово'}</div>
+              <div className="text-xs text-red-600">
+                Если видите не все отделения - нажмите "Обновить данные"
+              </div>
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline" 

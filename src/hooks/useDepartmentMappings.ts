@@ -73,7 +73,7 @@ export const useDeleteDepartmentMapping = () => {
 // Хук для получения уникальных отделений из базы данных
 export const useGetAllDepartments = () => {
   return useQuery({
-    queryKey: ["all-departments", "v2"], // Изменил ключ для сброса кеша
+    queryKey: ["all-departments", "v3"], // Сброс кеша
     queryFn: async () => {
       try {
         console.log('🔍 Начинаем загрузку отделений...');
