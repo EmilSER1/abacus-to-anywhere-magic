@@ -10,55 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
 import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping, useGetAllDepartments } from '@/hooks/useDepartmentMappings'
+import TurarDepartmentDisplay from '@/components/TurarDepartmentDisplay'
+import ProjectorDepartmentDisplay from '@/components/ProjectorDepartmentDisplay'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-
-// Типы данных
-interface ProjectorRoom {
-  floor: number
-  block: string
-  department: string
-  roomCode: string
-  roomName: string
-  area: number
-  equipmentCode: string | null
-  equipmentName: string | null
-  unit: string | null
-  quantity: number | null
-  notes: string | null
-}
-
-interface TurarEquipment {
-  department: string
-  room: string
-  equipmentCode: string
-  equipmentName: string
-  quantity: number
-}
-
-interface Room {
-  name: string
-  equipment: Equipment[]
-}
-
-interface Equipment {
-  code?: string
-  name: string
-  quantity: number
-  unit?: string
-}
-
-interface Department {
-  name: string
-  rooms: Room[]
-}
 
 export default function ConnectionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set())
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
-  const [projectorData, setProjectorData] = useState<ProjectorRoom[]>([])
-  const [turarData, setTurarData] = useState<TurarEquipment[]>([])
   const [linkingRoom, setLinkingRoom] = useState<{
     turarDept: string
     turarRoom: string
@@ -82,139 +42,8 @@ export default function ConnectionsPage() {
 
   // Загрузка данных из Supabase
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true)
-      try {
-        // Загружаем данные Турар
-        const { data: turarRaw, error: turarError } = await supabase
-          .from('turar_medical')
-          .select('*')
-        
-        // Загружаем данные Проектировщиков  
-        const { data: projectorRaw, error: projectorError } = await supabase
-          .from('projector_floors')
-          .select('*')
-        
-        if (turarError) {
-          console.error('Error loading turar data:', turarError)
-        } else if (turarRaw) {
-          const turarProcessed = turarRaw.map((item: any) => ({
-            department: item["Отделение/Блок"],
-            room: item["Помещение/Кабинет"],
-            equipmentCode: item["Код оборудования"],
-            equipmentName: item["Наименование"],
-            quantity: item["Кол-во"]
-          }))
-          setTurarData(turarProcessed)
-          console.log('Турар данные загружены:', turarProcessed.length)
-        }
-        
-        if (projectorError) {
-          console.error('Error loading projector data:', projectorError)
-        } else if (projectorRaw) {
-          const projectorProcessed = projectorRaw.map((item: any) => ({
-            floor: item["ЭТАЖ"],
-            block: item["БЛОК"],
-            department: item["ОТДЕЛЕНИЕ"]?.trim(),
-            roomCode: item["КОД ПОМЕЩЕНИЯ"],
-            roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-            area: item["Площадь (м2)"],
-            equipmentCode: item["Код оборудования"],
-            equipmentName: item["Наименование оборудования"],
-            unit: item["Ед. изм."],
-            quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
-            notes: item["Примечания"]
-          }))
-          setProjectorData(projectorProcessed)
-          console.log('Проектировщики данные загружены:', projectorProcessed.length)
-        }
-        
-      } catch (error) {
-        console.error('Failed to load data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
-
-  // Получение структурированных данных для отделений проектировщиков
-  const getProjectorDepartments = (turarDept: string): Department[] => {
-    // Получаем связанные отделения проектировщиков из базы данных
-    const linkedDepartments = departmentMappings?.filter(m => m.turar_department === turarDept)
-      .map(m => m.projector_department) || []
-    
-    return linkedDepartments.map(deptName => {
-      const deptItems = projectorData.filter(item => 
-        item.department && item.department.trim() === deptName.trim()
-      )
-      
-      const roomsMap = new Map<string, Room>()
-      
-      deptItems.forEach(item => {
-        const roomName = item.roomName
-        if (!roomName) return
-        
-        if (!roomsMap.has(roomName)) {
-          roomsMap.set(roomName, {
-            name: roomName,
-            equipment: []
-          })
-        }
-        
-        if (item.equipmentName?.trim()) {
-          roomsMap.get(roomName)!.equipment.push({
-            code: item.equipmentCode || undefined,
-            name: item.equipmentName,
-            quantity: item.quantity || 0,
-            unit: item.unit || undefined
-          })
-        }
-      })
-      
-      return {
-        name: deptName,
-        rooms: Array.from(roomsMap.values())
-      }
-    })
-  }
-
-  // Получение структурированных данных для отделения Турар
-  const getTurarDepartment = (deptName: string): Department | null => {
-    const deptItems = turarData.filter(item => 
-      item.department && item.department.trim() === deptName.trim()
-    )
-    
-    if (deptItems.length === 0) return null
-    
-    const roomsMap = new Map<string, Room>()
-    
-    deptItems.forEach(item => {
-      const roomName = item.room
-      if (!roomName) return
-      
-      if (!roomsMap.has(roomName)) {
-        roomsMap.set(roomName, {
-          name: roomName,
-          equipment: []
-        })
-      }
-      
-      if (item.equipmentName?.trim()) {
-        roomsMap.get(roomName)!.equipment.push({
-          code: item.equipmentCode || undefined,
-          name: item.equipmentName,
-          quantity: item.quantity || 0
-        })
-      }
-    })
-    
-    return {
-      name: deptName,
-      rooms: Array.from(roomsMap.values())
-    }
-  }
+    setIsLoading(false)
+  }, [allDepartments])
 
   // Функции для управления связями отделений
   const createDepartmentMapping = async () => {
@@ -260,19 +89,7 @@ export default function ConnectionsPage() {
     }
   }
 
-  // Функции для управления связями кабинетов (существующий функционал)
-  const getConnectedRooms = (turarDepartment: string, turarRoom: string) => {
-    return roomConnections?.filter(conn => 
-      conn.turar_department === turarDepartment && conn.turar_room === turarRoom
-    ) || [];
-  };
-
-  const getConnectedToProjectorRoom = (projectorDepartment: string, projectorRoom: string) => {
-    return roomConnections?.filter(conn => 
-      conn.projector_department === projectorDepartment && conn.projector_room === projectorRoom
-    ) || [];
-  };
-
+  // Функции для управления связями кабинетов
   const createConnection = async (turarDepartment: string, turarRoom: string, projectorDepartment: string, projectorRoom: string) => {
     const connectionData = {
       turar_department: turarDepartment,
@@ -460,12 +277,22 @@ export default function ConnectionsPage() {
                 </CardHeader>
                 <CardContent>
                   {allDepartments?.projectorDepartments.map(dept => {
-                    const isConnected = departmentMappings?.some(m => m.projector_department === dept)
+                    // Находим, к каким турар отделениям привязано это отделение проектировщиков
+                    const connectedTurar = departmentMappings?.filter(m => m.projector_department === dept)
+                      .map(m => m.turar_department) || []
+                    
                     return (
-                      <div key={dept} className={`p-3 border rounded-lg mb-2 ${isConnected ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
+                      <div key={dept} className="p-3 border rounded-lg mb-2">
                         <div className="font-medium">{dept}</div>
-                        {isConnected && (
-                          <Badge className="mt-1 bg-green-100 text-green-800">Связано</Badge>
+                        {connectedTurar.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            <div className="text-sm text-muted-foreground">Связан с Турар:</div>
+                            {connectedTurar.map(turarDept => (
+                              <div key={turarDept} className="bg-muted/50 p-2 rounded text-sm">
+                                {turarDept}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     )
@@ -496,8 +323,6 @@ export default function ConnectionsPage() {
                   turarDept.toLowerCase().includes(searchTerm.toLowerCase())
                 )
                 .map(([turarDept, projectorDepts]) => {
-                  const projectorDepartments = getProjectorDepartments(turarDept)
-                  const turarDepartment = getTurarDepartment(turarDept)
                   const isExpanded = expandedDepartments.has(turarDept)
 
                   return (
@@ -523,9 +348,6 @@ export default function ConnectionsPage() {
                               </CardDescription>
                             </div>
                           </div>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            {turarDepartment?.rooms.length || 0} кабинетов Турар • {projectorDepartments.reduce((sum, dept) => sum + dept.rooms.length, 0)} кабинетов Проектировщиков
-                          </Badge>
                         </div>
                       </CardHeader>
 
@@ -533,264 +355,50 @@ export default function ConnectionsPage() {
                         <CardContent className="pt-0">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Turar Department */}
-                            <div className="space-y-4">
-                              <h3 className="font-semibold text-primary flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                Турар
-                              </h3>
-                              {turarDepartment ? (
-                                <div className="space-y-3">
-                                  {turarDepartment.rooms.map((room, roomIndex) => {
-                                    const roomKey = `turar-${turarDept}-${room.name}`
-                                    const isRoomExpanded = expandedRooms.has(roomKey)
-                                    const connections = getConnectedRooms(turarDept, room.name)
-
-                                    return (
-                                      <div key={roomIndex} className="border rounded-lg overflow-hidden">
-                                        <div 
-                                          className="flex items-center justify-between p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                                          onClick={() => {
-                                            if (isRoomExpanded) {
-                                              expandedRooms.delete(roomKey)
-                                            } else {
-                                              expandedRooms.add(roomKey)
-                                            }
-                                            setExpandedRooms(new Set(expandedRooms))
-                                          }}
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            {isRoomExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                            <Home className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                              <div className="font-medium">{room.name}</div>
-                                              <div className="text-xs text-muted-foreground">
-                                                {room.equipment.length} единиц оборудования
-                                              </div>
-                                            </div>
-                                            {connections.length > 0 && (
-                                              <Badge variant="secondary" className="bg-green-100 text-green-800 ml-2">
-                                                <Link2 className="h-3 w-3 mr-1" />
-                                                {connections.length} связей
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              setLinkingRoom({
-                                                turarDept: turarDept,
-                                                turarRoom: room.name,
-                                                projectorDept: ''
-                                              })
-                                            }}
-                                          >
-                                            <Link2 className="h-3 w-3 mr-1" />
-                                            Связать
-                                          </Button>
-                                        </div>
-                                        
-                                        {/* Всегда показываем оборудование, но в свернутом виде */}
-                                        <div className="p-3 border-t bg-card">
-                                          {!isRoomExpanded && room.equipment.length > 0 && (
-                                            <div className="text-xs text-muted-foreground mb-2">
-                                              Оборудование: {room.equipment.slice(0, 2).map(eq => eq.name).join(', ')}
-                                              {room.equipment.length > 2 && ` и еще ${room.equipment.length - 2}...`}
-                                              <span className="text-primary cursor-pointer ml-1" onClick={(e) => {
-                                                e.stopPropagation()
-                                                expandedRooms.add(roomKey)
-                                                setExpandedRooms(new Set(expandedRooms))
-                                              }}>
-                                                развернуть
-                                              </span>
-                                            </div>
-                                          )}
-                                          
-                                          {isRoomExpanded && (
-                                            <div className="space-y-2">
-                                              <div className="font-medium text-sm flex items-center gap-2">
-                                                <Wrench className="h-3 w-3" />
-                                                Оборудование ({room.equipment.length})
-                                              </div>
-                                              <div className="grid gap-2">
-                                                {room.equipment.map((equipment, eqIndex) => (
-                                                  <div key={eqIndex} className="bg-muted/50 p-2 rounded text-sm">
-                                                    <div className="font-medium">{equipment.name}</div>
-                                                    <div className="text-muted-foreground">
-                                                      {equipment.code && `Код: ${equipment.code} • `}
-                                                      Количество: {equipment.quantity}
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          
-                                          {/* Связи */}
-                                          {connections.length > 0 && (
-                                            <div className="mt-3 space-y-2">
-                                              <div className="font-medium text-sm flex items-center gap-2">
-                                                <Link2 className="h-3 w-3" />
-                                                Связи с проектировщиками
-                                              </div>
-                                              {connections.map((conn, connIndex) => (
-                                                <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                                                  <span className="text-sm">→ {conn.projector_department} ({conn.projector_room})</span>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => removeConnection(
-                                                      conn.turar_department,
-                                                      conn.turar_room,
-                                                      conn.projector_department,
-                                                      conn.projector_room
-                                                    )}
-                                                  >
-                                                    <X className="h-3 w-3" />
-                                                  </Button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              ) : (
-                                <div className="text-muted-foreground">Данные не найдены</div>
-                              )}
-                            </div>
+                            <TurarDepartmentDisplay 
+                              departmentName={turarDept}
+                              onLinkRoom={(room) => setLinkingRoom({
+                                turarDept: turarDept,
+                                turarRoom: room,
+                                projectorDept: ''
+                              })}
+                              roomConnections={roomConnections || []}
+                              expandedRooms={expandedRooms}
+                              onToggleRoom={(roomKey) => {
+                                if (expandedRooms.has(roomKey)) {
+                                  expandedRooms.delete(roomKey)
+                                } else {
+                                  expandedRooms.add(roomKey)
+                                }
+                                setExpandedRooms(new Set(expandedRooms))
+                              }}
+                            />
 
                             {/* Projector Departments */}
                             <div className="space-y-4">
-                              <h3 className="font-semibold text-primary flex items-center gap-2">
+                              <h3 className="font-semibold text-secondary flex items-center gap-2">
                                 <Building2 className="h-4 w-4" />
                                 Проектировщики
                               </h3>
-                              {projectorDepartments.map((dept, deptIndex) => (
-                                <div key={deptIndex} className="space-y-3">
-                                  <h4 className="font-medium text-sm bg-muted/30 p-2 rounded">{dept.name}</h4>
-                                  {dept.rooms.map((room, roomIndex) => {
-                                    const roomKey = `projector-${dept.name}-${room.name}`
-                                    const isRoomExpanded = expandedRooms.has(roomKey)
-                                    const connections = getConnectedToProjectorRoom(dept.name, room.name)
-
-                                    return (
-                                      <div key={roomIndex} className="border rounded-lg overflow-hidden">
-                                        <div 
-                                          className="flex items-center justify-between p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                                          onClick={() => {
-                                            if (isRoomExpanded) {
-                                              expandedRooms.delete(roomKey)
-                                            } else {
-                                              expandedRooms.add(roomKey)
-                                            }
-                                            setExpandedRooms(new Set(expandedRooms))
-                                          }}
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            {isRoomExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                            <Home className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                              <div className="font-medium">{room.name}</div>
-                                              <div className="text-xs text-muted-foreground">
-                                                {room.equipment.length} единиц оборудования
-                                              </div>
-                                            </div>
-                                            {connections.length > 0 && (
-                                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 ml-2">
-                                                <Link2 className="h-3 w-3 mr-1" />
-                                                {connections.length} связей
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              setLinkingRoom({
-                                                turarDept: turarDept,
-                                                turarRoom: '',
-                                                projectorDept: dept.name
-                                              })
-                                            }}
-                                          >
-                                            <Link2 className="h-3 w-3 mr-1" />
-                                            Связать
-                                          </Button>
-                                        </div>
-                                        
-                                        {/* Всегда показываем оборудование, но в свернутом виде */}
-                                        <div className="p-3 border-t bg-card">
-                                          {!isRoomExpanded && room.equipment.length > 0 && (
-                                            <div className="text-xs text-muted-foreground mb-2">
-                                              Оборудование: {room.equipment.slice(0, 2).map(eq => eq.name).join(', ')}
-                                              {room.equipment.length > 2 && ` и еще ${room.equipment.length - 2}...`}
-                                              <span className="text-primary cursor-pointer ml-1" onClick={(e) => {
-                                                e.stopPropagation()
-                                                expandedRooms.add(roomKey)
-                                                setExpandedRooms(new Set(expandedRooms))
-                                              }}>
-                                                развернуть
-                                              </span>
-                                            </div>
-                                          )}
-                                          
-                                          {isRoomExpanded && (
-                                            <div className="space-y-2">
-                                              <div className="font-medium text-sm flex items-center gap-2">
-                                                <Wrench className="h-3 w-3" />
-                                                Оборудование ({room.equipment.length})
-                                              </div>
-                                              <div className="grid gap-2">
-                                                {room.equipment.map((equipment, eqIndex) => (
-                                                  <div key={eqIndex} className="bg-muted/50 p-2 rounded text-sm">
-                                                    <div className="font-medium">{equipment.name}</div>
-                                                    <div className="text-muted-foreground">
-                                                      {equipment.code && `Код: ${equipment.code} • `}
-                                                      Количество: {equipment.quantity}
-                                                      {equipment.unit && ` ${equipment.unit}`}
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          
-                                          {/* Связи */}
-                                          {connections.length > 0 && (
-                                            <div className="mt-3 space-y-2">
-                                              <div className="font-medium text-sm flex items-center gap-2">
-                                                <Link2 className="h-3 w-3" />
-                                                Связи с Турар
-                                              </div>
-                                              {connections.map((conn, connIndex) => (
-                                                <div key={connIndex} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-                                                  <span className="text-sm">← {conn.turar_department} ({conn.turar_room})</span>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => removeConnection(
-                                                      conn.turar_department,
-                                                      conn.turar_room,
-                                                      conn.projector_department,
-                                                      conn.projector_room
-                                                    )}
-                                                  >
-                                                    <X className="h-3 w-3" />
-                                                  </Button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
+                              {projectorDepts.map((projDept) => (
+                                <ProjectorDepartmentDisplay
+                                  key={projDept}
+                                  departmentName={projDept}
+                                  turarDept={turarDept}
+                                  linkingRoom={linkingRoom}
+                                  onCreateConnection={createConnection}
+                                  onRemoveConnection={removeConnection}
+                                  roomConnections={roomConnections || []}
+                                  expandedRooms={expandedRooms}
+                                  onToggleRoom={(roomKey) => {
+                                    if (expandedRooms.has(roomKey)) {
+                                      expandedRooms.delete(roomKey)
+                                    } else {
+                                      expandedRooms.add(roomKey)
+                                    }
+                                    setExpandedRooms(new Set(expandedRooms))
+                                  }}
+                                />
                               ))}
                             </div>
                           </div>
@@ -803,24 +411,27 @@ export default function ConnectionsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Dialog для создания связи отделений */}
+        {/* Диалог создания связи отделений */}
         <Dialog open={showMappingDialog} onOpenChange={setShowMappingDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Создать связь отделений</DialogTitle>
               <DialogDescription>
-                Выберите отделение Турар и соответствующие отделения Проектировщиков
+                Выберите отделение Турар и связанные с ним отделения Проектировщиков
               </DialogDescription>
             </DialogHeader>
+            
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Отделение Турар:</label>
+                <label className="text-sm font-medium">Отделение Турар</label>
                 <Select value={selectedTurarDept} onValueChange={setSelectedTurarDept}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите отделение Турар" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allDepartments?.turarDepartments.map(dept => (
+                    {allDepartments?.turarDepartments
+                      .filter(dept => !mappedDepartments.has(dept))
+                      .map(dept => (
                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
                   </SelectContent>
@@ -828,12 +439,13 @@ export default function ConnectionsPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium">Отделения Проектировщиков:</label>
-                <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
+                <label className="text-sm font-medium">Отделения Проектировщиков</label>
+                <div className="border rounded-md p-3 max-h-60 overflow-y-auto">
                   {allDepartments?.projectorDepartments.map(dept => (
-                    <label key={dept} className="flex items-center space-x-2">
+                    <div key={dept} className="flex items-center space-x-2 mb-2">
                       <input
                         type="checkbox"
+                        id={dept}
                         checked={selectedProjectorDepts.includes(dept)}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -843,8 +455,8 @@ export default function ConnectionsPage() {
                           }
                         }}
                       />
-                      <span className="text-sm">{dept}</span>
-                    </label>
+                      <label htmlFor={dept} className="text-sm cursor-pointer flex-1">{dept}</label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -854,7 +466,7 @@ export default function ConnectionsPage() {
                   Отмена
                 </Button>
                 <Button 
-                  onClick={createDepartmentMapping} 
+                  onClick={createDepartmentMapping}
                   disabled={!selectedTurarDept || selectedProjectorDepts.length === 0}
                 >
                   Создать связи
@@ -864,66 +476,23 @@ export default function ConnectionsPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog для связывания кабинетов */}
+        {/* Индикатор режима связывания */}
         {linkingRoom && (
-          <Dialog open={!!linkingRoom} onOpenChange={() => setLinkingRoom(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Создать связь кабинетов</DialogTitle>
-                <DialogDescription>
-                  Связать кабинет {linkingRoom.turarRoom} из отделения {linkingRoom.turarDept}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Выберите отделение проектировщиков:</label>
-                  <Select 
-                    value={linkingRoom.projectorDept} 
-                    onValueChange={(value) => setLinkingRoom(prev => prev ? {...prev, projectorDept: value} : null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите отделение" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departmentMappings
-                        ?.filter(m => m.turar_department === linkingRoom.turarDept)
-                        .map(m => m.projector_department)
-                        .map(dept => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {linkingRoom.projectorDept && (
-                  <div>
-                    <label className="text-sm font-medium">Выберите помещение:</label>
-                    <div className="space-y-2 mt-2">
-                      {getProjectorDepartments(linkingRoom.turarDept)
-                        .find(d => d.name === linkingRoom.projectorDept)
-                        ?.rooms.map(room => (
-                          <Button
-                            key={room.name}
-                            variant="outline"
-                            className="w-full justify-start"
-                            onClick={() => {
-                              createConnection(
-                                linkingRoom.turarDept,
-                                linkingRoom.turarRoom,
-                                linkingRoom.projectorDept,
-                                room.name
-                              )
-                            }}
-                          >
-                            {room.name}
-                          </Button>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+          <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground p-4 rounded-lg shadow-lg">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              <span className="text-sm">
+                Режим связывания: {linkingRoom.turarDept} → {linkingRoom.turarRoom}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setLinkingRoom(null)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
