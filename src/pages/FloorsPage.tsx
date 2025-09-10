@@ -406,24 +406,38 @@ export default function FloorsPage() {
                             }}
                           >
                             <AccordionItem value={`dept-${deptIndex}`} className="border-none">
-                              <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
-                                <div className="flex items-center justify-between w-full mr-4">
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="outline" className="font-mono">
-                                      Блок {department.block}
-                                    </Badge>
-                                     <span className="font-medium">{department.name}</span>
-                                     <span className="text-sm text-muted-foreground">
-                                       {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
-                                     </span>
-                                   </div>
-                                   <div className="flex items-center gap-2">
-                                     <Badge variant="secondary" className="text-xs">
-                                       {department.equipmentCount} ед. оборуд.
+                               <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
+                                 <div className="flex items-center justify-between w-full mr-4">
+                                   <div className="flex items-center gap-3">
+                                     <Badge variant="outline" className="font-mono">
+                                       Блок {department.block}
                                      </Badge>
-                                   </div>
-                                </div>
-                              </AccordionTrigger>
+                                      <span className="font-medium">{department.name}</span>
+                                      <span className="text-sm text-muted-foreground">
+                                        {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
+                                      </span>
+                                      {/* Индикатор связей на уровне отделения */}
+                                      {roomConnections && (() => {
+                                        const connectedRooms = department.rooms.filter(room => 
+                                          roomConnections.some(conn => 
+                                            conn.projector_department === department.name && conn.projector_room === room.name
+                                          )
+                                        );
+                                        return connectedRooms.length > 0 ? (
+                                          <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
+                                            <Link className="h-3 w-3 mr-1" />
+                                            {connectedRooms.length} связанных комнат
+                                          </Badge>
+                                        ) : null;
+                                      })()}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {department.equipmentCount} ед. оборуд.
+                                      </Badge>
+                                    </div>
+                                 </div>
+                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
                                  <div className="space-y-3">
                                    <div className="text-xs font-medium text-muted-foreground mb-2">
@@ -444,33 +458,37 @@ export default function FloorsPage() {
                                             }
                                           }}
                                         >
-                                         <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
-                                           <AccordionTrigger className="px-3 py-2 text-xs hover:no-underline hover:bg-muted/30">
-                                              <div className="flex justify-between items-center w-full mr-4">
-                                                <div className="flex items-center gap-2 flex-1">
-                                                  <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                  <span className="font-medium">{room.name}</span>
-                                                  <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
+                                          <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
+                                            <AccordionTrigger className={`px-3 py-2 text-xs hover:no-underline hover:bg-muted/30 ${
+                                              roomConnections && roomConnections.some(conn => 
+                                                conn.projector_department === department.name && conn.projector_room === room.name
+                                              ) ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''
+                                            }`}>
+                                               <div className="flex justify-between items-center w-full mr-4">
+                                                 <div className="flex items-center gap-2 flex-1">
+                                                   <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                   <span className="font-medium">{room.name}</span>
+                                                   <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
                                                    {roomConnections && (() => {
                                                      const connections = roomConnections.filter(conn => 
                                                        conn.projector_department === department.name && conn.projector_room === room.name
                                                      );
                                                      return connections.length > 0 ? (
-                                                       <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                                                       <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
                                                          <Link className="h-3 w-3 mr-1" />
-                                                         Связано ({connections.length})
+                                                         ✓ Связано ({connections.length})
                                                        </Badge>
                                                      ) : null;
                                                    })()}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                  <span>{(room.area || 0).toFixed(1)} м²</span>
-                                                  <Badge variant="secondary" className="text-xs">
-                                                    {room.equipment.length} ед.
-                                                  </Badge>
-                                                </div>
-                                              </div>
-                                           </AccordionTrigger>
+                                                 </div>
+                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                   <span>{(room.area || 0).toFixed(1)} м²</span>
+                                                   <Badge variant="secondary" className="text-xs">
+                                                     {room.equipment.length} ед.
+                                                   </Badge>
+                                                 </div>
+                                               </div>
+                                            </AccordionTrigger>
                                             <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (
                                                 <div className="bg-background/50 rounded border">
@@ -549,17 +567,21 @@ export default function FloorsPage() {
                                                        conn.projector_department === department.name && conn.projector_room === room.name
                                                      );
                                                      return connections.length > 0 ? (
-                                                       <div className="mt-3 pt-3 border-t border-border/50">
-                                                         <div className="text-xs font-medium text-muted-foreground mb-2">
+                                                       <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                                                         <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                           <Link className="h-4 w-4" />
                                                            Связано с кабинетами Турар:
                                                          </div>
-                                                         <div className="space-y-1">
+                                                         <div className="space-y-2">
                                                            {connections.map((conn, connIndex) => (
-                                                             <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded text-xs">
-                                                               <span>{conn.turar_department} → {conn.turar_room}</span>
-                                                               <Badge variant="secondary" className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
+                                                             <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-3 rounded-md border border-green-200 dark:border-green-700">
+                                                               <div className="font-medium">
+                                                                 <div className="text-sm">{conn.turar_department}</div>
+                                                                 <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                               </div>
+                                                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
                                                                  <Link className="h-3 w-3 mr-1" />
-                                                                 Связь
+                                                                 Активная связь
                                                                </Badge>
                                                              </div>
                                                            ))}
@@ -578,17 +600,21 @@ export default function FloorsPage() {
                                                        conn.projector_department === department.name && conn.projector_room === room.name
                                                      );
                                                      return connections.length > 0 ? (
-                                                       <div className="mt-3 pt-3 border-t border-border/50">
-                                                         <div className="text-xs font-medium text-muted-foreground mb-2">
+                                                       <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                                                         <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                           <Link className="h-4 w-4" />
                                                            Связано с кабинетами Турар:
                                                          </div>
-                                                         <div className="space-y-1">
+                                                         <div className="space-y-2">
                                                            {connections.map((conn, connIndex) => (
-                                                             <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded text-xs">
-                                                               <span>{conn.turar_department} → {conn.turar_room}</span>
-                                                               <Badge variant="secondary" className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
+                                                             <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-3 rounded-md border border-green-200 dark:border-green-700">
+                                                               <div className="font-medium">
+                                                                 <div className="text-sm">{conn.turar_department}</div>
+                                                                 <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                               </div>
+                                                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
                                                                  <Link className="h-3 w-3 mr-1" />
-                                                                 Связь
+                                                                 Активная связь
                                                                </Badge>
                                                              </div>
                                                            ))}
