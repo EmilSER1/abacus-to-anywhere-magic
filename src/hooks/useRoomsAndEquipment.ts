@@ -113,10 +113,11 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
   
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
-    const trimmedItemDept = itemDept?.trim();
-    const trimmedSearchDept = projectorDepartmentName.trim();
-    const match = trimmedItemDept && trimmedItemDept === trimmedSearchDept;
-    console.log(`🔍 Проверяем: "${trimmedItemDept}" === "${trimmedSearchDept}" = ${match}`);
+    // Удаляем все лишние пробелы, переносы строк и другие невидимые символы
+    const cleanItemDept = itemDept?.replace(/\s+/g, ' ').trim();
+    const cleanSearchDept = projectorDepartmentName.replace(/\s+/g, ' ').trim();
+    const match = cleanItemDept && cleanItemDept === cleanSearchDept;
+    console.log(`🔍 Проверяем: "${cleanItemDept}" === "${cleanSearchDept}" = ${match}`);
     return match;
   }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
