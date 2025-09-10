@@ -28,7 +28,9 @@ export default function ProjectorDepartmentDisplay({
   
   console.log(`🏗️ ProjectorDepartmentDisplay для ${departmentName}:`, {
     roomsData,
-    roomsCount: Object.keys(roomsData || {}).length
+    roomsCount: Object.keys(roomsData || {}).length,
+    turarDept,
+    departmentName
   })
 
   const getConnectedToProjectorRoom = (projectorDepartment: string, projectorRoom: string) => {
@@ -45,12 +47,14 @@ export default function ProjectorDepartmentDisplay({
           {departmentName} ({Object.keys(roomsData).length} кабинетов)
         </h4>
         
-        <div className="space-y-2">
-          {Object.keys(roomsData).length === 0 ? (
-            <div className="text-sm text-muted-foreground italic p-2">
-              Нет данных о кабинетах для этого отделения
-            </div>
-          ) : (
+         <div className="space-y-2">
+           {Object.keys(roomsData).length === 0 ? (
+             <div className="text-sm text-muted-foreground italic p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
+               ⚠️ Нет данных о кабинетах для отделения "{departmentName}"
+               <br />
+               <span className="text-xs">Проверьте точное совпадение названий отделений в базах Турар и Проектировщики</span>
+             </div>
+           ) : (
             Object.entries(roomsData).map(([roomName, roomData]) => {
             const roomKey = `projector-${departmentName}-${roomName}`
             const isRoomExpanded = expandedRooms.has(roomKey)

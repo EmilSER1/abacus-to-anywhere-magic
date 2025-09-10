@@ -117,12 +117,20 @@ export const useProjectorDepartmentRooms = (departmentName: string) => {
     searchTrimmed: departmentName.trim(),
     searchLower: departmentName.trim().toLowerCase()
   });
+  
+  // Показываем несколько примеров для сравнения
+  console.log(`🔍 Первые 3 отделения проектировщиков:`, uniqueDepartments.slice(0, 3));
 
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
     const match = itemDept && itemDept.trim().toLowerCase() === departmentName.trim().toLowerCase();
     if (match) {
-      console.log(`✅ Найдено совпадение: "${itemDept}" === "${departmentName}"`);
+      console.log(`✅ Найдено точное совпадение: "${itemDept}" === "${departmentName}"`);
+    } else if (itemDept) {
+      // Показываем близкие совпадения для отладки
+      if (itemDept.toLowerCase().includes(departmentName.toLowerCase().split(' ')[0])) {
+        console.log(`🔍 Похожее отделение найдено: "${itemDept}" (искали: "${departmentName}")`);
+      }
     }
     return match;
   }).reduce((acc, item) => {
@@ -172,7 +180,9 @@ export const useProjectorDepartmentRooms = (departmentName: string) => {
 
   console.log(`📈 Результат для "${departmentName}":`, {
     organizedData,
-    roomsCount: Object.keys(organizedData || {}).length
+    roomsCount: Object.keys(organizedData || {}).length,
+    foundRooms: Object.keys(organizedData || {}),
+    isEmpty: Object.keys(organizedData || {}).length === 0
   });
 
   return organizedData || {};
