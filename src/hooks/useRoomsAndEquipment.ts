@@ -33,7 +33,7 @@ export interface TurarRoomData {
 
 export const useProjectorRoomsAndEquipment = () => {
   return useQuery<ProjectorRoomData[]>({
-    queryKey: ["projector-rooms-equipment", Date.now()], // Уникальный ключ для принудительного обновления
+    queryKey: ["projector-rooms-equipment"],
     queryFn: async () => {
       console.log(`🔄 Загружаем данные проектировщиков из базы...`);
       const { data, error } = await (supabase as any)
@@ -60,7 +60,7 @@ export const useProjectorRoomsAndEquipment = () => {
 
 export const useTurarRoomsAndEquipment = () => {
   return useQuery<TurarRoomData[]>({
-    queryKey: ["turar-rooms-equipment", Date.now()], // Уникальный ключ для принудительного обновления
+    queryKey: ["turar-rooms-equipment"],
     queryFn: async () => {
       console.log(`🔄 Загружаем данные Турар из базы...`);
       const { data, error } = await (supabase as any)
