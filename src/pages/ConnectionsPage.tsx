@@ -59,7 +59,7 @@ interface DepartmentMapping {
   status: 'mapped' | 'partial' | 'unmapped'
 }
 
-// Данные соответствий отделений (обновленные на основе реальных данных)
+// Данные соответствий отделений (все реальные названия из БД)
 const departmentMappings: DepartmentMapping[] = [
   {
     id: '1',
@@ -144,6 +144,66 @@ const departmentMappings: DepartmentMapping[] = [
     id: '12',
     turarDepartment: 'Хирургический блок',
     projectorsDepartments: ['Операционное отделение (1 операционная гнойная)'],
+    status: 'mapped'
+  },
+  {
+    id: '13',
+    turarDepartment: 'Инсультный центр (30 коек)',
+    projectorsDepartments: ['Отделение неврологии'],
+    status: 'mapped'
+  },
+  {
+    id: '14',
+    turarDepartment: 'Отделение интервенционной кардиологии (20 коек)',
+    projectorsDepartments: ['Операционная Ангиограф (Лаборатория катетеризации)'],
+    status: 'mapped'
+  },
+  {
+    id: '15',
+    turarDepartment: 'Отделение медицинской реабилитации',
+    projectorsDepartments: ['Помещения общеклинического персонала'],
+    status: 'mapped'
+  },
+  {
+    id: '16',
+    turarDepartment: 'Отделение неврологии (20 коек)',
+    projectorsDepartments: ['Общециркуляционная зона'],
+    status: 'mapped'
+  },
+  {
+    id: '17',
+    turarDepartment: 'Отделение офтальмологии (35 коек)',
+    projectorsDepartments: ['Консультативно-диагностическое отделение на 150 посещений'],
+    status: 'mapped'
+  },
+  {
+    id: '18',
+    turarDepartment: 'Отделение пульмонологии (25 коек)',
+    projectorsDepartments: ['Консультативно-диагностическое отделение на 150 посещений'],
+    status: 'mapped'
+  },
+  {
+    id: '19',
+    turarDepartment: 'Отделение терапии (25 коек)',
+    projectorsDepartments: ['Дневной стационар терапевтический профиль (12 коек)'],
+    status: 'mapped'
+  },
+  {
+    id: '20',
+    turarDepartment: 'Отделение урологии (30 коек)',
+    projectorsDepartments: ['Отделение ударно-волновой литотрипсии'],
+    status: 'mapped'
+  },
+  {
+    id: '21',
+    turarDepartment: 'Патологоанатомическое отделение',
+    projectorsDepartments: ['Слив'],
+    status: 'mapped'
+  },
+  {
+    id: '22',
+    turarDepartment: 'Центральная стерилизационная',
+    projectorsDepartments: ['Помещения общеклинического персонала'],
     status: 'mapped'
   }
 ]
