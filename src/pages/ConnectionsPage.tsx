@@ -386,10 +386,16 @@ export default function ConnectionsPage() {
                                 <Building2 className="h-4 w-4" />
                                 Проектировщики
                               </h3>
-                              {projectorDepts.map((projDept) => (
-                                <ProjectorDepartmentDisplay
-                                  key={projDept}
-                                  departmentName={projDept}
+                               {projectorDepts.map((projDept) => {
+                                 console.log(`🔧 Передаю в ProjectorDepartmentDisplay:`, {
+                                   projDept,
+                                   turarDept,
+                                   projectorDepts
+                                 });
+                                 return (
+                                 <ProjectorDepartmentDisplay
+                                   key={projDept}
+                                   departmentName={projDept}
                                   turarDept={turarDept}
                                   linkingRoom={linkingRoom}
                                   onCreateConnection={createConnection}
@@ -403,9 +409,10 @@ export default function ConnectionsPage() {
                                       expandedRooms.add(roomKey)
                                     }
                                     setExpandedRooms(new Set(expandedRooms))
-                                  }}
-                                />
-                              ))}
+                                   }}
+                                 />
+                                 )
+                               })}
                             </div>
                           </div>
                         </CardContent>

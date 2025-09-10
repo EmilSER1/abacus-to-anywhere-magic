@@ -111,7 +111,12 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
   // Получаем все уникальные отделения для отладки
   const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
   const uniqueDepartments = [...new Set(allDepartments)];
-  console.log(`🏢 Все уникальные отделения проектировщиков:`, uniqueDepartments.slice(0, 5));
+  console.log(`🏢 Все уникальные отделения проектировщиков (первые 10):`, uniqueDepartments.slice(0, 10));
+  console.log(`🎯 Ищем отделение проектировщиков:`, {
+    search: projectorDepartmentName,
+    searchTrimmed: projectorDepartmentName.trim(),
+    exactMatches: uniqueDepartments.filter(dept => dept.trim() === projectorDepartmentName.trim())
+  });
 
   
   const organizedData = projectorData?.filter(item => {
