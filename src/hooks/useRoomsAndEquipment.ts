@@ -55,12 +55,13 @@ export const useProjectorRoomsAndEquipment = () => {
           allData = [...allData, ...data];
           from += limit;
           hasMore = data.length === limit;
+          console.log(`📊 Загружено ${allData.length} записей проектировщиков (батч ${Math.floor(from/limit)})`);
         } else {
           hasMore = false;
         }
       }
 
-      console.log(`📊 Загружено ${allData.length} записей проектировщиков с кабинетами и оборудованием`);
+      console.log(`📊 Итого загружено ${allData.length} записей проектировщиков с кабинетами и оборудованием`);
       return allData as ProjectorRoomData[];
     },
   });
@@ -90,12 +91,13 @@ export const useTurarRoomsAndEquipment = () => {
           allData = [...allData, ...data];
           from += limit;
           hasMore = data.length === limit;
+          console.log(`🏥 Загружено ${allData.length} записей турар (батч ${Math.floor(from/limit)})`);
         } else {
           hasMore = false;
         }
       }
 
-      console.log(`🏥 Загружено ${allData.length} записей турар с кабинетами и оборудованием`);
+      console.log(`🏥 Итого загружено ${allData.length} записей турар с кабинетами и оборудованием`);
       return allData as TurarRoomData[];
     },
   });
