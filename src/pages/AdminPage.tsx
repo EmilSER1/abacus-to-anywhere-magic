@@ -1,8 +1,9 @@
 import React from 'react';
 import { Navigation } from '@/components/Navigation';
 import { DataSyncPanel } from '@/components/DataSyncPanel';
+import { CsvUploadPanel } from '@/components/CsvUploadPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Database, Users, FileText } from 'lucide-react';
+import { Settings, Database, Users, FileText, Upload } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   return (
@@ -22,7 +23,7 @@ const AdminPage: React.FC = () => {
         </div>
 
         {/* Admin Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           
           {/* Data Sync Section */}
           <div className="space-y-6">
@@ -31,6 +32,15 @@ const AdminPage: React.FC = () => {
               Управление данными
             </h2>
             <DataSyncPanel />
+            
+            {/* CSV Upload Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Загрузка CSV файлов
+              </h3>
+              <CsvUploadPanel />
+            </div>
           </div>
 
           {/* Statistics Section */}

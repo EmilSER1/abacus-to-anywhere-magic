@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,28 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Navigation } from '@/components/Navigation';
-import { Download, BarChart3, Package, Search } from 'lucide-react';
+import { Download, BarChart3, Package, Search, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
-
-// Interfaces
-interface TurarEquipment {
-  "Отделение/Блок": string;
-  "Помещение/Кабинет": string;
-  "Код оборудования": string;
-  "Наименование": string;
-  "Кол-во": number;
-}
-
-interface FloorEquipment {
-  "ЭТАЖ": number;
-  "БЛОК": string;
-  "ОТДЕЛЕНИЕ": string;
-  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
-  "Код оборудования": string | null;
-  "Наименование оборудования": string | null;
-  "Кол-во": number | string | null;
-}
+import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
+import { useFloorsData } from '@/hooks/useFloorsData';
 
 interface ConsolidatedEquipment {
   code: string;
@@ -39,120 +22,103 @@ interface ConsolidatedEquipment {
 
 const ConsolidationPage: React.FC = () => {
   const navigate = useNavigate();
-  const [turarData, setTurarData] = useState<ConsolidatedEquipment[]>([]);
-  const [floorsData, setFloorsData] = useState<ConsolidatedEquipment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('turar');
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const { data: turarRawData, isLoading: turarLoading } = useTurarMedicalData();
+  const { data: floorsRawData, isLoading: floorsLoading } = useFloorsData();
 
-  useEffect(() => {
-    loadAndConsolidateData();
-  }, []);
+  // Consolidate data using useMemo for performance
+  const turarData = useMemo(() => {
+    if (!turarRawData) return [];
 
-  const loadAndConsolidateData = async () => {
-    setIsLoading(true);
-    try {
-      // Load Turar data
-      const turarResponse = await fetch(`/turar_full.json?t=${Date.now()}`);
-      const turarEquipment: TurarEquipment[] = await turarResponse.json();
+    const turarMap = new Map<string, {
+      name: string;
+      quantity: number;
+      departments: Set<string>;
+      rooms: Set<string>;
+    }>();
 
-      // Load Floor data
-      const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
-      const floorsEquipment: FloorEquipment[] = await floorsResponse.json();
+    turarRawData.forEach(item => {
+      const code = item["Код оборудования"];
+      const name = item["Наименование"];
+      const quantity = item["Кол-во"] || 0;
 
-      // Consolidate Turar data
-      const turarMap = new Map<string, {
-        name: string;
-        quantity: number;
-        departments: Set<string>;
-        rooms: Set<string>;
-      }>();
-
-      turarEquipment.forEach(item => {
-        const code = item["Код оборудования"];
-        const name = item["Наименование"];
-        const quantity = typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(String(item["Кол-во"])) || 0;
-
-        if (turarMap.has(code)) {
-          const existing = turarMap.get(code)!;
-          existing.quantity += quantity;
-          existing.departments.add(item["Отделение/Блок"]);
-          existing.rooms.add(item["Помещение/Кабинет"]);
-        } else {
-          turarMap.set(code, {
-            name,
-            quantity,
-            departments: new Set([item["Отделение/Блок"]]),
-            rooms: new Set([item["Помещение/Кабинет"]])
-          });
-        }
-      });
-
-      // Consolidate Floors data
-      const floorsMap = new Map<string, {
-        name: string;
-        quantity: number;
-        departments: Set<string>;
-        rooms: Set<string>;
-      }>();
-
-      floorsEquipment.forEach(item => {
-        const code = String(item["Код оборудования"] || '');
-        const name = item["Наименование оборудования"] || '';
-        const quantity = typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(String(item["Кол-во"])) || 1;
-
-        if (!code || !name) return;
-
-        if (floorsMap.has(code)) {
-          const existing = floorsMap.get(code)!;
-          existing.quantity += quantity;
-          existing.departments.add(item["ОТДЕЛЕНИЕ"]);
-          existing.rooms.add(item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]);
-        } else {
-          floorsMap.set(code, {
-            name,
-            quantity,
-            departments: new Set([item["ОТДЕЛЕНИЕ"]]),
-            rooms: new Set([item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]])
-          });
-        }
-      });
-
-      // Convert to arrays
-      const turarConsolidated: ConsolidatedEquipment[] = [];
-      turarMap.forEach((item, code) => {
-        turarConsolidated.push({
-          code,
-          name: item.name,
-          quantity: item.quantity,
-          departments: Array.from(item.departments),
-          rooms: Array.from(item.rooms)
+      if (turarMap.has(code)) {
+        const existing = turarMap.get(code)!;
+        existing.quantity += quantity;
+        existing.departments.add(item["Отделение/Блок"]);
+        existing.rooms.add(item["Помещение/Кабинет"]);
+      } else {
+        turarMap.set(code, {
+          name,
+          quantity,
+          departments: new Set([item["Отделение/Блок"]]),
+          rooms: new Set([item["Помещение/Кабинет"]])
         });
-      });
+      }
+    });
 
-      const floorsConsolidated: ConsolidatedEquipment[] = [];
-      floorsMap.forEach((item, code) => {
-        floorsConsolidated.push({
-          code,
-          name: item.name,
-          quantity: item.quantity,
-          departments: Array.from(item.departments),
-          rooms: Array.from(item.rooms)
+    const turarConsolidated: ConsolidatedEquipment[] = [];
+    turarMap.forEach((item, code) => {
+      turarConsolidated.push({
+        code,
+        name: item.name,
+        quantity: item.quantity,
+        departments: Array.from(item.departments),
+        rooms: Array.from(item.rooms)
+      });
+    });
+
+    return turarConsolidated.sort((a, b) => b.quantity - a.quantity);
+  }, [turarRawData]);
+
+  const floorsData = useMemo(() => {
+    if (!floorsRawData) return [];
+
+    const floorsMap = new Map<string, {
+      name: string;
+      quantity: number;
+      departments: Set<string>;
+      rooms: Set<string>;
+    }>();
+
+    floorsRawData.forEach(item => {
+      const code = String(item["Код оборудования"] || '');
+      const name = item["Наименование оборудования"] || '';
+      const quantity = typeof item["Кол-во"] === 'number' ? parseInt(String(item["Кол-во"])) || 1 : 
+                      typeof item["Кол-во"] === 'string' ? parseInt(item["Кол-во"]) || 1 : 1;
+
+      if (!code || !name) return;
+
+      if (floorsMap.has(code)) {
+        const existing = floorsMap.get(code)!;
+        existing.quantity += quantity;
+        existing.departments.add(item["ОТДЕЛЕНИЕ"]);
+        existing.rooms.add(item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]);
+      } else {
+        floorsMap.set(code, {
+          name,
+          quantity,
+          departments: new Set([item["ОТДЕЛЕНИЕ"]]),
+          rooms: new Set([item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]])
         });
+      }
+    });
+
+    const floorsConsolidated: ConsolidatedEquipment[] = [];
+    floorsMap.forEach((item, code) => {
+      floorsConsolidated.push({
+        code,
+        name: item.name,
+        quantity: item.quantity,
+        departments: Array.from(item.departments),
+        rooms: Array.from(item.rooms)
       });
+    });
 
-      // Sort by quantity (descending)
-      turarConsolidated.sort((a, b) => b.quantity - a.quantity);
-      floorsConsolidated.sort((a, b) => b.quantity - a.quantity);
-
-      setTurarData(turarConsolidated);
-      setFloorsData(floorsConsolidated);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return floorsConsolidated.sort((a, b) => b.quantity - a.quantity);
+  }, [floorsRawData]);
 
   const exportToExcel = (data: ConsolidatedEquipment[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(
@@ -212,12 +178,15 @@ const ConsolidationPage: React.FC = () => {
     </Table>
   );
 
+  const isLoading = turarLoading || floorsLoading;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         <Navigation />
         <main className="container mx-auto px-4 py-8 max-w-6xl">
           <div className="text-center py-16">
+            <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
             <div className="text-lg">Загрузка данных для консолидации...</div>
           </div>
         </main>
