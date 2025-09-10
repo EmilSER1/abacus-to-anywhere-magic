@@ -73,46 +73,46 @@ export const useDeleteDepartmentMapping = () => {
 // Хук для получения уникальных отделений из базы данных
 export const useGetAllDepartments = () => {
   return useQuery({
-    queryKey: ["all-departments", "v4"], // Новый сброс кеша
+    queryKey: ["all-departments", "v5"], // Используем функции БД
     queryFn: async () => {
       try {
-        console.log('🔍 ЗАГРУЖАЕМ ВСЕ ОТДЕЛЕНИЯ');
+        console.log('🔍 ИСПОЛЬЗУЕМ ФУНКЦИИ БАЗЫ ДАННЫХ');
         
-        // Получаем ВСЕ записи Турар (увеличиваем лимит)
-        console.log('📋 Запрашиваем ВСЕ данные Турар...');
+        // Вызываем функцию для получения уникальных отделений Турар
+        console.log('📋 Вызываем get_unique_turar_departments...');
         const { data: turarData, error: turarError } = await supabase
-          .from("turar_medical")
-          .select('"Отделение/Блок"')
-          .limit(5000); // Увеличили лимит
+          .rpc('get_unique_turar_departments');
 
-        if (turarError) throw turarError;
-        console.log('📋 Загружено записей Турар:', turarData?.length);
+        if (turarError) {
+          console.error('❌ Ошибка загрузки Турар:', turarError);
+          throw turarError;
+        }
 
-        // Получаем ВСЕ записи Проектировщиков
-        console.log('🏗️ Запрашиваем ВСЕ данные Проектировщиков...');
+        console.log('📋 РЕЗУЛЬТАТ ТУРАР:', turarData?.length, turarData);
+
+        // Вызываем функцию для получения уникальных отделений Проектировщиков
+        console.log('🏗️ Вызываем get_unique_projector_departments...');
         const { data: projectorData, error: projectorError } = await supabase
-          .from("projector_floors")
-          .select('"ОТДЕЛЕНИЕ"')
-          .not('"ОТДЕЛЕНИЕ"', 'is', null)
-          .limit(8000); // Увеличили лимит еще больше
+          .rpc('get_unique_projector_departments');
 
-        if (projectorError) throw projectorError;
-        console.log('🏗️ Загружено записей Проектировщиков:', projectorData?.length);
+        if (projectorError) {
+          console.error('❌ Ошибка загрузки Проектировщиков:', projectorError);
+          throw projectorError;
+        }
 
-        const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].filter(Boolean).sort();
-        const uniqueProjectorDepts = [...new Set(projectorData?.map(item => {
-          const dept = item["ОТДЕЛЕНИЕ"];
-          if (!dept) return null;
-          return dept.replace(/\s+/g, ' ').trim();
-        }) || [])].filter(Boolean).sort();
+        console.log('🏗️ РЕЗУЛЬТАТ ПРОЕКТИРОВЩИКИ:', projectorData?.length, projectorData);
+
+        // Преобразуем данные в нужный формат
+        const turarDepartments = turarData?.map(item => item.department_name) || [];
+        const projectorDepartments = projectorData?.map(item => item.department_name) || [];
 
         console.log('✅ ФИНАЛЬНЫЙ РЕЗУЛЬТАТ:');
-        console.log('- Уникальные Турар:', uniqueTurarDepts.length, uniqueTurarDepts);
-        console.log('- Уникальные Проектировщики:', uniqueProjectorDepts.length, uniqueProjectorDepts);
+        console.log('- Уникальные Турар:', turarDepartments.length, turarDepartments);
+        console.log('- Уникальные Проектировщики:', projectorDepartments.length, projectorDepartments);
 
         return {
-          turarDepartments: uniqueTurarDepts,
-          projectorDepartments: uniqueProjectorDepts
+          turarDepartments,
+          projectorDepartments
         };
       } catch (error) {
         console.error('Ошибка загрузки отделений:', error);
