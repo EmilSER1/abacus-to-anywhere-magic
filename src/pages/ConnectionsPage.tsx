@@ -339,12 +339,20 @@ export default function ConnectionsPage() {
     return mapped
   }
 
-  if (isLoading) {
+  if (isLoading || !allDepartments) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         <Navigation />
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <div className="text-center">Загрузка данных...</div>
+          <div className="text-center">
+            <div>Загрузка данных...</div>
+            {allDepartments && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Турар: {allDepartments.turarDepartments?.length || 0} отделений, 
+                Проектировщики: {allDepartments.projectorDepartments?.length || 0} отделений
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -382,6 +390,13 @@ export default function ConnectionsPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Добавить связь отделений
               </Button>
+            </div>
+
+            {/* Отладочная информация */}
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg text-sm">
+              <div>Отделений Турар: {allDepartments?.turarDepartments?.length || 0}</div>
+              <div>Отделений Проектировщиков: {allDepartments?.projectorDepartments?.length || 0}</div>
+              <div>Состояние загрузки: {isLoading ? 'загружается' : 'готово'}</div>
             </div>
 
             {/* Отображение связанных отделений */}

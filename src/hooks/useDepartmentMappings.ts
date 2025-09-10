@@ -75,30 +75,36 @@ export const useGetAllDepartments = () => {
   return useQuery({
     queryKey: ["all-departments"],
     queryFn: async () => {
-      // Получаем уникальные отделения Турар
-      const { data: turarDepts, error: turarError } = await supabase
-        .from("turar_medical")
-        .select("Отделение/Блок")
-        .order("Отделение/Блок");
+      try {
+        // Получаем уникальные отделения Турар
+        const { data: turarData, error: turarError } = await supabase
+          .from("turar_medical")
+          .select('"Отделение/Блок"');
 
-      if (turarError) throw turarError;
+        if (turarError) throw turarError;
 
-      // Получаем уникальные отделения Проектировщиков
-      const { data: projectorDepts, error: projectorError } = await supabase
-        .from("projector_floors")
-        .select("ОТДЕЛЕНИЕ")
-        .not("ОТДЕЛЕНИЕ", "is", null)
-        .order("ОТДЕЛЕНИЕ");
+        // Получаем уникальные отделения Проектировщиков
+        const { data: projectorData, error: projectorError } = await supabase
+          .from("projector_floors")
+          .select('"ОТДЕЛЕНИЕ"')
+          .not('"ОТДЕЛЕНИЕ"', 'is', null);
 
-      if (projectorError) throw projectorError;
+        if (projectorError) throw projectorError;
 
-      const uniqueTurarDepts = [...new Set(turarDepts?.map(item => item["Отделение/Блок"]) || [])];
-      const uniqueProjectorDepts = [...new Set(projectorDepts?.map(item => item["ОТДЕЛЕНИЕ"]?.trim()) || [])].filter(Boolean);
+        const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].sort();
+        const uniqueProjectorDepts = [...new Set(projectorData?.map(item => item["ОТДЕЛЕНИЕ"]?.trim()) || [])].filter(Boolean).sort();
 
-      return {
-        turarDepartments: uniqueTurarDepts,
-        projectorDepartments: uniqueProjectorDepts
-      };
+        console.log('Загружены отделения Турар:', uniqueTurarDepts);
+        console.log('Загружены отделения Проектировщиков:', uniqueProjectorDepts);
+
+        return {
+          turarDepartments: uniqueTurarDepts,
+          projectorDepartments: uniqueProjectorDepts
+        };
+      } catch (error) {
+        console.error('Ошибка загрузки отделений:', error);
+        throw error;
+      }
     },
   });
 };
