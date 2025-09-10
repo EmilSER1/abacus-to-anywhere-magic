@@ -451,17 +451,17 @@ export default function FloorsPage() {
                                                   <MapPin className="h-3 w-3 text-muted-foreground" />
                                                   <span className="font-medium">{room.name}</span>
                                                   <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
-                                                  {roomConnections && (() => {
-                                                    const connections = roomConnections.filter(conn => 
-                                                      conn.projector_department === department.name && conn.projector_room === room.name
-                                                    );
-                                                    return connections.length > 0 ? (
-                                                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                                                        <Link className="h-2 w-2 mr-1" />
-                                                        Связано с {connections[0].turar_department}
-                                                      </Badge>
-                                                    ) : null;
-                                                  })()}
+                                                   {roomConnections && (() => {
+                                                     const connections = roomConnections.filter(conn => 
+                                                       conn.projector_department === department.name && conn.projector_room === room.name
+                                                     );
+                                                     return connections.length > 0 ? (
+                                                       <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
+                                                         <Link className="h-3 w-3 mr-1" />
+                                                         Связано ({connections.length})
+                                                       </Badge>
+                                                     ) : null;
+                                                   })()}
                                                 </div>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                   <span>{(room.area || 0).toFixed(1)} м²</span>
@@ -540,13 +540,63 @@ export default function FloorsPage() {
                                                           </tr>
                                                         );
                                                       })}
-                                                    </tbody>
-                                                  </table>
-                                                </div>
-                                              ) : (
-                                                <div className="text-center py-4 text-muted-foreground text-xs">
-                                                  Оборудование не указано
-                                                </div>
+                                                     </tbody>
+                                                   </table>
+                                                   
+                                                   {/* Связи с Турар */}
+                                                   {roomConnections && (() => {
+                                                     const connections = roomConnections.filter(conn => 
+                                                       conn.projector_department === department.name && conn.projector_room === room.name
+                                                     );
+                                                     return connections.length > 0 ? (
+                                                       <div className="mt-3 pt-3 border-t border-border/50">
+                                                         <div className="text-xs font-medium text-muted-foreground mb-2">
+                                                           Связано с кабинетами Турар:
+                                                         </div>
+                                                         <div className="space-y-1">
+                                                           {connections.map((conn, connIndex) => (
+                                                             <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded text-xs">
+                                                               <span>{conn.turar_department} → {conn.turar_room}</span>
+                                                               <Badge variant="secondary" className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
+                                                                 <Link className="h-3 w-3 mr-1" />
+                                                                 Связь
+                                                               </Badge>
+                                                             </div>
+                                                           ))}
+                                                         </div>
+                                                       </div>
+                                                     ) : null;
+                                                   })()}
+                                                 </div>
+                                               ) : (
+                                                 <div className="text-center py-4 text-muted-foreground text-xs">
+                                                   Оборудование не указано
+                                                   
+                                                   {/* Связи с Турар для комнат без оборудования */}
+                                                   {roomConnections && (() => {
+                                                     const connections = roomConnections.filter(conn => 
+                                                       conn.projector_department === department.name && conn.projector_room === room.name
+                                                     );
+                                                     return connections.length > 0 ? (
+                                                       <div className="mt-3 pt-3 border-t border-border/50">
+                                                         <div className="text-xs font-medium text-muted-foreground mb-2">
+                                                           Связано с кабинетами Турар:
+                                                         </div>
+                                                         <div className="space-y-1">
+                                                           {connections.map((conn, connIndex) => (
+                                                             <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 p-2 rounded text-xs">
+                                                               <span>{conn.turar_department} → {conn.turar_room}</span>
+                                                               <Badge variant="secondary" className="bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200">
+                                                                 <Link className="h-3 w-3 mr-1" />
+                                                                 Связь
+                                                               </Badge>
+                                                             </div>
+                                                           ))}
+                                                         </div>
+                                                       </div>
+                                                     ) : null;
+                                                   })()}
+                                                 </div>
                                               )}
                                             </AccordionContent>
                                           </AccordionItem>
