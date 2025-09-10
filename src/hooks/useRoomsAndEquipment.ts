@@ -117,7 +117,6 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
     const cleanItemDept = itemDept?.replace(/\s+/g, ' ').trim();
     const cleanSearchDept = projectorDepartmentName.replace(/\s+/g, ' ').trim();
     const match = cleanItemDept && cleanItemDept === cleanSearchDept;
-    console.log(`🔍 Проверяем: "${cleanItemDept}" === "${cleanSearchDept}" = ${match}`);
     return match;
   }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
@@ -177,9 +176,13 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
 export const useTurarDepartmentRooms = (departmentName: string) => {
   const { data: turarData } = useTurarRoomsAndEquipment();
 
-  const organizedData = turarData?.filter(item => 
-    item["Отделение/Блок"] && item["Отделение/Блок"].trim() === departmentName.trim()
-  ).reduce((acc, item) => {
+  const organizedData = turarData?.filter(item => {
+    const itemDept = item["Отделение/Блок"];
+    // Удаляем все лишние пробелы, переносы строк и другие невидимые символы
+    const cleanItemDept = itemDept?.replace(/\s+/g, ' ').trim();
+    const cleanSearchDept = departmentName.replace(/\s+/g, ' ').trim();
+    return cleanItemDept && cleanItemDept === cleanSearchDept;
+  }).reduce((acc, item) => {
     const roomName = item["Помещение/Кабинет"];
     if (!roomName) return acc;
 
