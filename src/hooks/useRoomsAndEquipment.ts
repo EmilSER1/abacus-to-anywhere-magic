@@ -105,9 +105,22 @@ export const useTurarRoomsAndEquipment = () => {
 export const useProjectorDepartmentRooms = (departmentName: string) => {
   const { data: projectorData } = useProjectorRoomsAndEquipment();
 
-  const organizedData = projectorData?.filter(item => 
-    item["ОТДЕЛЕНИЕ"] && item["ОТДЕЛЕНИЕ"].trim() === departmentName.trim()
-  ).reduce((acc, item) => {
+  console.log(`🔍 useProjectorDepartmentRooms поиск для "${departmentName}"`);
+  console.log(`📊 Всего данных проектировщиков:`, projectorData?.length);
+  
+  // Получаем все уникальные отделения для отладки
+  const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
+  const uniqueDepartments = [...new Set(allDepartments)];
+  console.log(`🏢 Все уникальные отделения:`, uniqueDepartments);
+
+  const organizedData = projectorData?.filter(item => {
+    const itemDept = item["ОТДЕЛЕНИЕ"];
+    const match = itemDept && itemDept.trim().toLowerCase() === departmentName.trim().toLowerCase();
+    if (match) {
+      console.log(`✅ Найдено совпадение: "${itemDept}" === "${departmentName}"`);
+    }
+    return match;
+  }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
     if (!roomName) return acc;
 
@@ -151,6 +164,11 @@ export const useProjectorDepartmentRooms = (departmentName: string) => {
       notes: string | null;
     }>;
   }>);
+
+  console.log(`📈 Результат для "${departmentName}":`, {
+    organizedData,
+    roomsCount: Object.keys(organizedData || {}).length
+  });
 
   return organizedData || {};
 };
