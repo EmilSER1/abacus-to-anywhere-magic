@@ -97,26 +97,24 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
     return {};
   }
   
-  // Получаем все уникальные отделения для отладки
-  const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
-  const uniqueDepartments = [...new Set(allDepartments)];
-  console.log(`🏢 Все уникальные отделения проектировщиков (всего ${uniqueDepartments.length}):`, uniqueDepartments);
-  console.log(`🎯 Ищем отделение проектировщиков: "${projectorDepartmentName}"`);
-  
-  // Проверяем частичные совпадения
-  const partialMatches = uniqueDepartments.filter(dept => 
-    dept.toLowerCase().includes(projectorDepartmentName.toLowerCase()) || 
-    projectorDepartmentName.toLowerCase().includes(dept.toLowerCase())
-  );
-  console.log(`🔍 Частичные совпадения для "${projectorDepartmentName}":`, partialMatches);
-
+  // Нормализуем название отделения для поиска - убираем все лишние пробелы
+  const normalizedSearchDept = projectorDepartmentName.replace(/\s+/g, ' ').trim().toLowerCase();
+  console.log(`🎯 Нормализованное название для поиска: "${normalizedSearchDept}"`);
   
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
-    // Удаляем все лишние пробелы, переносы строк и другие невидимые символы
-    const cleanItemDept = itemDept?.replace(/\s+/g, ' ').trim();
-    const cleanSearchDept = projectorDepartmentName.replace(/\s+/g, ' ').trim();
-    const match = cleanItemDept && cleanItemDept === cleanSearchDept;
+    if (!itemDept) return false;
+    
+    // Нормализуем название отделения из БД
+    const normalizedItemDept = itemDept.replace(/\s+/g, ' ').trim().toLowerCase();
+    
+    // Проверяем точное совпадение нормализованных названий
+    const match = normalizedItemDept === normalizedSearchDept;
+    
+    if (match) {
+      console.log(`✅ Найдено совпадение: "${itemDept}" -> "${normalizedItemDept}"`);
+    }
+    
     return match;
   }).reduce((acc, item) => {
     const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
@@ -176,12 +174,33 @@ export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => 
 export const useTurarDepartmentRooms = (departmentName: string) => {
   const { data: turarData } = useTurarRoomsAndEquipment();
 
+  console.log(`🔍 useTurarDepartmentRooms вызван для: "${departmentName}"`);
+  console.log(`📊 Всего данных Турар:`, turarData?.length);
+  
+  if (!turarData || turarData.length === 0) {
+    console.log(`❌ Нет данных Турар для поиска`);
+    return {};
+  }
+
+  // Нормализуем название отделения для поиска
+  const normalizedSearchDept = departmentName.replace(/\s+/g, ' ').trim().toLowerCase();
+  console.log(`🎯 Нормализованное название Турар для поиска: "${normalizedSearchDept}"`);
+
   const organizedData = turarData?.filter(item => {
     const itemDept = item["Отделение/Блок"];
-    // Удаляем все лишние пробелы, переносы строк и другие невидимые символы
-    const cleanItemDept = itemDept?.replace(/\s+/g, ' ').trim();
-    const cleanSearchDept = departmentName.replace(/\s+/g, ' ').trim();
-    return cleanItemDept && cleanItemDept === cleanSearchDept;
+    if (!itemDept) return false;
+    
+    // Нормализуем название отделения из БД
+    const normalizedItemDept = itemDept.replace(/\s+/g, ' ').trim().toLowerCase();
+    
+    // Проверяем точное совпадение нормализованных названий
+    const match = normalizedItemDept === normalizedSearchDept;
+    
+    if (match) {
+      console.log(`✅ Найдено совпадение Турар: "${itemDept}" -> "${normalizedItemDept}"`);
+    }
+    
+    return match;
   }).reduce((acc, item) => {
     const roomName = item["Помещение/Кабинет"];
     if (!roomName) return acc;
@@ -214,6 +233,13 @@ export const useTurarDepartmentRooms = (departmentName: string) => {
       quantity: number;
     }>;
   }>);
+
+  console.log(`📈 Результат Турар для "${departmentName}":`, {
+    organizedData,
+    roomsCount: Object.keys(organizedData || {}).length,
+    foundRooms: Object.keys(organizedData || {}),
+    isEmpty: Object.keys(organizedData || {}).length === 0
+  });
 
   return organizedData || {};
 };
