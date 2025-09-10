@@ -2,7 +2,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronRight, Home, Link2, Wrench, X } from 'lucide-react'
 import { useProjectorDepartmentRooms } from '@/hooks/useRoomsAndEquipment'
-import { useDepartmentMappings } from '@/hooks/useDepartmentMappings'
 
 interface ProjectorDepartmentDisplayProps {
   departmentName: string
@@ -25,20 +24,11 @@ export default function ProjectorDepartmentDisplay({
   expandedRooms,
   onToggleRoom
 }: ProjectorDepartmentDisplayProps) {
-  const roomsData = useProjectorDepartmentRooms(departmentName)  // departmentName здесь - это название отделения Турар
-  const { data: departmentMappings } = useDepartmentMappings()
+  const roomsData = useProjectorDepartmentRooms(departmentName)  // departmentName здесь - название отделения проектировщиков
   
-  // Находим соответствующее название отделения проектировщиков
-  const projectorDepartmentName = departmentMappings?.find(mapping => 
-    mapping.turar_department === departmentName
-  )?.projector_department || departmentName;
-  
-  console.log(`🏗️ ProjectorDepartmentDisplay для ${departmentName}:`, {
+  console.log(`🏗️ ProjectorDepartmentDisplay для "${departmentName}":`, {
     roomsData,
-    roomsCount: Object.keys(roomsData || {}).length,
-    turarDept,
-    departmentName,
-    projectorDepartmentName
+    roomsCount: Object.keys(roomsData || {}).length
   })
 
   const getConnectedToProjectorRoom = (projectorDepartment: string, projectorRoom: string) => {
@@ -52,17 +42,15 @@ export default function ProjectorDepartmentDisplay({
       <div className="p-3 border rounded-lg bg-muted/20">
         <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
           <Home className="h-4 w-4" />
-          {projectorDepartmentName} ({Object.keys(roomsData).length} кабинетов)
+          {departmentName} ({Object.keys(roomsData).length} кабинетов)
         </h4>
         
          <div className="space-y-2">
            {Object.keys(roomsData).length === 0 ? (
              <div className="text-sm text-muted-foreground italic p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
-               ⚠️ Нет данных о кабинетах для отделения "{projectorDepartmentName}"
+               ⚠️ Нет данных о кабинетах для отделения "{departmentName}"
                <br />
-               <span className="text-xs">Отделение Турар: "{departmentName}"</span>
-               <br />
-               <span className="text-xs">Проверьте маппинг отделений и данные проектировщиков</span>
+               <span className="text-xs">Проверьте данные проектировщиков в базе</span>
              </div>
            ) : (
             Object.entries(roomsData).map(([roomName, roomData]) => {

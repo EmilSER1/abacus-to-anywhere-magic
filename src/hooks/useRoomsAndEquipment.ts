@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useDepartmentMappings } from "./useDepartmentMappings";
 
 export interface ProjectorRoomData {
   id: string;
@@ -102,34 +101,24 @@ export const useTurarRoomsAndEquipment = () => {
   });
 };
 
-// Хук для получения структурированных данных по кабинетам и оборудованию для конкретного отделения
-export const useProjectorDepartmentRooms = (turarDepartmentName: string) => {
+// Хук для получения структурированных данных по кабинетам и оборудованию для конкретного отделения проектировщиков
+export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => {
   const { data: projectorData } = useProjectorRoomsAndEquipment();
-  const { data: departmentMappings } = useDepartmentMappings();
 
-  console.log(`🔍 useProjectorDepartmentRooms поиск для Турар отделения: "${turarDepartmentName}"`);
+  console.log(`🔍 useProjectorDepartmentRooms поиск для отделения проектировщиков: "${projectorDepartmentName}"`);
   console.log(`📊 Всего данных проектировщиков:`, projectorData?.length);
-  console.log(`🔗 Маппинги отделений:`, departmentMappings);
   
-  // Находим соответствующее отделение проектировщиков через маппинг
-  const projectorDepartmentName = departmentMappings?.find(mapping => 
-    mapping.turar_department === turarDepartmentName
-  )?.projector_department;
-
-  console.log(`🎯 Найденное отделение проектировщиков для "${turarDepartmentName}": "${projectorDepartmentName}"`);
+  // Получаем все уникальные отделения для отладки
+  const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
+  const uniqueDepartments = [...new Set(allDepartments)];
+  console.log(`🏢 Все уникальные отделения проектировщиков:`, uniqueDepartments.slice(0, 5));
 
   
-  // Если маппинг не найден, возвращаем пустой результат
-  if (!projectorDepartmentName) {
-    console.log(`❌ Маппинг не найден для отделения Турар: "${turarDepartmentName}"`);
-    return {};
-  }
-
   const organizedData = projectorData?.filter(item => {
     const itemDept = item["ОТДЕЛЕНИЕ"];
     const match = itemDept && itemDept.trim() === projectorDepartmentName.trim();
     if (match) {
-      console.log(`✅ Найдено совпадение проектировщиков: "${itemDept}" === "${projectorDepartmentName}"`);
+      console.log(`✅ Найдено совпадение: "${itemDept}" === "${projectorDepartmentName}"`);
     }
     return match;
   }).reduce((acc, item) => {
@@ -177,7 +166,7 @@ export const useProjectorDepartmentRooms = (turarDepartmentName: string) => {
     }>;
   }>);
 
-  console.log(`📈 Результат для Турар "${turarDepartmentName}" -> Проектировщики "${projectorDepartmentName}":`, {
+  console.log(`📈 Результат для "${projectorDepartmentName}":`, {
     organizedData,
     roomsCount: Object.keys(organizedData || {}).length,
     foundRooms: Object.keys(organizedData || {}),
