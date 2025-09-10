@@ -188,46 +188,66 @@ export default function ConnectionsPage() {
   // Загрузка данных напрямую из Supabase
   useEffect(() => {
     const loadTurarData = async () => {
-      const { data, error } = await supabase
-        .from('turar_medical')
-        .select('*')
-        .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
-      
-      if (data && !error) {
-        const processed = data.map((item: any) => ({
-          department: item["Отделение/Блок"],
-          room: item["Помещение/Кабинет"],
-          equipmentCode: item["Код оборудования"],
-          equipmentName: item["Наименование"],
-          quantity: item["Кол-во"]
-        }))
-        setTurarData(processed)
-        console.log('Loaded turar data:', processed.length, 'records')
+      try {
+        const { data, error } = await supabase
+          .from('turar_medical')
+          .select('*')
+          .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"')
+        
+        if (error) {
+          console.error('Error loading turar data:', error)
+          return
+        }
+        
+        if (data) {
+          const processed = data.map((item: any) => ({
+            department: item["Отделение/Блок"],
+            room: item["Помещение/Кабинет"],
+            equipmentCode: item["Код оборудования"],
+            equipmentName: item["Наименование"],
+            quantity: item["Кол-во"]
+          }))
+          setTurarData(processed)
+          console.log('Loaded turar data:', processed.length, 'records')
+          console.log('Sample turar data:', processed.slice(0, 3))
+        }
+      } catch (error) {
+        console.error('Failed to load turar data:', error)
       }
     }
 
     const loadProjectorData = async () => {
-      const { data, error } = await supabase
-        .from('projector_floors')
-        .select('*')
-        .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"')
-      
-      if (data && !error) {
-        const processed = data.map((item: any) => ({
-          floor: item["ЭТАЖ"],
-          block: item["БЛОК"],
-          department: item["ОТДЕЛЕНИЕ"]?.trim(),
-          roomCode: item["КОД ПОМЕЩЕНИЯ"],
-          roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
-          area: item["Площадь (м2)"],
-          equipmentCode: item["Код оборудования"],
-          equipmentName: item["Наименование оборудования"],
-          unit: item["Ед. изм."],
-          quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
-          notes: item["Примечания"]
-        }))
-        setProjectorData(processed)
-        console.log('Loaded projector data:', processed.length, 'records')
+      try {
+        const { data, error } = await supabase
+          .from('projector_floors')
+          .select('*')
+          .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"')
+        
+        if (error) {
+          console.error('Error loading projector data:', error)
+          return
+        }
+        
+        if (data) {
+          const processed = data.map((item: any) => ({
+            floor: item["ЭТАЖ"],
+            block: item["БЛОК"],
+            department: item["ОТДЕЛЕНИЕ"]?.trim(),
+            roomCode: item["КОД ПОМЕЩЕНИЯ"],
+            roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+            area: item["Площадь (м2)"],
+            equipmentCode: item["Код оборудования"],
+            equipmentName: item["Наименование оборудования"],
+            unit: item["Ед. изм."],
+            quantity: item["Кол-во"] ? parseInt(item["Кол-во"]) : 0,
+            notes: item["Примечания"]
+          }))
+          setProjectorData(processed)
+          console.log('Loaded projector data:', processed.length, 'records')
+          console.log('Sample projector data:', processed.slice(0, 3))
+        }
+      } catch (error) {
+        console.error('Failed to load projector data:', error)
       }
     }
 
