@@ -77,8 +77,13 @@ export const useTurarRoomsAndEquipment = () => {
 export const useProjectorDepartmentRooms = (projectorDepartmentName: string) => {
   const { data: projectorData } = useProjectorRoomsAndEquipment();
 
-  console.log(`🔍 useProjectorDepartmentRooms поиск для отделения проектировщиков: "${projectorDepartmentName}"`);
+  console.log(`🔍 useProjectorDepartmentRooms вызван для: "${projectorDepartmentName}"`);
   console.log(`📊 Всего данных проектировщиков:`, projectorData?.length);
+  
+  if (!projectorData || projectorData.length === 0) {
+    console.log(`❌ Нет данных проектировщиков для поиска`);
+    return {};
+  }
   
   // Получаем все уникальные отделения для отладки
   const allDepartments = projectorData?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
