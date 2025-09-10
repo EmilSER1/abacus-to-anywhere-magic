@@ -33,47 +33,55 @@ export interface TurarRoomData {
 
 export const useProjectorRoomsAndEquipment = () => {
   return useQuery<ProjectorRoomData[]>({
-    queryKey: ["projector-rooms-equipment"],
+    queryKey: ["projector-rooms-equipment", Date.now()], // Уникальный ключ для принудительного обновления
     queryFn: async () => {
+      console.log(`🔄 Загружаем данные проектировщиков из базы...`);
       const { data, error } = await (supabase as any)
         .from("projector_floors")
         .select("*")
         .order('"ЭТАЖ", "ОТДЕЛЕНИЕ", "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", "Наименование оборудования"');
 
       if (error) {
+        console.error(`❌ Ошибка загрузки данных проектировщиков:`, error);
         throw error;
       }
 
       console.log(`📊 Загружено ${data?.length || 0} записей проектировщиков с кабинетами и оборудованием`);
+      
+      // Проверим уникальные отделения сразу при загрузке
+      const allDepartments = data?.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean);
+      const uniqueDepartments = [...new Set(allDepartments)];
+      console.log(`🏢 Уникальные отделения в загруженных данных (${uniqueDepartments.length}):`, uniqueDepartments);
+      
       return (data || []) as ProjectorRoomData[];
     },
-    staleTime: 0, // Данные всегда считаются устаревшими
-    gcTime: 0, // Не кешировать данные
-    refetchOnMount: 'always', // Всегда перезагружать при монтировании
-    refetchOnWindowFocus: false, // Не перезагружать при фокусе окна
   });
 };
 
 export const useTurarRoomsAndEquipment = () => {
   return useQuery<TurarRoomData[]>({
-    queryKey: ["turar-rooms-equipment"],
+    queryKey: ["turar-rooms-equipment", Date.now()], // Уникальный ключ для принудительного обновления
     queryFn: async () => {
+      console.log(`🔄 Загружаем данные Турар из базы...`);
       const { data, error } = await (supabase as any)
         .from("turar_medical")
         .select("*")
         .order('"Отделение/Блок", "Помещение/Кабинет", "Наименование"');
 
       if (error) {
+        console.error(`❌ Ошибка загрузки данных Турар:`, error);
         throw error;
       }
 
       console.log(`🏥 Загружено ${data?.length || 0} записей турар с кабинетами и оборудованием`);
+      
+      // Проверим уникальные отделения сразу при загрузке
+      const allDepartments = data?.map(item => item["Отделение/Блок"]).filter(Boolean);
+      const uniqueDepartments = [...new Set(allDepartments)];
+      console.log(`🏥 Уникальные отделения Турар в загруженных данных (${uniqueDepartments.length}):`, uniqueDepartments);
+      
       return (data || []) as TurarRoomData[];
     },
-    staleTime: 0, // Данные всегда считаются устаревшими
-    gcTime: 0, // Не кешировать данные
-    refetchOnMount: 'always', // Всегда перезагружать при монтировании
-    refetchOnWindowFocus: false, // Не перезагружать при фокусе окна
   });
 };
 
