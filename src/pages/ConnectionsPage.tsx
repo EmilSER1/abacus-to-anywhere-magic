@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench, RefreshCw } from 'lucide-react'
+import { ArrowRight, ChevronDown, ChevronRight, Link2, X, Plus, Trash2, Building2, Home, Wrench, RefreshCw, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Navigation } from '@/components/Navigation'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,6 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export default function ConnectionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set())
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const [linkingRoom, setLinkingRoom] = useState<{
     turarDept: string
@@ -360,95 +359,93 @@ export default function ConnectionsPage() {
               </div>
             </div>
 
-            {/* Список связанных отделений для работы с кабинетами */}
-            <div className="space-y-4">
-              {Array.from(mappedDepartments.entries())
-                .filter(([turarDept]) => 
-                  turarDept.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map(([turarDept, projectorDepts]) => {
-                  const isExpanded = expandedDepartments.has(turarDept)
+            {/* Новая компоновка: слева Турар, справа Проектировщики */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Левая половина - Турар */}
+              <div className="space-y-4">
+                <div className="sticky top-4 bg-background/80 backdrop-blur p-4 rounded-lg border">
+                  <h2 className="text-xl font-bold text-orange-800 flex items-center gap-2">
+                    <Users className="h-6 w-6" />
+                    Отделения Турар
+                  </h2>
+                  <p className="text-sm text-orange-600">Выберите кабинет для создания связи</p>
+                </div>
 
-                  return (
-                    <Card key={turarDept} className="bg-card/50 backdrop-blur border-border/50">
-                      <CardHeader 
-                        className="cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => {
-                          if (isExpanded) {
-                            expandedDepartments.delete(turarDept)
-                          } else {
-                            expandedDepartments.add(turarDept)
-                          }
-                          setExpandedDepartments(new Set(expandedDepartments))
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                            <div>
-                              <CardTitle className="text-lg">{turarDept}</CardTitle>
-                              <CardDescription>
-                                {projectorDepts.length} связанных отделения проектировщиков
-                              </CardDescription>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      {isExpanded && (
-                        <CardContent className="pt-0">
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Turar Department - используем новый компонент с промежуточными таблицами */}
-                            {projectorDepts.map((projDept) => {
-                              // Находим ID сопоставления для этой пары отделений
-                              const mapping = departmentMappings?.find(m => 
-                                m.turar_department === turarDept && m.projector_department === projDept
-                              );
-                              
-                              if (!mapping) {
-                                console.warn(`Не найдено сопоставление для ${turarDept} - ${projDept}`);
-                                return null;
-                              }
-
-                              return (
-                                <div key={projDept} className="space-y-4">
-                                  {/* Отображаем Турар только один раз для первого проектировщика */}
-                                  {projDept === projectorDepts[0] && (
-                                    <MappedTurarDepartmentDisplay 
-                                      departmentMappingId={mapping.id}
-                                      departmentName={turarDept}
-                                      onLinkRoom={(room) => setLinkingRoom({
-                                        turarDept: turarDept,
-                                        turarRoom: room,
-                                        projectorDept: projDept
-                                      })}
-                                      onRemoveConnection={removeConnection}
-                                      roomConnections={roomConnections || []}
-                                      expandedRooms={expandedRooms}
-                                      setExpandedRooms={setExpandedRooms}
-                                    />
-                                  )}
-
-                                  {/* Проектировщики */}
-                                  <MappedProjectorDepartmentDisplay
-                                    departmentMappingId={mapping.id}
-                                    departmentName={projDept}
-                                    linkingRoom={linkingRoom}
-                                    onCreateConnection={createConnection}
-                                    onRemoveConnection={removeConnection}
-                                    roomConnections={roomConnections || []}
-                                    expandedRooms={expandedRooms}
-                                    setExpandedRooms={setExpandedRooms}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
+                {Array.from(mappedDepartments.entries())
+                  .filter(([turarDept]) => 
+                    turarDept.toLowerCase().includes(searchTerm.toLowerCase())
                   )
-                })}
+                  .map(([turarDept, projectorDepts]) => {
+                    // Берем первый projector dept для получения mapping ID
+                    const mapping = departmentMappings?.find(m => 
+                      m.turar_department === turarDept && m.projector_department === projectorDepts[0]
+                    );
+                    
+                    if (!mapping) return null;
+
+                    return (
+                      <MappedTurarDepartmentDisplay 
+                        key={turarDept}
+                        departmentMappingId={mapping.id}
+                        departmentName={turarDept}
+                        onLinkRoom={(room) => setLinkingRoom({
+                          turarDept: turarDept,
+                          turarRoom: room,
+                          projectorDept: projectorDepts[0] // выбираем первый проектировщик
+                        })}
+                        onRemoveConnection={removeConnection}
+                        roomConnections={roomConnections || []}
+                        expandedRooms={expandedRooms}
+                        setExpandedRooms={setExpandedRooms}
+                      />
+                    );
+                  })}
+              </div>
+
+              {/* Правая половина - Проектировщики */}
+              <div className="space-y-4">
+                <div className="sticky top-4 bg-background/80 backdrop-blur p-4 rounded-lg border">
+                  <h2 className="text-xl font-bold text-blue-800 flex items-center gap-2">
+                    <Building2 className="h-6 w-6" />
+                    Отделения Проектировщиков
+                  </h2>
+                  <p className="text-sm text-blue-600">
+                    {linkingRoom ? 
+                      `Выберите кабинет для связи с: ${linkingRoom.turarDept} → ${linkingRoom.turarRoom}` :
+                      'Кабинеты проектировщиков'
+                    }
+                  </p>
+                </div>
+
+                {Array.from(mappedDepartments.entries())
+                  .filter(([turarDept]) => 
+                    turarDept.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .flatMap(([turarDept, projectorDepts]) => 
+                    projectorDepts.map(projDept => {
+                      const mapping = departmentMappings?.find(m => 
+                        m.turar_department === turarDept && m.projector_department === projDept
+                      );
+                      
+                      if (!mapping) return null;
+
+                      return (
+                        <MappedProjectorDepartmentDisplay
+                          key={`${turarDept}-${projDept}`}
+                          departmentMappingId={mapping.id}
+                          departmentName={projDept}
+                          linkingRoom={linkingRoom}
+                          onCreateConnection={createConnection}
+                          onRemoveConnection={removeConnection}
+                          roomConnections={roomConnections || []}
+                          expandedRooms={expandedRooms}
+                          setExpandedRooms={setExpandedRooms}
+                        />
+                      );
+                    })
+                  )
+                  .filter(Boolean)}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
