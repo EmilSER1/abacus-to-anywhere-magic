@@ -72,33 +72,49 @@ const MappedTurarDepartmentDisplay: React.FC<MappedTurarDepartmentDisplayProps> 
           const connectedRooms = getConnectedRooms(roomName);
 
           return (
-            <AccordionItem key={roomName} value={roomName} className="border rounded-lg">
+            <AccordionItem key={roomName} value={roomName} className={`border rounded-lg ${
+              connectedRooms.length > 0 ? 'border-green-300 bg-green-50/50 dark:bg-green-900/10' : 'border-orange-200'
+            }`}>
               <AccordionTrigger className="hover:no-underline px-4">
-                <div className="flex items-center justify-between w-full pr-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-orange-100 dark:bg-orange-900/20 rounded">
-                      <Users className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium">{roomName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {roomData.equipment.length} оборудования
-                        {connectedRooms.length > 0 && ` • ${connectedRooms.length} связей`}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLinkRoom(roomName);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Link2 className="h-4 w-4" />
-                    Связать
-                  </Button>
+                 <div className="flex items-center justify-between w-full pr-4">
+                   <div className="flex items-center gap-3">
+                     <div className={`p-1.5 rounded ${
+                       connectedRooms.length > 0 
+                         ? 'bg-green-100 dark:bg-green-900/20' 
+                         : 'bg-orange-100 dark:bg-orange-900/20'
+                     }`}>
+                       <Users className={`h-4 w-4 ${
+                         connectedRooms.length > 0 ? 'text-green-600' : 'text-orange-600'
+                       }`} />
+                     </div>
+                     <div className="text-left">
+                       <div className={`font-medium ${
+                         connectedRooms.length > 0 ? 'text-green-800 dark:text-green-300' : ''
+                       }`}>{roomName}</div>
+                       <div className="text-sm text-muted-foreground">
+                         {roomData.equipment.length} оборудования
+                         {connectedRooms.length > 0 && (
+                           <span className="text-green-600 font-medium"> • {connectedRooms.length} связей ✓</span>
+                         )}
+                       </div>
+                     </div>
+                   </div>
+                   <Button
+                     variant={connectedRooms.length > 0 ? "default" : "outline"}
+                     size="sm"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       onLinkRoom(roomName);
+                     }}
+                     className={`flex items-center gap-2 ${
+                       connectedRooms.length > 0 
+                         ? 'bg-green-600 hover:bg-green-700 text-white' 
+                         : ''
+                     }`}
+                   >
+                     <Link2 className="h-4 w-4" />
+                     {connectedRooms.length > 0 ? 'Добавить связь' : 'Связать'}
+                   </Button>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">

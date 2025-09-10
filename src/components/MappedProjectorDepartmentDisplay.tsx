@@ -93,26 +93,42 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
 
           return (
             <AccordionItem key={roomName} value={roomName} className={`border rounded-lg ${
-              isLinkTarget ? 'border-yellow-300' : 'border-blue-200'
+              isLinkTarget 
+                ? 'border-yellow-300' 
+                : connectedTurarRooms.length > 0 
+                  ? 'border-green-300 bg-green-50/50 dark:bg-green-900/10'
+                  : 'border-blue-200'
             }`}>
               <AccordionTrigger className="hover:no-underline px-4">
                 <div className="flex items-center justify-between w-full pr-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded ${
-                      isLinkTarget ? 'bg-yellow-100' : 'bg-blue-100 dark:bg-blue-900/20'
-                    }`}>
-                      <Building2 className={`h-4 w-4 ${
-                        isLinkTarget ? 'text-yellow-600' : 'text-blue-600'
-                      }`} />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium">{roomName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Этаж {roomData.roomInfo.floor}, {roomData.roomInfo.block} • {roomData.equipment.length} оборудования
-                        {connectedTurarRooms.length > 0 && ` • ${connectedTurarRooms.length} связей`}
-                      </div>
-                    </div>
-                  </div>
+                   <div className="flex items-center gap-3">
+                     <div className={`p-1.5 rounded ${
+                       isLinkTarget 
+                         ? 'bg-yellow-100' 
+                         : connectedTurarRooms.length > 0
+                           ? 'bg-green-100 dark:bg-green-900/20'
+                           : 'bg-blue-100 dark:bg-blue-900/20'
+                     }`}>
+                       <Building2 className={`h-4 w-4 ${
+                         isLinkTarget 
+                           ? 'text-yellow-600' 
+                           : connectedTurarRooms.length > 0
+                             ? 'text-green-600'
+                             : 'text-blue-600'
+                       }`} />
+                     </div>
+                     <div className="text-left">
+                       <div className={`font-medium ${
+                         connectedTurarRooms.length > 0 ? 'text-green-800 dark:text-green-300' : ''
+                       }`}>{roomName}</div>
+                       <div className="text-sm text-muted-foreground">
+                         Этаж {roomData.roomInfo.floor}, {roomData.roomInfo.block} • {roomData.equipment.length} оборудования
+                         {connectedTurarRooms.length > 0 && (
+                           <span className="text-green-600 font-medium"> • {connectedTurarRooms.length} связей ✓</span>
+                         )}
+                       </div>
+                     </div>
+                   </div>
                   
                   {isLinkTarget && (
                     <Button
