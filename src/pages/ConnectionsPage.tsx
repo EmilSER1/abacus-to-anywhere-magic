@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
 import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping, useGetAllDepartments } from '@/hooks/useDepartmentMappings'
 import { usePopulateMappedDepartments } from '@/hooks/useMappedDepartments'
@@ -359,93 +360,117 @@ export default function ConnectionsPage() {
               </div>
             </div>
 
-            {/* Новая компоновка: слева Турар, справа Проектировщики */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Левая половина - Турар */}
-              <div className="space-y-4">
-                <div className="sticky top-4 bg-background/80 backdrop-blur p-4 rounded-lg border">
-                  <h2 className="text-xl font-bold text-orange-800 flex items-center gap-2">
-                    <Users className="h-6 w-6" />
-                    Отделения Турар
-                  </h2>
-                  <p className="text-sm text-orange-600">Выберите кабинет для создания связи</p>
-                </div>
-
+            {/* Группировка по связанным отделениям с аккордеоном */}
+            <div className="space-y-4">
+              <Accordion type="multiple" className="w-full">
                 {Array.from(mappedDepartments.entries())
                   .filter(([turarDept]) => 
                     turarDept.toLowerCase().includes(searchTerm.toLowerCase())
                   )
                   .map(([turarDept, projectorDepts]) => {
-                    // Берем первый projector dept для получения mapping ID
                     const mapping = departmentMappings?.find(m => 
                       m.turar_department === turarDept && m.projector_department === projectorDepts[0]
                     );
                     
                     if (!mapping) return null;
 
+                    // Подсчитываем количество связанных кабинетов для этой группы отделений
+                    const connectedRoomsCount = roomConnections?.filter(conn => 
+                      conn.turar_department === turarDept
+                    ).length || 0;
+
                     return (
-                      <MappedTurarDepartmentDisplay 
-                        key={turarDept}
-                        departmentMappingId={mapping.id}
-                        departmentName={turarDept}
-                        onLinkRoom={(room) => setLinkingRoom({
-                          turarDept: turarDept,
-                          turarRoom: room,
-                          projectorDept: projectorDepts[0] // выбираем первый проектировщик
-                        })}
-                        onRemoveConnection={removeConnection}
-                        roomConnections={roomConnections || []}
-                        expandedRooms={expandedRooms}
-                        setExpandedRooms={setExpandedRooms}
-                      />
+                      <AccordionItem key={turarDept} value={turarDept} className="border rounded-lg px-6">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <Users className="h-5 w-5 text-orange-600" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold text-lg">{turarDept}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Связан с: {projectorDepts.join(', ')}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <Badge variant="outline" className="bg-orange-50 dark:bg-orange-900/20">
+                                {connectedRoomsCount} связей кабинетов
+                              </Badge>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-6">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                            {/* Кабинеты Турар */}
+                            <div className="space-y-4">
+                              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                                <h3 className="font-medium text-orange-800 dark:text-orange-300 mb-2">
+                                  Кабинеты {turarDept}
+                                </h3>
+                                <MappedTurarDepartmentDisplay 
+                                  departmentMappingId={mapping.id}
+                                  departmentName={turarDept}
+                                  onLinkRoom={(room) => setLinkingRoom({
+                                    turarDept: turarDept,
+                                    turarRoom: room,
+                                    projectorDept: projectorDepts[0]
+                                  })}
+                                  onRemoveConnection={removeConnection}
+                                  roomConnections={roomConnections || []}
+                                  expandedRooms={expandedRooms}
+                                  setExpandedRooms={setExpandedRooms}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Кабинеты Проектировщиков */}
+                            <div className="space-y-4">
+                              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                                  Кабинеты связанных отделений
+                                  {linkingRoom && linkingRoom.turarDept === turarDept && (
+                                    <span className="block text-sm text-blue-600 dark:text-blue-400 mt-1">
+                                      Выберите кабинет для связи с "{linkingRoom.turarRoom}"
+                                    </span>
+                                  )}
+                                </h3>
+                                <div className="space-y-3">
+                                  {projectorDepts.map(projectorDept => {
+                                    const projectorMapping = departmentMappings?.find(m => 
+                                      m.turar_department === turarDept && m.projector_department === projectorDept
+                                    );
+                                    
+                                    if (!projectorMapping) return null;
+
+                                    return (
+                                      <div key={projectorDept} className="border rounded-lg p-2">
+                                        <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+                                          {projectorDept}
+                                        </div>
+                                        <MappedProjectorDepartmentDisplay 
+                                          departmentMappingId={projectorMapping.id}
+                                          departmentName={projectorDept}
+                                          linkingRoom={linkingRoom && linkingRoom.turarDept === turarDept ? linkingRoom : undefined}
+                                          onCreateConnection={createConnection}
+                                          onRemoveConnection={removeConnection}
+                                          roomConnections={roomConnections || []}
+                                          expandedRooms={expandedRooms}
+                                          setExpandedRooms={setExpandedRooms}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     );
                   })}
-              </div>
-
-              {/* Правая половина - Проектировщики */}
-              <div className="space-y-4">
-                <div className="sticky top-4 bg-background/80 backdrop-blur p-4 rounded-lg border">
-                  <h2 className="text-xl font-bold text-blue-800 flex items-center gap-2">
-                    <Building2 className="h-6 w-6" />
-                    Отделения Проектировщиков
-                  </h2>
-                  <p className="text-sm text-blue-600">
-                    {linkingRoom ? 
-                      `Выберите кабинет для связи с: ${linkingRoom.turarDept} → ${linkingRoom.turarRoom}` :
-                      'Кабинеты проектировщиков'
-                    }
-                  </p>
-                </div>
-
-                {Array.from(mappedDepartments.entries())
-                  .filter(([turarDept]) => 
-                    turarDept.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .flatMap(([turarDept, projectorDepts]) => 
-                    projectorDepts.map(projDept => {
-                      const mapping = departmentMappings?.find(m => 
-                        m.turar_department === turarDept && m.projector_department === projDept
-                      );
-                      
-                      if (!mapping) return null;
-
-                      return (
-                        <MappedProjectorDepartmentDisplay
-                          key={`${turarDept}-${projDept}`}
-                          departmentMappingId={mapping.id}
-                          departmentName={projDept}
-                          linkingRoom={linkingRoom}
-                          onCreateConnection={createConnection}
-                          onRemoveConnection={removeConnection}
-                          roomConnections={roomConnections || []}
-                          expandedRooms={expandedRooms}
-                          setExpandedRooms={setExpandedRooms}
-                        />
-                      );
-                    })
-                  )
-                  .filter(Boolean)}
-              </div>
+              </Accordion>
             </div>
           </TabsContent>
         </Tabs>
