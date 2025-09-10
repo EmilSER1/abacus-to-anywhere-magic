@@ -27,7 +27,7 @@ serve(async (req) => {
     const { data: projectorData, error: projectorError } = await supabase
       .from('projector_floors')
       .select('*')
-      .ilike('ОТДЕЛЕНИЕ', `%${projector_department}%`)
+      .ilike('"ОТДЕЛЕНИЕ"', `%${projector_department}%`)
 
     if (projectorError) {
       console.error('❌ Ошибка загрузки данных проектировщиков:', projectorError)
@@ -40,7 +40,7 @@ serve(async (req) => {
     const { data: turarData, error: turarError } = await supabase
       .from('turar_medical')
       .select('*')
-      .ilike('Отделение/Блок', `%${turar_department}%`)
+      .ilike('"Отделение/Блок"', `%${turar_department}%`)
 
     if (turarError) {
       console.error('❌ Ошибка загрузки данных Турар:', turarError)
