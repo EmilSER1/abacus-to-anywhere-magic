@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ChevronDown, ChevronRight, Link2, Users, Wrench } from 'lucide-react';
 import { useGroupedMappedTurarRooms } from '@/hooks/useMappedDepartments';
 
@@ -65,63 +66,42 @@ const MappedTurarDepartmentDisplay: React.FC<MappedTurarDepartmentDisplayProps> 
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-4">
-        <Users className="h-5 w-5 text-orange-600" />
-        <h3 className="text-lg font-semibold text-orange-800">
-          Турар: {departmentName}
-        </h3>
-        <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-          {Object.keys(groupedRooms).length} кабинетов
-        </Badge>
-      </div>
+    <div className="space-y-2">
+      <Accordion type="multiple" className="w-full">
+        {Object.entries(groupedRooms).map(([roomName, roomData]) => {
+          const connectedRooms = getConnectedRooms(roomName);
 
-      {Object.entries(groupedRooms).map(([roomName, roomData]) => {
-        const isExpanded = expandedRooms.has(roomName);
-        const connectedRooms = getConnectedRooms(roomName);
-
-        return (
-          <Card key={roomName} className="bg-orange-50/30 border-orange-200/50 hover:bg-orange-50/50 transition-colors">
-            <CardHeader 
-              className="cursor-pointer py-3"
-              onClick={() => toggleRoom(roomName)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  <div>
-                    <CardTitle className="text-base">{roomName}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Wrench className="h-3 w-3" />
+          return (
+            <AccordionItem key={roomName} value={roomName} className="border rounded-lg">
+              <AccordionTrigger className="hover:no-underline px-4">
+                <div className="flex items-center justify-between w-full pr-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-orange-100 dark:bg-orange-900/20 rounded">
+                      <Users className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium">{roomName}</div>
+                      <div className="text-sm text-muted-foreground">
                         {roomData.equipment.length} оборудования
-                      </span>
-                      {connectedRooms.length > 0 && (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <Link2 className="h-3 w-3" />
-                          {connectedRooms.length} связей
-                        </span>
-                      )}
+                        {connectedRooms.length > 0 && ` • ${connectedRooms.length} связей`}
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLinkRoom(roomName);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Связать
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLinkRoom(roomName);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Link2 className="h-4 w-4" />
-                  Связать
-                </Button>
-              </div>
-            </CardHeader>
-
-            {isExpanded && (
-              <CardContent className="pt-0">
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
                 {/* Оборудование */}
                 <div className="mb-4">
                   <h4 className="font-medium mb-2 text-orange-800">Оборудование:</h4>
@@ -175,11 +155,11 @@ const MappedTurarDepartmentDisplay: React.FC<MappedTurarDepartmentDisplayProps> 
                     </div>
                   </div>
                 )}
-              </CardContent>
-            )}
-          </Card>
-        );
-      })}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 };

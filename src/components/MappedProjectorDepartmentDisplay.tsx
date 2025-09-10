@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ChevronDown, ChevronRight, Link2, Building2, Wrench, MapPin } from 'lucide-react';
 import { useGroupedMappedProjectorRooms } from '@/hooks/useMappedDepartments';
 
@@ -71,19 +72,9 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-4">
-        <Building2 className="h-5 w-5 text-blue-600" />
-        <h3 className="text-lg font-semibold text-blue-800">
-          Проектировщики: {departmentName}
-        </h3>
-        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-          {Object.keys(groupedRooms).length} кабинетов
-        </Badge>
-      </div>
-
+    <div className="space-y-2">
       {linkingRoom && linkingRoom.projectorDept === departmentName && (
-        <Card className="bg-yellow-50 border-yellow-200">
+        <Card className="bg-yellow-50 border-yellow-200 mb-3">
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-yellow-800">
               <Link2 className="h-4 w-4" />
@@ -95,67 +86,56 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
         </Card>
       )}
 
-      {Object.entries(groupedRooms).map(([roomName, roomData]) => {
-        const isExpanded = expandedRooms.has(roomName);
-        const connectedTurarRooms = getConnectedTurarRooms(roomName);
-        const isLinkTarget = linkingRoom?.projectorDept === departmentName;
+      <Accordion type="multiple" className="w-full">
+        {Object.entries(groupedRooms).map(([roomName, roomData]) => {
+          const connectedTurarRooms = getConnectedTurarRooms(roomName);
+          const isLinkTarget = linkingRoom?.projectorDept === departmentName;
 
-        return (
-          <Card key={roomName} className={`border-blue-200/50 transition-colors ${
-            isLinkTarget ? 'bg-yellow-50/50 hover:bg-yellow-50' : 'bg-blue-50/30 hover:bg-blue-50/50'
-          }`}>
-            <CardHeader 
-              className="cursor-pointer py-3"
-              onClick={() => toggleRoom(roomName)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  <div>
-                    <CardTitle className="text-base">{roomName}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        Этаж {roomData.roomInfo.floor}, {roomData.roomInfo.block}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Wrench className="h-3 w-3" />
-                        {roomData.equipment.length} оборудования
-                      </span>
-                      {connectedTurarRooms.length > 0 && (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <Link2 className="h-3 w-3" />
-                          {connectedTurarRooms.length} связей
-                        </span>
-                      )}
+          return (
+            <AccordionItem key={roomName} value={roomName} className={`border rounded-lg ${
+              isLinkTarget ? 'border-yellow-300' : 'border-blue-200'
+            }`}>
+              <AccordionTrigger className="hover:no-underline px-4">
+                <div className="flex items-center justify-between w-full pr-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded ${
+                      isLinkTarget ? 'bg-yellow-100' : 'bg-blue-100 dark:bg-blue-900/20'
+                    }`}>
+                      <Building2 className={`h-4 w-4 ${
+                        isLinkTarget ? 'text-yellow-600' : 'text-blue-600'
+                      }`} />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium">{roomName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Этаж {roomData.roomInfo.floor}, {roomData.roomInfo.block} • {roomData.equipment.length} оборудования
+                        {connectedTurarRooms.length > 0 && ` • ${connectedTurarRooms.length} связей`}
+                      </div>
                     </div>
                   </div>
+                  
+                  {isLinkTarget && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateConnection(
+                          linkingRoom.turarDept,
+                          linkingRoom.turarRoom,
+                          linkingRoom.projectorDept,
+                          roomName
+                        );
+                      }}
+                      className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      Связать
+                    </Button>
+                  )}
                 </div>
-                
-                {isLinkTarget && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCreateConnection(
-                        linkingRoom.turarDept,
-                        linkingRoom.turarRoom,
-                        linkingRoom.projectorDept,
-                        roomName
-                      );
-                    }}
-                    className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700"
-                  >
-                    <Link2 className="h-4 w-4" />
-                    Связать
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-
-            {isExpanded && (
-              <CardContent className="pt-0">
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
                 {/* Информация о кабинете */}
                 <div className="mb-4 bg-white/70 p-3 rounded border border-blue-100">
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -222,11 +202,11 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
                     </div>
                   </div>
                 )}
-              </CardContent>
-            )}
-          </Card>
-        );
-      })}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 };
