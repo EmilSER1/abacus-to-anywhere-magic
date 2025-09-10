@@ -193,6 +193,10 @@ export default function ConnectionsPage() {
           }))
           setTurarData(turarProcessed)
           console.log('Турар данные загружены:', turarProcessed.length)
+          
+          // Показываем какие отделения реально есть в данных
+          const uniqueDepts = [...new Set(turarProcessed.map(item => item.department))]
+          console.log('Реальные отделения Турар:', uniqueDepts)
         }
         
         if (projectorError) {
@@ -213,6 +217,10 @@ export default function ConnectionsPage() {
           }))
           setProjectorData(projectorProcessed)
           console.log('Проектировщики данные загружены:', projectorProcessed.length)
+          
+          // Показываем какие отделения реально есть в данных
+          const uniqueDepts = [...new Set(projectorProcessed.map(item => item.department).filter(Boolean))]
+          console.log('Реальные отделения Проектировщиков:', uniqueDepts)
         }
         
       } catch (error) {
@@ -433,6 +441,17 @@ export default function ConnectionsPage() {
             <span>Сопоставлений: {departmentMappings.length}</span>
           </div>
         </div>
+
+        {/* Debug info - показываем реальные отделения */}
+        {turarData.length > 0 && (
+          <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">Отладочная информация:</h4>
+            <div className="text-sm space-y-1">
+              <div>Отделения Турар: {[...new Set(turarData.map(item => item.department))].join(', ')}</div>
+              <div>Отделения Проектировщиков: {[...new Set(projectorData.map(item => item.department).filter(Boolean))].join(', ')}</div>
+            </div>
+          </div>
+        )}
 
         {/* Mappings List */}
         <div className="space-y-4">
