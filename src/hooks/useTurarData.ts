@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface TurarEquipment {
   id: string;
-  code: string;
-  name: string;
-  quantity: number;
-  department: string;
-  room: string;
+  "Код оборудования": string;
+  "Наименование": string;
+  "Кол-во": number;
+  "Отделение/Блок": string;
+  "Помещение/Кабинет": string;
   created_at: string;
   updated_at: string;
 }
@@ -17,9 +17,9 @@ export const useTurarData = () => {
     queryKey: ["turar-equipment"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("turar_equipment")
+        .from("turar_medical")
         .select("*")
-        .order("department, room, name");
+        .order("\"Отделение/Блок\", \"Помещение/Кабинет\", \"Наименование\"");
 
       if (error) {
         throw error;
@@ -34,10 +34,11 @@ export const useTurarDataByDepartment = () => {
   const { data: turarData, ...rest } = useTurarData();
 
   const organizedData = turarData?.reduce((acc, item) => {
-    if (!acc[item.department]) {
-      acc[item.department] = [];
+    const department = item["Отделение/Блок"];
+    if (!acc[department]) {
+      acc[department] = [];
     }
-    acc[item.department].push(item);
+    acc[department].push(item);
     return acc;
   }, {} as Record<string, TurarEquipment[]>);
 

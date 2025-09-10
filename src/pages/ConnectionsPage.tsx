@@ -193,11 +193,11 @@ export default function ConnectionsPage() {
   useEffect(() => {
     if (turarDataRaw) {
       const turarProcessed = turarDataRaw.map((item: any) => ({
-        department: item.department,
-        room: item.room,
-        equipmentCode: item.code,
-        equipmentName: item.name,
-        quantity: item.quantity
+        department: item["Отделение/Блок"],
+        room: item["Помещение/Кабинет"],
+        equipmentCode: item["Код оборудования"],
+        equipmentName: item["Наименование"],
+        quantity: item["Кол-во"]
       }))
       setTurarData(turarProcessed)
     }
@@ -206,17 +206,17 @@ export default function ConnectionsPage() {
   useEffect(() => {
     if (projectorDataRaw) {
       const projectorProcessed = projectorDataRaw.map((item: any) => ({
-        floor: item.floor,
-        block: item.block,
-        department: item.department?.trim(),
-        roomCode: item.room_code,
-        roomName: item.room_name || item.room,
-        area: item.area_m2,
-        equipmentCode: item.code,
-        equipmentName: item.name,
-        unit: item.unit,
-        quantity: item.quantity,
-        notes: item.notes
+        floor: item["ЭТАЖ"],
+        block: item["БЛОК"],
+        department: item["ОТДЕЛЕНИЕ"]?.trim(),
+        roomCode: item["КОД ПОМЕЩЕНИЯ"],
+        roomName: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
+        area: item["Площадь (м2)"],
+        equipmentCode: item["Код оборудования"],
+        equipmentName: item["Наименование оборудования"],
+        unit: item["Ед. изм."],
+        quantity: parseInt(item["Кол-во"]) || 0,
+        notes: item["Примечания"]
       }))
       setProjectorData(projectorProcessed)
     }

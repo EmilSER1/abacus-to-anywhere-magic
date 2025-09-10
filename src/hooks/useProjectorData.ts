@@ -3,18 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ProjectorEquipment {
   id: string;
-  code: string;
-  name: string;
-  quantity: number;
-  department: string;
-  room: string;
-  floor: string;
-  block?: string;
-  room_code?: string;
-  room_name?: string;
-  area_m2?: number;
-  unit?: string;
-  notes?: string;
+  "Код оборудования"?: string;
+  "Наименование оборудования"?: string;
+  "Кол-во"?: string;
+  "ОТДЕЛЕНИЕ": string;
+  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
+  "ЭТАЖ": number;
+  "БЛОК": string;
+  "КОД ПОМЕЩЕНИЯ": string;
+  "Код помещения"?: string;
+  "Наименование помещения"?: string;
+  "Площадь (м2)"?: number;
+  "Ед. изм."?: string;
+  "Примечания"?: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,9 +25,9 @@ export const useProjectorData = () => {
     queryKey: ["projector-equipment"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("projector_equipment")
+        .from("projector_floors")
         .select("*")
-        .order("floor, department, room, name");
+        .order("\"ЭТАЖ\", \"ОТДЕЛЕНИЕ\", \"НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ\", \"Наименование оборудования\"");
 
       if (error) {
         throw error;
@@ -41,13 +42,15 @@ export const useProjectorDataByFloor = () => {
   const { data: projectorData, ...rest } = useProjectorData();
 
   const organizedData = projectorData?.reduce((acc, item) => {
-    if (!acc[item.floor]) {
-      acc[item.floor] = {};
+    const floor = item["ЭТАЖ"].toString();
+    const department = item["ОТДЕЛЕНИЕ"];
+    if (!acc[floor]) {
+      acc[floor] = {};
     }
-    if (!acc[item.floor][item.department]) {
-      acc[item.floor][item.department] = [];
+    if (!acc[floor][department]) {
+      acc[floor][department] = [];
     }
-    acc[item.floor][item.department].push(item);
+    acc[floor][department].push(item);
     return acc;
   }, {} as Record<string, Record<string, ProjectorEquipment[]>>);
 
