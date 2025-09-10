@@ -537,30 +537,39 @@ export default function ConnectionsPage() {
                                     </Button>
                                   </div>
                                   
-                                  {isRoomExpanded && (
-                                    <div className="mt-3 space-y-2">
-                                      <div className="text-sm text-muted-foreground">
-                                        Оборудование: {room.equipment.length} ед.
-                                      </div>
-                                      {connections.map((conn, connIndex) => (
-                                        <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                                          <span className="text-sm">→ {conn.projector_department} ({conn.projector_room})</span>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => removeConnection(
-                                              conn.turar_department,
-                                              conn.turar_room,
-                                              conn.projector_department,
-                                              conn.projector_room
-                                            )}
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
+                                     {isRoomExpanded && (
+                                     <div className="mt-3 space-y-2">
+                                       <div className="text-sm text-muted-foreground">
+                                         Оборудование: {room.equipment.length} ед.
+                                       </div>
+                                       {room.equipment.map((equipment, eqIndex) => (
+                                         <div key={eqIndex} className="bg-muted/50 p-2 rounded text-sm">
+                                           <div className="font-medium">{equipment.name}</div>
+                                           <div className="text-muted-foreground">
+                                             {equipment.code && `Код: ${equipment.code} • `}
+                                             Количество: {equipment.quantity}
+                                           </div>
+                                         </div>
+                                       ))}
+                                       {connections.map((conn, connIndex) => (
+                                         <div key={connIndex} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                                           <span className="text-sm">→ {conn.projector_department} ({conn.projector_room})</span>
+                                           <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             onClick={() => removeConnection(
+                                               conn.turar_department,
+                                               conn.turar_room,
+                                               conn.projector_department,
+                                               conn.projector_room
+                                             )}
+                                           >
+                                             <X className="h-3 w-3" />
+                                           </Button>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
                                 </div>
                               )
                             })}
@@ -583,41 +592,78 @@ export default function ConnectionsPage() {
 
                               return (
                                 <div key={roomIndex} className="border rounded-lg p-3">
-                                  <div 
-                                    className="flex items-center justify-between cursor-pointer"
-                                    onClick={() => {
-                                      if (isRoomExpanded) {
-                                        expandedRooms.delete(roomKey)
-                                      } else {
-                                        expandedRooms.add(roomKey)
-                                      }
-                                      setExpandedRooms(new Set(expandedRooms))
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {isRoomExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                      <span className="font-medium">{room.name}</span>
-                                      {connections.length > 0 && (
-                                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                          <LinkIcon className="h-3 w-3 mr-1" />
-                                          {connections.length}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
+                                   <div 
+                                     className="flex items-center justify-between cursor-pointer"
+                                     onClick={() => {
+                                       if (isRoomExpanded) {
+                                         expandedRooms.delete(roomKey)
+                                       } else {
+                                         expandedRooms.add(roomKey)
+                                       }
+                                       setExpandedRooms(new Set(expandedRooms))
+                                     }}
+                                   >
+                                     <div className="flex items-center gap-2">
+                                       {isRoomExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                       <span className="font-medium">{room.name}</span>
+                                       {connections.length > 0 && (
+                                         <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                           <LinkIcon className="h-3 w-3 mr-1" />
+                                           {connections.length}
+                                         </Badge>
+                                       )}
+                                     </div>
+                                     <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={(e) => {
+                                         e.stopPropagation()
+                                         setLinkingRoom({
+                                           turarDept: mapping.turarDepartment,
+                                           turarRoom: room.name,
+                                           projectorDept: dept.name
+                                         })
+                                       }}
+                                     >
+                                       <Link2 className="h-3 w-3 mr-1" />
+                                       Связать
+                                     </Button>
+                                   </div>
                                   
-                                  {isRoomExpanded && (
-                                    <div className="mt-3 space-y-2">
-                                      <div className="text-sm text-muted-foreground">
-                                        Оборудование: {room.equipment.length} ед.
-                                      </div>
-                                      {connections.map((conn, connIndex) => (
-                                        <div key={connIndex} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-                                          <span className="text-sm">← {conn.turar_department} ({conn.turar_room})</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
+                                   {isRoomExpanded && (
+                                     <div className="mt-3 space-y-2">
+                                       <div className="text-sm text-muted-foreground">
+                                         Оборудование: {room.equipment.length} ед.
+                                       </div>
+                                       {room.equipment.map((equipment, eqIndex) => (
+                                         <div key={eqIndex} className="bg-muted/50 p-2 rounded text-sm">
+                                           <div className="font-medium">{equipment.name}</div>
+                                           <div className="text-muted-foreground">
+                                             {equipment.code && `Код: ${equipment.code} • `}
+                                             Количество: {equipment.quantity}
+                                             {equipment.unit && ` ${equipment.unit}`}
+                                           </div>
+                                         </div>
+                                       ))}
+                                       {connections.map((conn, connIndex) => (
+                                         <div key={connIndex} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                           <span className="text-sm">← {conn.turar_department} ({conn.turar_room})</span>
+                                           <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             onClick={() => removeConnection(
+                                               conn.turar_department,
+                                               conn.turar_room,
+                                               conn.projector_department,
+                                               conn.projector_room
+                                             )}
+                                           >
+                                             <X className="h-3 w-3" />
+                                           </Button>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
                                 </div>
                               )
                             })}
