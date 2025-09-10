@@ -76,20 +76,36 @@ export const useGetAllDepartments = () => {
     queryKey: ["all-departments", "v2"], // Изменил ключ для сброса кеша
     queryFn: async () => {
       try {
+        console.log('🔍 Начинаем загрузку отделений...');
+        
         // Получаем уникальные отделения Турар
         const { data: turarData, error: turarError } = await supabase
           .from("turar_medical")
-          .select('"Отделение/Блок"');
+          .select('"Отделение/Блок"')
+          .limit(10000); // Явно устанавливаем большой лимит
 
-        if (turarError) throw turarError;
+        if (turarError) {
+          console.error('❌ Ошибка загрузки Турар:', turarError);
+          throw turarError;
+        }
+
+        console.log('📋 Сырые данные Турар:', turarData?.length, 'записей');
+        console.log('📋 Образец данных Турар:', turarData?.slice(0, 3));
 
         // Получаем уникальные отделения Проектировщиков
         const { data: projectorData, error: projectorError } = await supabase
           .from("projector_floors")
           .select('"ОТДЕЛЕНИЕ"')
-          .not('"ОТДЕЛЕНИЕ"', 'is', null);
+          .not('"ОТДЕЛЕНИЕ"', 'is', null)
+          .limit(10000); // Явно устанавливаем большой лимит
 
-        if (projectorError) throw projectorError;
+        if (projectorError) {
+          console.error('❌ Ошибка загрузки Проектировщиков:', projectorError);
+          throw projectorError;
+        }
+
+        console.log('🏗️ Сырые данные Проектировщиков:', projectorData?.length, 'записей');
+        console.log('🏗️ Образец данных Проектировщиков:', projectorData?.slice(0, 3));
 
         const uniqueTurarDepts = [...new Set(turarData?.map(item => item["Отделение/Блок"]) || [])].filter(Boolean).sort();
         const uniqueProjectorDepts = [...new Set(projectorData?.map(item => {
@@ -99,8 +115,8 @@ export const useGetAllDepartments = () => {
           return dept.replace(/\s+/g, ' ').trim();
         }) || [])].filter(Boolean).sort();
 
-        console.log('Загружены отделения Турар:', uniqueTurarDepts);
-        console.log('Загружены отделения Проектировщиков:', uniqueProjectorDepts);
+        console.log('✅ Обработанные отделения Турар:', uniqueTurarDepts.length, uniqueTurarDepts);
+        console.log('✅ Обработанные отделения Проектировщиков:', uniqueProjectorDepts.length, uniqueProjectorDepts);
 
         return {
           turarDepartments: uniqueTurarDepts,
