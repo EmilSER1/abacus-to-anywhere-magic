@@ -175,7 +175,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_unique_projector_departments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          department_name: string
+        }[]
+      }
+      get_unique_turar_departments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          department_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
