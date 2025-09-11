@@ -119,7 +119,7 @@ export default function ConnectionsPage() {
 
             {/* Отображение связанных отделений по группам Турар */}
             <div className="space-y-6">
-              {departmentMappings?.length === 0 ? (
+              {!departmentMappings || departmentMappings.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
                     <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -134,9 +134,9 @@ export default function ConnectionsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                // Группируем по отделениям Турар
+                // Группируем по отделениям Турар - добавляем проверку на существование данных
                 Object.entries(
-                  departmentMappings.reduce((acc, mapping) => {
+                  (departmentMappings || []).reduce((acc, mapping) => {
                     const turarDept = mapping.turar_department;
                     if (!acc[turarDept]) {
                       acc[turarDept] = {
