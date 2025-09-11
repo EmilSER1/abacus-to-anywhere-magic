@@ -159,10 +159,24 @@ export default function FloorsPage() {
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
     );
     
+    console.log('🔍 Checking room connection:', {
+      roomName: room.name,
+      departmentName,
+      roomRecord: roomRecord ? {
+        id: roomRecord.id,
+        connected_turar_room_id: roomRecord.connected_turar_room_id,
+        connected_turar_room: roomRecord.connected_turar_room,
+        connected_turar_department: roomRecord.connected_turar_department
+      } : null
+    });
+    
     // Check if room has connection data (either ID or name fields)
-    return !!(roomRecord?.connected_turar_room_id || 
+    const isConnected = !!(roomRecord?.connected_turar_room_id || 
               roomRecord?.connected_turar_room || 
               roomRecord?.connected_turar_department);
+              
+    console.log('✅ Room connected result:', isConnected);
+    return isConnected;
   };
 
   // Helper function to get connections for a room
@@ -175,12 +189,23 @@ export default function FloorsPage() {
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
     );
     
+    console.log('🔗 Getting room connections:', {
+      roomName: room.name,
+      departmentName,
+      roomRecord: roomRecord ? {
+        id: roomRecord.id,
+        connected_turar_room: roomRecord.connected_turar_room,
+        connected_turar_department: roomRecord.connected_turar_department
+      } : null
+    });
+    
     if (!roomRecord || (!roomRecord.connected_turar_room && !roomRecord.connected_turar_department)) {
+      console.log('❌ No connections found');
       return [];
     }
     
     // Return connection data from the room record itself
-    return [{
+    const connections = [{
       id: `connection-${roomRecord.id}`,
       turar_department: roomRecord.connected_turar_department || 'Неизвестное отделение',
       turar_room: roomRecord.connected_turar_room || 'Неизвестный кабинет',
@@ -191,6 +216,9 @@ export default function FloorsPage() {
       created_at: roomRecord.created_at || new Date().toISOString(),
       updated_at: roomRecord.updated_at || new Date().toISOString()
     }];
+    
+    console.log('✅ Found connections:', connections);
+    return connections;
   };
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
