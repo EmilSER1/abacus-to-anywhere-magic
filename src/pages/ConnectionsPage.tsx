@@ -136,12 +136,10 @@ export default function ConnectionsPage() {
                         <div>
                           <div className="font-medium text-blue-600">Отделение Турар</div>
                           <div>{mapping.turar_department}</div>
-                          <div className="text-xs text-muted-foreground">ID: {mapping.turar_department_id}</div>
                         </div>
                         <div>
                           <div className="font-medium text-green-600">Отделение Проектировщиков</div>
                           <div>{mapping.projector_department}</div>
-                          <div className="text-xs text-muted-foreground">ID: {mapping.projector_department_id}</div>
                         </div>
                       </div>
                     </CardContent>

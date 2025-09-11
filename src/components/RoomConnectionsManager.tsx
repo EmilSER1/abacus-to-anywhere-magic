@@ -190,7 +190,7 @@ export default function RoomConnectionsManager() {
         </Card>
       </div>
 
-      {/* Отображение всех связанных пар отделений */}
+      {/* Группировка по отделениям Турар */}
       <div className="space-y-8">
         {linkedDepartmentPairs.length === 0 ? (
           <Card>
@@ -201,38 +201,80 @@ export default function RoomConnectionsManager() {
             </CardContent>
           </Card>
         ) : (
-          linkedDepartmentPairs.map((pair) => (
-            <Card key={pair.id} className="border-2">
+          // Группируем по отделениям Турар
+          Object.entries(
+            linkedDepartmentPairs.reduce((acc, pair) => {
+              const turarDept = pair.turar_department;
+              if (!acc[turarDept]) {
+                acc[turarDept] = {
+                  turar_department_id: pair.turar_department_id!,
+                  turar_department: pair.turar_department,
+                  projector_departments: []
+                };
+              }
+              acc[turarDept].projector_departments.push({
+                id: pair.projector_department_id!,
+                name: pair.projector_department
+              });
+              return acc;
+            }, {} as Record<string, {
+              turar_department_id: string;
+              turar_department: string;
+              projector_departments: Array<{id: string; name: string}>;
+            }>)
+          ).map(([turarDeptName, group]) => (
+            <Card key={turarDeptName} className="border-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Link2 className="h-5 w-5" />
-                  Связанные отделения
+                  {group.turar_department}
                 </CardTitle>
                 <CardDescription>
-                  {pair.turar_department} ↔ {pair.projector_department}
+                  Связан с {group.projector_departments.length} отделением(ями) проектировщиков: {group.projector_departments.map(p => p.name).join(', ')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <DepartmentRoomsDisplay
-                    departmentId={pair.turar_department_id!}
-                    departmentName={pair.turar_department}
-                    onLinkRoom={handleLinkRoom}
-                    onRemoveConnection={handleRemoveConnection}
-                    linkingRoom={linkingRoom}
-                    connections={connections}
-                    isProjectorDepartment={false}
-                  />
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Отделение Турар */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-600 mb-4">
+                      Кабинеты отделения Турар
+                    </h3>
+                    <DepartmentRoomsDisplay
+                      departmentId={group.turar_department_id}
+                      departmentName={group.turar_department}
+                      onLinkRoom={handleLinkRoom}
+                      onRemoveConnection={handleRemoveConnection}
+                      linkingRoom={linkingRoom}
+                      connections={connections}
+                      isProjectorDepartment={false}
+                    />
+                  </div>
                   
-                  <DepartmentRoomsDisplay
-                    departmentId={pair.projector_department_id!}
-                    departmentName={pair.projector_department}
-                    onLinkRoom={handleLinkRoom}
-                    onRemoveConnection={handleRemoveConnection}
-                    linkingRoom={linkingRoom}
-                    connections={connections}
-                    isProjectorDepartment={true}
-                  />
+                  {/* Связанные отделения Проектировщиков */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-600 mb-4">
+                      Кабинеты связанных отделений проектировщиков
+                    </h3>
+                    <div className="space-y-6">
+                      {group.projector_departments.map((projectorDept) => (
+                        <div key={projectorDept.id}>
+                          <h4 className="font-medium text-green-700 mb-2">
+                            {projectorDept.name}
+                          </h4>
+                          <DepartmentRoomsDisplay
+                            departmentId={projectorDept.id}
+                            departmentName={projectorDept.name}
+                            onLinkRoom={handleLinkRoom}
+                            onRemoveConnection={handleRemoveConnection}
+                            linkingRoom={linkingRoom}
+                            connections={connections}
+                            isProjectorDepartment={true}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

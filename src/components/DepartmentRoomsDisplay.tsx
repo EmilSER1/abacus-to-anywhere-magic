@@ -149,9 +149,9 @@ export default function DepartmentRoomsDisplay({
                 
                 <AccordionContent>
                   <div className="pt-4 space-y-3">
-                    {/* Информация о кабинете */}
+                    {/* Информация о кабинете - скрыли ID */}
                     <div className="text-sm text-muted-foreground">
-                      ID кабинета: {room.id}
+                      Кабинет: {room.name}
                     </div>
                     
                     {/* Существующие связи */}
