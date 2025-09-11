@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/SimpleLayout";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUserRole } = useUserRole();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -86,6 +88,18 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   // If not authenticated and not on auth page, redirect will happen in useEffect
   if (!user) {
     return null;
+  }
+
+  // Check role-based access for specific routes
+  if (currentUserRole === 'none') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Доступ ограничен</h2>
+          <p className="text-muted-foreground">Обратитесь к администратору для получения доступа</p>
+        </div>
+      </div>
+    );
   }
 
   return <AppLayout>{children}</AppLayout>;

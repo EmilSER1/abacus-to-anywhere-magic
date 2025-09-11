@@ -11,6 +11,7 @@ import { useDepartmentMappingsWithDetails } from '@/hooks/useDepartmentMappingsB
 import { useRoomConnectionsById, useCreateRoomConnectionById, useDeleteRoomConnectionById } from '@/hooks/useRoomConnectionsById'
 import DepartmentRoomsDisplay from '@/components/DepartmentRoomsDisplay'
 import { useToast } from '@/hooks/use-toast'
+import { useUserRole } from '@/hooks/useUserRole'
 
 export default function RoomConnectionsManager() {
   const [linkingRoom, setLinkingRoom] = useState<{
@@ -33,6 +34,7 @@ export default function RoomConnectionsManager() {
   const createConnectionMutation = useCreateRoomConnectionById()
   const deleteConnectionMutation = useDeleteRoomConnectionById()
   const { toast } = useToast()
+  const { canEdit } = useUserRole()
 
   // Получаем связанные отделения (только те, у которых есть ID)
   const linkedDepartmentPairs = departmentMappings?.filter(mapping => 

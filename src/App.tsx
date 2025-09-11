@@ -12,6 +12,7 @@ import SearchPage from "./pages/SearchPage";
 import ConsolidationPage from "./pages/ConsolidationPage";
 import AdminPage from "./pages/AdminPage";
 import AuthPage from "./pages/AuthPage";
+import UsersPage from "./pages/UsersPage";
 import AuthWrapper from "./components/AuthWrapper";
 import DepartmentIdTestPage from "./pages/DepartmentIdTestPage";
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/search" element={<SearchPage />} />
               <Route path="/consolidation" element={<ConsolidationPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/users" element={<UsersPage />} />
               <Route path="/dept-test" element={<DepartmentIdTestPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

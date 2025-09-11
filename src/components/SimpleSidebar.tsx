@@ -10,48 +10,64 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  Menu
+  Menu,
+  UserCog,
+  Stethoscope
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useUserRole, type UserRole } from "@/hooks/useUserRole"
 
-const navItems = [
+const getNavItems = (userRole: string | null) => [
   {
     title: "Главная",
     url: "/",
     icon: Home,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Проектировщики", 
     url: "/floors",
     icon: Building2,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Турар",
     url: "/turar", 
-    icon: Users,
+    icon: Stethoscope,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Поиск",
     url: "/search",
     icon: Search,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Консолидация",
     url: "/consolidation",
     icon: BarChart3,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Таблица соединения",
     url: "/connections",
     icon: Database,
+    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
     title: "Админ",
     url: "/admin",
     icon: Settings,
+    allowedRoles: ['admin'] as UserRole[]
+  },
+  {
+    title: "Пользователи",
+    url: "/users",
+    icon: UserCog,
+    allowedRoles: ['admin'] as UserRole[]
   },
 ]
 
@@ -65,6 +81,9 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
   const navigate = useNavigate()
   const { toast } = useToast()
   const currentPath = location.pathname
+  const { currentUserRole, canAccess } = useUserRole()
+  
+  const navItems = getNavItems(currentUserRole)
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
@@ -126,24 +145,26 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               Навигация
             </p>
             <nav className="space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.url}
-                    to={item.url}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      isActive(item.url)
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.title}
-                  </Link>
-                )
-              })}
+              {navItems
+                .filter(item => !currentUserRole || canAccess(item.allowedRoles))
+                .map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.url}
+                      to={item.url}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        isActive(item.url)
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {item.title}
+                    </Link>
+                  )
+                })}
             </nav>
           </div>
         </div>

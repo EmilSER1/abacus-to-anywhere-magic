@@ -10,6 +10,7 @@ import { useTurarRoomsByDepartmentId, useProjectorRoomsByDepartmentId } from '@/
 import { useTurarRoomEquipment, useProjectorRoomEquipment } from '@/hooks/useRoomEquipment'
 import RoomEquipmentDisplay from '@/components/RoomEquipmentDisplay'
 import { supabase } from '@/integrations/supabase/client'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface DepartmentRoomsDisplayProps {
   departmentId: string;
@@ -102,6 +103,7 @@ export default function DepartmentRoomsDisplay({
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
+  const { canEdit } = useUserRole()
   // Используем правильные хуки для получения данных из основных таблиц
   const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
   const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
@@ -200,7 +202,7 @@ export default function DepartmentRoomsDisplay({
                     
                     <div className="flex items-center gap-2">
                       {/* Кнопка связывания */}
-                      {onLinkRoom && (
+                      {onLinkRoom && canEdit() && (
                         <Button
                           size="sm"
                           variant={selectedRoomId === room.id ? "default" : "outline"}

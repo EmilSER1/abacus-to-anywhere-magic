@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Edit, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface Room {
   id: string
@@ -31,12 +32,17 @@ interface EditRoomDialogProps {
 export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const { canEdit } = useUserRole()
   const [formData, setFormData] = useState({
     name: room.name,
     code: room.code || '',
     area: room.area || 0,
     description: room.description || ''
   })
+
+  if (!canEdit()) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
