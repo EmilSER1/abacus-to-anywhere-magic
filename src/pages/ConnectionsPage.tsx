@@ -100,8 +100,8 @@ export default function ConnectionsPage() {
               </Button>
             </div>
 
-            {/* Отображение связанных отделений */}
-            <div className="space-y-4">
+            {/* Отображение связанных отделений по группам Турар */}
+            <div className="space-y-6">
               {departmentMappings?.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
@@ -117,29 +117,67 @@ export default function ConnectionsPage() {
                   </CardContent>
                 </Card>
               ) : (
-                departmentMappings?.map(mapping => (
-                  <Card key={mapping.id}>
+                // Группируем по отделениям Турар
+                Object.entries(
+                  departmentMappings.reduce((acc, mapping) => {
+                    const turarDept = mapping.turar_department;
+                    if (!acc[turarDept]) {
+                      acc[turarDept] = {
+                        turar_department: mapping.turar_department,
+                        turar_department_id: mapping.turar_department_id!,
+                        projector_departments: []
+                      };
+                    }
+                    acc[turarDept].projector_departments.push({
+                      id: mapping.id,
+                      name: mapping.projector_department,
+                      department_id: mapping.projector_department_id!
+                    });
+                    return acc;
+                  }, {} as Record<string, {
+                    turar_department: string;
+                    turar_department_id: string;
+                    projector_departments: Array<{id: string; name: string; department_id: string}>;
+                  }>)
+                ).map(([turarDeptName, group]) => (
+                  <Card key={turarDeptName} className="border-l-4 border-l-blue-500">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Link2 className="h-5 w-5" />
-                          Связь отделений
+                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <span className="text-blue-700">{group.turar_department}</span>
                         </div>
-                        <Badge variant="secondary">Активна</Badge>
+                        <Badge variant="secondary" className="text-blue-600">
+                          {group.projector_departments.length} связей
+                        </Badge>
                       </CardTitle>
                       <CardDescription>
-                        {mapping.turar_department} ↔ {mapping.projector_department}
+                        Отделение Турар связано с {group.projector_departments.length} отделением(ями) проектировщиков
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="font-medium text-blue-600">Отделение Турар</div>
-                          <div>{mapping.turar_department}</div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Блок Турар */}
+                        <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-200">
+                          <h4 className="font-semibold text-blue-700 mb-2">Отделение Турар</h4>
+                          <Badge variant="outline" className="text-blue-600 border-blue-300">
+                            {group.turar_department}
+                          </Badge>
                         </div>
-                        <div>
-                          <div className="font-medium text-green-600">Отделение Проектировщиков</div>
-                          <div>{mapping.projector_department}</div>
+                        
+                        {/* Блок связанных отделений Проектировщиков */}
+                        <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200">
+                          <h4 className="font-semibold text-green-700 mb-3">Связанные отделения Проектировщиков</h4>
+                          <div className="space-y-2">
+                            {group.projector_departments.map((projDept) => (
+                              <div key={projDept.id} className="flex items-center justify-between bg-white dark:bg-background p-2 rounded border">
+                                <Badge variant="outline" className="text-green-600 border-green-300">
+                                  {projDept.name}
+                                </Badge>
+                                <div className="text-xs text-muted-foreground">ID: {projDept.department_id}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </CardContent>

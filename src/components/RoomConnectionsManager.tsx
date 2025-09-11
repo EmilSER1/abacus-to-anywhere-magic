@@ -191,46 +191,62 @@ export default function RoomConnectionsManager() {
         </Card>
       </div>
 
-      {/* Двухколоночный дизайн с аккордионами */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Левая колонка - Отделения Турар */}
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-600">
-              <Building2 className="h-5 w-5" />
-              Отделения Турар
-            </CardTitle>
-            <CardDescription>
-              Выберите отделение и кабинет для связывания
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {Object.entries(
-                linkedDepartmentPairs.reduce((acc, pair) => {
-                  const turarDept = pair.turar_department;
-                  if (!acc[turarDept]) {
-                    acc[turarDept] = {
-                      turar_department_id: pair.turar_department_id!,
-                      turar_department: pair.turar_department,
-                    };
-                  }
-                  return acc;
-                }, {} as Record<string, {
-                  turar_department_id: string;
-                  turar_department: string;
-                }>)
-              ).map(([turarDeptName, group]) => (
-                <AccordionItem key={turarDeptName} value={turarDeptName}>
-                  <AccordionTrigger className="text-left">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-medium">{group.turar_department}</span>
-                      <Badge variant="outline" className="text-blue-600 border-blue-200">
-                        Турар
+      {/* Группировка по отделениям Турар */}
+      <div className="space-y-8">
+        {linkedDepartmentPairs.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <div className="text-muted-foreground">
+                Нет связанных отделений. Сначала создайте связи на вкладке "Связывание отделений".
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          // Группируем по отделениям Турар
+          Object.entries(
+            linkedDepartmentPairs.reduce((acc, pair) => {
+              const turarDept = pair.turar_department;
+              if (!acc[turarDept]) {
+                acc[turarDept] = {
+                  turar_department_id: pair.turar_department_id!,
+                  turar_department: pair.turar_department,
+                  projector_departments: []
+                };
+              }
+              acc[turarDept].projector_departments.push({
+                id: pair.projector_department_id!,
+                name: pair.projector_department
+              });
+              return acc;
+            }, {} as Record<string, {
+              turar_department_id: string;
+              turar_department: string;
+              projector_departments: Array<{id: string; name: string}>;
+            }>)
+          ).map(([turarDeptName, group]) => (
+            <Card key={turarDeptName} className="border-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  {group.turar_department}
+                </CardTitle>
+                <CardDescription>
+                  Связан с {group.projector_departments.length} отделением(ями) проектировщиков
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Левая сторона - Отделение Турар */}
+                  <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-lg border border-blue-200">
+                    <h3 className="text-lg font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Отделение Турар
+                    </h3>
+                    <div className="mb-4">
+                      <Badge variant="outline" className="text-blue-600 border-blue-300 bg-blue-50">
+                        {group.turar_department}
                       </Badge>
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
                     <DepartmentRoomsDisplay
                       departmentId={group.turar_department_id}
                       departmentName={group.turar_department}
@@ -240,69 +256,47 @@ export default function RoomConnectionsManager() {
                       connections={connections}
                       isProjectorDepartment={false}
                     />
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-            
-            {linkedDepartmentPairs.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Нет связанных отделений Турар
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Правая колонка - Отделения Проектировщиков */}
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-600">
-              <Building2 className="h-5 w-5" />
-              Отделения Проектировщиков
-            </CardTitle>
-            <CardDescription>
-              Связанные отделения проектировщиков
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {linkedDepartmentPairs.map((pair) => (
-                <AccordionItem key={pair.id} value={pair.projector_department}>
-                  <AccordionTrigger className="text-left">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div>
-                        <div className="font-medium">{pair.projector_department}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Связан с: {pair.turar_department}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-green-600 border-green-200">
-                        Проектировщики
-                      </Badge>
+                  </div>
+                  
+                  {/* Правая сторона - Связанные отделения Проектировщиков */}
+                  <div className="bg-green-50 dark:bg-green-900/10 p-6 rounded-lg border border-green-200">
+                    <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Связанные отделения Проектировщиков
+                    </h3>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {group.projector_departments.map((projDept) => (
+                        <Badge key={projDept.id} variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                          {projDept.name}
+                        </Badge>
+                      ))}
                     </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <DepartmentRoomsDisplay
-                      departmentId={pair.projector_department_id!}
-                      departmentName={pair.projector_department}
-                      onLinkRoom={handleLinkRoom}
-                      onRemoveConnection={handleRemoveConnection}
-                      linkingRoom={linkingRoom}
-                      connections={connections}
-                      isProjectorDepartment={true}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-            
-            {linkedDepartmentPairs.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Нет связанных отделений проектировщиков
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    <Accordion type="single" collapsible className="w-full">
+                      {group.projector_departments.map((projectorDept) => (
+                        <AccordionItem key={projectorDept.id} value={projectorDept.id}>
+                          <AccordionTrigger>
+                            <span className="font-medium">{projectorDept.name}</span>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <DepartmentRoomsDisplay
+                              departmentId={projectorDept.id}
+                              departmentName={projectorDept.name}
+                              onLinkRoom={handleLinkRoom}
+                              onRemoveConnection={handleRemoveConnection}
+                              linkingRoom={linkingRoom}
+                              connections={connections}
+                              isProjectorDepartment={true}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Статистика */}
