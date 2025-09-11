@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -9,6 +9,7 @@ import { useRoomConnectionsById, RoomConnectionById } from '@/hooks/useRoomConne
 import { useTurarRoomsByDepartmentId, useProjectorRoomsByDepartmentId } from '@/hooks/useActualRoomsById'
 import { useTurarRoomEquipment, useProjectorRoomEquipment } from '@/hooks/useRoomEquipment'
 import RoomEquipmentDisplay from '@/components/RoomEquipmentDisplay'
+import { supabase } from '@/integrations/supabase/client'
 
 interface DepartmentRoomsDisplayProps {
   departmentId: string;
@@ -25,6 +26,68 @@ interface DepartmentRoomsDisplayProps {
   connections?: RoomConnectionById[];
   isProjectorDepartment?: boolean;
   selectedRoomId?: string;
+}
+
+// Компонент для отображения связанного кабинета с названием
+function ConnectedRoomDisplay({ connectionId, roomId, isProjectorRoom, onRemove }: {
+  connectionId: string;
+  roomId: string;
+  isProjectorRoom: boolean;
+  onRemove?: (connectionId: string) => void;
+}) {
+  const [roomName, setRoomName] = useState<string>('Загрузка...');
+
+  useEffect(() => {
+    const fetchRoomName = async () => {
+      try {
+        if (isProjectorRoom) {
+          const { data } = await supabase
+            .from("projector_floors")
+            .select('"НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"')
+            .eq("id", roomId)
+            .limit(1)
+            .single();
+          setRoomName(data?.["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || `ID: ${roomId}`);
+        } else {
+          const { data } = await supabase
+            .from("turar_medical")
+            .select('"Помещение/Кабинет"')
+            .eq("id", roomId)
+            .limit(1)
+            .single();
+          setRoomName(data?.["Помещение/Кабинет"] || `ID: ${roomId}`);
+        }
+      } catch (error) {
+        console.error('Ошибка получения названия кабинета:', error);
+        setRoomName(`ID: ${roomId}`);
+      }
+    };
+
+    fetchRoomName();
+  }, [roomId, isProjectorRoom]);
+
+  return (
+    <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
+      <div className="text-sm">
+        {isProjectorRoom ? (
+          <span>📍 Проектировщики: {roomName}</span>
+        ) : (
+          <span>📍 Турар: {roomName}</span>
+        )}
+      </div>
+      {onRemove && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="hover:bg-red-100 hover:text-red-600 gap-1"
+          onClick={() => onRemove(connectionId)}
+        >
+          <X className="h-3 w-3" />
+          Удалить
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export default function DepartmentRoomsDisplay({
@@ -188,26 +251,13 @@ export default function DepartmentRoomsDisplay({
                           Связанные кабинеты:
                         </div>
                         {connectedRooms.map((connection) => (
-                          <div key={connection.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
-                            <div className="text-sm">
-                              {isProjectorDepartment ? (
-                                <span>📍 Турар: {connection.turar_room_id}</span>
-                              ) : (
-                                <span>📍 Проектировщики: {connection.projector_room_id}</span>
-                              )}
-                            </div>
-                            {onRemoveConnection && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="hover:bg-red-100 hover:text-red-600 gap-1"
-                                onClick={() => onRemoveConnection(connection.id)}
-                              >
-                                <X className="h-3 w-3" />
-                                Удалить
-                              </Button>
-                            )}
-                          </div>
+                          <ConnectedRoomDisplay
+                            key={connection.id}
+                            connectionId={connection.id}
+                            roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
+                            isProjectorRoom={!isProjectorDepartment}
+                            onRemove={onRemoveConnection}
+                          />
                         ))}
                       </div>
                     )}
