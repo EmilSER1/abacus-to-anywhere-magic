@@ -366,6 +366,10 @@ export type Database = {
           department_name: string
         }[]
       }
+      sync_projector_room_connections: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
