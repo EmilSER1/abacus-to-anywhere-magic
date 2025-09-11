@@ -151,44 +151,46 @@ export default function FloorsPage() {
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
-    if (!roomConnections || !allData) return false;
+    if (!allData) return false;
     
-    // Find the room record in allData to get its ID
+    // Find the room record in allData to check connection fields
     const roomRecord = allData.find(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
     );
     
-    if (roomRecord?.connected_turar_room_id) {
-      return true;
-    }
-    
-    // Fallback to name-based matching
-    return roomConnections.some(conn => 
-      conn.projector_department === departmentName && 
-      (conn.projector_room === room.name || conn.projector_room === room.code)
-    );
+    // Check if room has connection data (either ID or name fields)
+    return !!(roomRecord?.connected_turar_room_id || 
+              roomRecord?.connected_turar_room || 
+              roomRecord?.connected_turar_department);
   };
 
   // Helper function to get connections for a room
   const getRoomConnections = (room: Room, departmentName: string) => {
-    if (!roomConnections || !allData) return [];
+    if (!allData) return [];
     
-    // Find the room record in allData to get its ID
+    // Find the room record in allData to get connection data
     const roomRecord = allData.find(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
     );
     
-    if (roomRecord?.connected_turar_room_id) {
-      return roomConnections.filter(conn => conn.turar_room_id === roomRecord.connected_turar_room_id);
+    if (!roomRecord || (!roomRecord.connected_turar_room && !roomRecord.connected_turar_department)) {
+      return [];
     }
     
-    // Fallback to name-based matching
-    return roomConnections.filter(conn => 
-      conn.projector_department === departmentName && 
-      (conn.projector_room === room.name || conn.projector_room === room.code)
-    );
+    // Return connection data from the room record itself
+    return [{
+      id: `connection-${roomRecord.id}`,
+      turar_department: roomRecord.connected_turar_department || 'Неизвестное отделение',
+      turar_room: roomRecord.connected_turar_room || 'Неизвестный кабинет',
+      projector_department: departmentName,
+      projector_room: room.name,
+      turar_room_id: roomRecord.connected_turar_room_id,
+      projector_room_id: roomRecord.id,
+      created_at: roomRecord.created_at || new Date().toISOString(),
+      updated_at: roomRecord.updated_at || new Date().toISOString()
+    }];
   };
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
