@@ -115,7 +115,8 @@ export default function DepartmentRoomsDisplay({
                       <span className="font-medium">{room.name}</span>
                       {connectedRooms.length > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          {connectedRooms.length} связей
+                          <Link2 className="h-3 w-3 mr-1" />
+                          {connectedRooms.length}
                         </Badge>
                       )}
                     </div>
@@ -149,7 +150,7 @@ export default function DepartmentRoomsDisplay({
                 
                 <AccordionContent>
                   <div className="pt-4 space-y-3">
-                    {/* Информация о кабинете - скрыли ID */}
+                    {/* Информация о кабинете */}
                     <div className="text-sm text-muted-foreground">
                       Кабинет: {room.name}
                     </div>
@@ -157,14 +158,17 @@ export default function DepartmentRoomsDisplay({
                     {/* Существующие связи */}
                     {connectedRooms.length > 0 && (
                       <div className="space-y-2">
-                        <div className="text-sm font-medium">Связанные кабинеты:</div>
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          <Link2 className="h-4 w-4" />
+                          Связанные кабинеты:
+                        </div>
                         {connectedRooms.map((connection) => (
                           <div key={connection.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
                             <div className="text-sm">
                               {isProjectorDepartment ? (
-                                <span>Турар кабинет: {connection.turar_room_id}</span>
+                                <span>📍 Турар: {connection.turar_room_id}</span>
                               ) : (
-                                <span>Проектор кабинет: {connection.projector_room_id}</span>
+                                <span>📍 Проектировщики: {connection.projector_room_id}</span>
                               )}
                             </div>
                             {onRemoveConnection && (
@@ -185,7 +189,7 @@ export default function DepartmentRoomsDisplay({
                     
                     {/* Сообщение если нет связей */}
                     {connectedRooms.length === 0 && (
-                      <div className="text-sm text-muted-foreground italic">
+                      <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg text-center">
                         Кабинет не связан с другими кабинетами
                       </div>
                     )}

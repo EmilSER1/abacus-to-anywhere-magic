@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Link2 } from 'lucide-react'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Plus, Link2, Building2 } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useDepartmentMappingsWithDetails } from '@/hooks/useDepartmentMappingsById'
 import { useRoomConnectionsById, useCreateRoomConnectionById, useDeleteRoomConnectionById } from '@/hooks/useRoomConnectionsById'
@@ -190,56 +191,46 @@ export default function RoomConnectionsManager() {
         </Card>
       </div>
 
-      {/* Группировка по отделениям Турар */}
-      <div className="space-y-8">
-        {linkedDepartmentPairs.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <div className="text-muted-foreground">
-                Нет связанных отделений. Сначала создайте связи на вкладке "Связывание отделений".
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          // Группируем по отделениям Турар
-          Object.entries(
-            linkedDepartmentPairs.reduce((acc, pair) => {
-              const turarDept = pair.turar_department;
-              if (!acc[turarDept]) {
-                acc[turarDept] = {
-                  turar_department_id: pair.turar_department_id!,
-                  turar_department: pair.turar_department,
-                  projector_departments: []
-                };
-              }
-              acc[turarDept].projector_departments.push({
-                id: pair.projector_department_id!,
-                name: pair.projector_department
-              });
-              return acc;
-            }, {} as Record<string, {
-              turar_department_id: string;
-              turar_department: string;
-              projector_departments: Array<{id: string; name: string}>;
-            }>)
-          ).map(([turarDeptName, group]) => (
-            <Card key={turarDeptName} className="border-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Link2 className="h-5 w-5" />
-                  {group.turar_department}
-                </CardTitle>
-                <CardDescription>
-                  Связан с {group.projector_departments.length} отделением(ями) проектировщиков: {group.projector_departments.map(p => p.name).join(', ')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-6">
-                  {/* Отделение Турар */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-600 mb-4">
-                      Кабинеты отделения Турар
-                    </h3>
+      {/* Двухколоночный дизайн с аккордионами */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Левая колонка - Отделения Турар */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-600">
+              <Building2 className="h-5 w-5" />
+              Отделения Турар
+            </CardTitle>
+            <CardDescription>
+              Выберите отделение и кабинет для связывания
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {Object.entries(
+                linkedDepartmentPairs.reduce((acc, pair) => {
+                  const turarDept = pair.turar_department;
+                  if (!acc[turarDept]) {
+                    acc[turarDept] = {
+                      turar_department_id: pair.turar_department_id!,
+                      turar_department: pair.turar_department,
+                    };
+                  }
+                  return acc;
+                }, {} as Record<string, {
+                  turar_department_id: string;
+                  turar_department: string;
+                }>)
+              ).map(([turarDeptName, group]) => (
+                <AccordionItem key={turarDeptName} value={turarDeptName}>
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-medium">{group.turar_department}</span>
+                      <Badge variant="outline" className="text-blue-600 border-blue-200">
+                        Турар
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
                     <DepartmentRoomsDisplay
                       departmentId={group.turar_department_id}
                       departmentName={group.turar_department}
@@ -249,37 +240,69 @@ export default function RoomConnectionsManager() {
                       connections={connections}
                       isProjectorDepartment={false}
                     />
-                  </div>
-                  
-                  {/* Связанные отделения Проектировщиков */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-600 mb-4">
-                      Кабинеты связанных отделений проектировщиков
-                    </h3>
-                    <div className="space-y-6">
-                      {group.projector_departments.map((projectorDept) => (
-                        <div key={projectorDept.id}>
-                          <h4 className="font-medium text-green-700 mb-2">
-                            {projectorDept.name}
-                          </h4>
-                          <DepartmentRoomsDisplay
-                            departmentId={projectorDept.id}
-                            departmentName={projectorDept.name}
-                            onLinkRoom={handleLinkRoom}
-                            onRemoveConnection={handleRemoveConnection}
-                            linkingRoom={linkingRoom}
-                            connections={connections}
-                            isProjectorDepartment={true}
-                          />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            
+            {linkedDepartmentPairs.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Нет связанных отделений Турар
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Правая колонка - Отделения Проектировщиков */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-600">
+              <Building2 className="h-5 w-5" />
+              Отделения Проектировщиков
+            </CardTitle>
+            <CardDescription>
+              Связанные отделения проектировщиков
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {linkedDepartmentPairs.map((pair) => (
+                <AccordionItem key={pair.id} value={pair.projector_department}>
+                  <AccordionTrigger className="text-left">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div>
+                        <div className="font-medium">{pair.projector_department}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Связан с: {pair.turar_department}
                         </div>
-                      ))}
+                      </div>
+                      <Badge variant="outline" className="text-green-600 border-green-200">
+                        Проектировщики
+                      </Badge>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <DepartmentRoomsDisplay
+                      departmentId={pair.projector_department_id!}
+                      departmentName={pair.projector_department}
+                      onLinkRoom={handleLinkRoom}
+                      onRemoveConnection={handleRemoveConnection}
+                      linkingRoom={linkingRoom}
+                      connections={connections}
+                      isProjectorDepartment={true}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            
+            {linkedDepartmentPairs.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Нет связанных отделений проектировщиков
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Статистика */}
