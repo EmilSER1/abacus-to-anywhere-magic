@@ -16,6 +16,9 @@ export interface FloorData {
   "Ед. изм.": string | null;
   "Кол-во": number | string | null;
   "Примечания": string | null;
+  connected_turar_department?: string | null;
+  connected_turar_room?: string | null;
+  connected_turar_room_id?: string | null;
   created_at: string;
   updated_at: string;
 }

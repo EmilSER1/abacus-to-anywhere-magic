@@ -7,8 +7,19 @@ export interface RoomConnection {
   turar_room: string;
   projector_department: string;
   projector_room: string;
+  projector_room_id: string | null;
+  turar_room_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateRoomConnectionRequest {
+  turar_department: string;
+  turar_room: string;
+  projector_department: string;
+  projector_room: string;
+  projector_room_id?: string | null;
+  turar_room_id?: string | null;
 }
 
 export const useRoomConnections = () => {
@@ -33,7 +44,7 @@ export const useCreateRoomConnection = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (connection: Omit<RoomConnection, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (connection: CreateRoomConnectionRequest) => {
       // Create connection record
       const { data, error } = await supabase
         .from("room_connections")
@@ -45,25 +56,39 @@ export const useCreateRoomConnection = () => {
         throw error;
       }
 
-      // Update turar_medical table with connection info
-      await supabase
-        .from("turar_medical")
-        .update({
-          connected_projector_department: connection.projector_department,
-          connected_projector_room: connection.projector_room
-        })
-        .eq("Отделение/Блок", connection.turar_department)
-        .eq("Помещение/Кабинет", connection.turar_room);
-
-      // Update projector_floors table with connection info
-      await supabase
-        .from("projector_floors")
-        .update({
-          connected_turar_department: connection.turar_department,
-          connected_turar_room: connection.turar_room
-        })
-        .eq("ОТДЕЛЕНИЕ", connection.projector_department)
-        .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room);
+      // Update tables using ID-based relationships if IDs are provided
+      if (connection.projector_room_id && connection.turar_room_id) {
+        await Promise.all([
+          supabase
+            .from("projector_floors")
+            .update({ connected_turar_room_id: connection.turar_room_id })
+            .eq("id", connection.projector_room_id),
+          supabase
+            .from("turar_medical")
+            .update({ connected_projector_room_id: connection.projector_room_id })
+            .eq("id", connection.turar_room_id)
+        ]);
+      } else {
+        // Fallback to string-based updates for backward compatibility
+        await Promise.all([
+          supabase
+            .from("turar_medical")
+            .update({
+              connected_projector_department: connection.projector_department,
+              connected_projector_room: connection.projector_room
+            })
+            .eq("Отделение/Блок", connection.turar_department)
+            .eq("Помещение/Кабинет", connection.turar_room),
+          supabase
+            .from("projector_floors")
+            .update({
+              connected_turar_department: connection.turar_department,
+              connected_turar_room: connection.turar_room
+            })
+            .eq("ОТДЕЛЕНИЕ", connection.projector_department)
+            .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room)
+        ]);
+      }
 
       return data;
     },
@@ -112,25 +137,39 @@ export const useDeleteRoomConnection = () => {
         .single();
 
       if (connection) {
-        // Clear connection info from turar_medical
-        await supabase
-          .from("turar_medical")
-          .update({
-            connected_projector_department: null,
-            connected_projector_room: null
-          })
-          .eq("Отделение/Блок", connection.turar_department)
-          .eq("Помещение/Кабинет", connection.turar_room);
-
-        // Clear connection info from projector_floors
-        await supabase
-          .from("projector_floors")
-          .update({
-            connected_turar_department: null,
-            connected_turar_room: null
-          })
-          .eq("ОТДЕЛЕНИЕ", connection.projector_department)
-          .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room);
+        // Use ID-based cleanup if available
+        if (connection.projector_room_id && connection.turar_room_id) {
+          await Promise.all([
+            supabase
+              .from("projector_floors")
+              .update({ connected_turar_room_id: null })
+              .eq("id", connection.projector_room_id),
+            supabase
+              .from("turar_medical")
+              .update({ connected_projector_room_id: null })
+              .eq("id", connection.turar_room_id)
+          ]);
+        } else {
+          // Fallback to string-based cleanup
+          await Promise.all([
+            supabase
+              .from("turar_medical")
+              .update({
+                connected_projector_department: null,
+                connected_projector_room: null
+              })
+              .eq("Отделение/Блок", connection.turar_department)
+              .eq("Помещение/Кабинет", connection.turar_room),
+            supabase
+              .from("projector_floors")
+              .update({
+                connected_turar_department: null,
+                connected_turar_room: null
+              })
+              .eq("ОТДЕЛЕНИЕ", connection.projector_department)
+              .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room)
+          ]);
+        }
       }
 
       // Delete the connection record

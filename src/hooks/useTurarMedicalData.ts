@@ -8,6 +8,9 @@ export interface TurarMedicalData {
   "Код оборудования": string;
   "Наименование": string;
   "Кол-во": number;
+  connected_projector_department?: string | null;
+  connected_projector_room?: string | null;
+  connected_projector_room_id?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -221,6 +221,7 @@ export type Database = {
         Row: {
           connected_turar_department: string | null
           connected_turar_room: string | null
+          connected_turar_room_id: string | null
           created_at: string
           id: string
           updated_at: string
@@ -241,6 +242,7 @@ export type Database = {
         Insert: {
           connected_turar_department?: string | null
           connected_turar_room?: string | null
+          connected_turar_room_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -261,6 +263,7 @@ export type Database = {
         Update: {
           connected_turar_department?: string | null
           connected_turar_room?: string | null
+          connected_turar_room_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -278,7 +281,15 @@ export type Database = {
           Примечания?: string | null
           ЭТАЖ?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projector_floors_connected_turar_room_id_fkey"
+            columns: ["connected_turar_room_id"]
+            isOneToOne: false
+            referencedRelation: "turar_medical"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_connections: {
         Row: {
@@ -286,8 +297,10 @@ export type Database = {
           id: string
           projector_department: string
           projector_room: string
+          projector_room_id: string | null
           turar_department: string
           turar_room: string
+          turar_room_id: string | null
           updated_at: string
         }
         Insert: {
@@ -295,8 +308,10 @@ export type Database = {
           id?: string
           projector_department: string
           projector_room: string
+          projector_room_id?: string | null
           turar_department: string
           turar_room: string
+          turar_room_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -304,16 +319,34 @@ export type Database = {
           id?: string
           projector_department?: string
           projector_room?: string
+          projector_room_id?: string | null
           turar_department?: string
           turar_room?: string
+          turar_room_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "room_connections_projector_room_id_fkey"
+            columns: ["projector_room_id"]
+            isOneToOne: false
+            referencedRelation: "projector_floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_connections_turar_room_id_fkey"
+            columns: ["turar_room_id"]
+            isOneToOne: false
+            referencedRelation: "turar_medical"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       turar_medical: {
         Row: {
           connected_projector_department: string | null
           connected_projector_room: string | null
+          connected_projector_room_id: string | null
           created_at: string
           id: string
           updated_at: string
@@ -326,6 +359,7 @@ export type Database = {
         Insert: {
           connected_projector_department?: string | null
           connected_projector_room?: string | null
+          connected_projector_room_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -338,6 +372,7 @@ export type Database = {
         Update: {
           connected_projector_department?: string | null
           connected_projector_room?: string | null
+          connected_projector_room_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -347,7 +382,15 @@ export type Database = {
           "Отделение/Блок"?: string
           "Помещение/Кабинет"?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "turar_medical_connected_projector_room_id_fkey"
+            columns: ["connected_projector_room_id"]
+            isOneToOne: false
+            referencedRelation: "projector_floors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

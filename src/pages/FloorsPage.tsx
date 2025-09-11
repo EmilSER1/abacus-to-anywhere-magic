@@ -148,6 +148,48 @@ export default function FloorsPage() {
   const [searchParams] = useSearchParams();
   const { data: allData, isLoading, error, refetch } = useFloorsData();
   const { data: roomConnections } = useRoomConnections();
+  
+  // Helper function to check if a room is connected using new ID-based structure
+  const isRoomConnected = (room: Room, departmentName: string) => {
+    if (!roomConnections || !allData) return false;
+    
+    // Find the room record in allData to get its ID
+    const roomRecord = allData.find(item => 
+      item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
+    );
+    
+    if (roomRecord?.connected_turar_room_id) {
+      return true;
+    }
+    
+    // Fallback to name-based matching
+    return roomConnections.some(conn => 
+      conn.projector_department === departmentName && 
+      (conn.projector_room === room.name || conn.projector_room === room.code)
+    );
+  };
+
+  // Helper function to get connections for a room
+  const getRoomConnections = (room: Room, departmentName: string) => {
+    if (!roomConnections || !allData) return [];
+    
+    // Find the room record in allData to get its ID
+    const roomRecord = allData.find(item => 
+      item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
+    );
+    
+    if (roomRecord?.connected_turar_room_id) {
+      return roomConnections.filter(conn => conn.turar_room_id === roomRecord.connected_turar_room_id);
+    }
+    
+    // Fallback to name-based matching
+    return roomConnections.filter(conn => 
+      conn.projector_department === departmentName && 
+      (conn.projector_room === room.name || conn.projector_room === room.code)
+    );
+  };
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -460,21 +502,17 @@ export default function FloorsPage() {
                                           }}
                                         >
                                           <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
-                                            <AccordionTrigger className={`px-3 py-2 text-xs hover:no-underline hover:bg-muted/30 ${
-                                              roomConnections && roomConnections.some(conn => 
-                                                conn.projector_department === department.name && conn.projector_room === room.name
-                                              ) ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''
-                                            }`}>
+                                             <AccordionTrigger className={`px-3 py-2 text-xs hover:no-underline hover:bg-muted/30 ${
+                                               isRoomConnected(room, department.name) 
+                                                 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''
+                                             }`}>
                                                <div className="flex justify-between items-center w-full mr-4">
                                                  <div className="flex items-center gap-2 flex-1">
                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
                                                    <span className="font-medium">{room.name}</span>
                                                    <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
-                                                   {roomConnections && (() => {
-                                                      const connections = roomConnections.filter(conn => 
-                                                        conn.projector_department === department.name && 
-                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
-                                                      );
+                                                    {(() => {
+                                                       const connections = getRoomConnections(room, department.name);
                                                      return connections.length > 0 ? (
                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
                                                          <Link className="h-3 w-3 mr-1" />
@@ -564,11 +602,8 @@ export default function FloorsPage() {
                                                    </table>
                                                    
                                                    {/* Связи с Турар */}
-                                                   {roomConnections && (() => {
-                                                      const connections = roomConnections.filter(conn => 
-                                                        conn.projector_department === department.name && 
-                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
-                                                      );
+                                                    {(() => {
+                                                       const connections = getRoomConnections(room, department.name);
                                                      return connections.length > 0 ? (
                                                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                                                          <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
@@ -598,11 +633,8 @@ export default function FloorsPage() {
                                                    Оборудование не указано
                                                    
                                                    {/* Связи с Турар для комнат без оборудования */}
-                                                   {roomConnections && (() => {
-                                                      const connections = roomConnections.filter(conn => 
-                                                        conn.projector_department === department.name && 
-                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
-                                                      );
+                                                    {(() => {
+                                                       const connections = getRoomConnections(room, department.name);
                                                      return connections.length > 0 ? (
                                                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                                                          <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
