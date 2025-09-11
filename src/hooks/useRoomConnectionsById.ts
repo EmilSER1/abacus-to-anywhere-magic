@@ -118,17 +118,30 @@ export const useCreateRoomConnectionById = () => {
 
       console.log('✅ Room connection created successfully:', data);
 
-      // Обновляем основные таблицы с ID связей
+      // Обновляем основные таблицы с ID связей И названиями
       await Promise.all([
+        // Обновляем projector_floors
         supabase
           .from("projector_floors")
-          .update({ connected_turar_room_id: connection.turar_room_id })
-          .eq("room_id", connection.projector_room_id),
+          .update({ 
+            connected_turar_room_id: connection.turar_room_id,
+            connected_turar_department: turarDept.data.name,
+            connected_turar_room: turarRoom.data["Помещение/Кабинет"]
+          })
+          .eq("id", connection.projector_room_id), // Используем id записи, а не room_id
+        
+        // Обновляем turar_medical
         supabase
           .from("turar_medical")
-          .update({ connected_projector_room_id: connection.projector_room_id })
-          .eq("room_id", connection.turar_room_id)
+          .update({ 
+            connected_projector_room_id: connection.projector_room_id,
+            connected_projector_department: projectorDept.data.name,
+            connected_projector_room: projectorRoom.data["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]
+          })
+          .eq("id", connection.turar_room_id) // Используем id записи, а не room_id
       ]);
+
+      console.log('✅ Updated main tables with connection data');
 
       return data;
     },
@@ -159,17 +172,28 @@ export const useDeleteRoomConnectionById = () => {
         .single();
 
       if (connection) {
-        // Очищаем связи в основных таблицах по ID
+        // Очищаем связи в основных таблицах по ID записей
         if (connection.projector_room_id && connection.turar_room_id) {
           await Promise.all([
+            // Очищаем все поля связи в projector_floors
             supabase
               .from("projector_floors")
-              .update({ connected_turar_room_id: null })
-              .eq("room_id", connection.projector_room_id),
+              .update({ 
+                connected_turar_room_id: null,
+                connected_turar_department: null,
+                connected_turar_room: null
+              })
+              .eq("id", connection.projector_room_id), // Используем id записи
+            
+            // Очищаем все поля связи в turar_medical
             supabase
               .from("turar_medical")
-              .update({ connected_projector_room_id: null })
-              .eq("room_id", connection.turar_room_id)
+              .update({ 
+                connected_projector_room_id: null,
+                connected_projector_department: null,
+                connected_projector_room: null
+              })
+              .eq("id", connection.turar_room_id) // Используем id записи
           ]);
         }
       }

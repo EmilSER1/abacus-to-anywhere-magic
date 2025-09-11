@@ -48,7 +48,9 @@ const TurarPage: React.FC = () => {
       // Process data to group by departments and rooms
       const processedData = processTurarData(turarData);
       setDepartments(processedData);
-
+      
+      console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
+      
       // Handle search params from URL
       const urlSearchTerm = searchParams.get('search');
       const urlDepartment = searchParams.get('department');
@@ -321,33 +323,42 @@ const TurarPage: React.FC = () => {
                         {department.rooms.map((room, roomIndex) => (
                           <AccordionItem key={roomIndex} value={`room-${deptIndex}-${roomIndex}`}>
                             <Card className="bg-muted/30 border-border/50">
-                              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                                  <div className="text-left flex-1">
-                                    <div className="font-medium">{room.name}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {room.equipment.length} типов оборудования
-                                      {roomConnections && (() => {
-                                        const connections = roomConnections.filter(conn => 
-                                          conn.turar_department === department.name && conn.turar_room === room.name
-                                        );
-                                        return connections.length > 0 ? ` • ${connections.length} связь(ей)` : '';
-                                      })()}
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                    <div className="text-left flex-1">
+                                      <div className="font-medium">{room.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {room.equipment.length} типов оборудования
+                                        {(() => {
+                                          // Проверяем есть ли связь в данных этого кабинета
+                                          const hasConnection = room.equipment.some((eq: any) => 
+                                            eq.connected_projector_room || eq.connected_projector_department
+                                          );
+                                          return hasConnection ? ' • Связан' : '';
+                                        })()}
+                                      </div>
                                     </div>
+                                    {(() => {
+                                      // Находим связь в данных кабинета
+                                      const connectedEquipment = room.equipment.find((eq: any) => 
+                                        eq.connected_projector_room || eq.connected_projector_department
+                                      );
+                                      
+                                      if (connectedEquipment) {
+                                        return (
+                                          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            <Link className="h-3 w-3 mr-1" />
+                                            {connectedEquipment.connected_projector_room 
+                                              ? `${connectedEquipment.connected_projector_room}` 
+                                              : `${connectedEquipment.connected_projector_department}`
+                                            }
+                                          </Badge>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                   </div>
-                                  {roomConnections && (() => {
-                                    const connections = roomConnections.filter(conn => 
-                                      conn.turar_department === department.name && conn.turar_room === room.name
-                                    );
-                                    return connections.length > 0 ? (
-                                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                        <Link className="h-3 w-3 mr-1" />
-                                        Связано с {connections[0].projector_department}
-                                      </Badge>
-                                    ) : null;
-                                  })()}
-                                </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
                                 <div className="space-y-2">
