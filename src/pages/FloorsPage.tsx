@@ -547,15 +547,15 @@ export default function FloorsPage() {
                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
                                                    <span className="font-medium">{room.name}</span>
                                                    <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
-                                                    {(() => {
-                                                       const connections = getRoomConnections(room, department.name);
-                                                     return connections.length > 0 ? (
-                                                       <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
-                                                         <Link className="h-3 w-3 mr-1" />
-                                                         ✓ Связано ({connections.length})
-                                                       </Badge>
-                                                     ) : null;
-                                                   })()}
+                                                     {(() => {
+                                                        const connections = getRoomConnections(room, department.name);
+                                                      return connections.length > 0 ? (
+                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
+                                                          <Link className="h-3 w-3 mr-1" />
+                                                          ✓ {connections[0].turar_room} ({connections.length})
+                                                        </Badge>
+                                                      ) : null;
+                                                    })()}
                                                  </div>
                                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                    <span>{(room.area || 0).toFixed(1)} м²</span>
