@@ -153,28 +153,25 @@ export default function FloorsPage() {
   const isRoomConnected = (room: Room, departmentName: string) => {
     if (!allData) return false;
     
-    // Find the room record in allData to check connection fields
-    const roomRecord = allData.find(item => 
+    // Find ANY room record with this name and department that has a connection
+    const connectedRecord = allData.find(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
-      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
+      (item.connected_turar_room_id || item.connected_turar_room || item.connected_turar_department)
     );
     
     console.log('🔍 Checking room connection:', {
       roomName: room.name,
       departmentName,
-      roomRecord: roomRecord ? {
-        id: roomRecord.id,
-        connected_turar_room_id: roomRecord.connected_turar_room_id,
-        connected_turar_room: roomRecord.connected_turar_room,
-        connected_turar_department: roomRecord.connected_turar_department
+      connectedRecord: connectedRecord ? {
+        id: connectedRecord.id,
+        connected_turar_room_id: connectedRecord.connected_turar_room_id,
+        connected_turar_room: connectedRecord.connected_turar_room,
+        connected_turar_department: connectedRecord.connected_turar_department
       } : null
     });
     
-    // Check if room has connection data (either ID or name fields)
-    const isConnected = !!(roomRecord?.connected_turar_room_id || 
-              roomRecord?.connected_turar_room || 
-              roomRecord?.connected_turar_department);
-              
+    const isConnected = !!connectedRecord;
     console.log('✅ Room connected result:', isConnected);
     return isConnected;
   };
@@ -183,40 +180,49 @@ export default function FloorsPage() {
   const getRoomConnections = (room: Room, departmentName: string) => {
     if (!allData) return [];
     
-    // Find the room record in allData to get connection data
-    const roomRecord = allData.find(item => 
+    // Find ALL room records with this name and department that have connections
+    const connectedRecords = allData.filter(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
-      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim()
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
+      (item.connected_turar_room_id || item.connected_turar_room || item.connected_turar_department)
     );
     
     console.log('🔗 Getting room connections:', {
       roomName: room.name,
       departmentName,
-      roomRecord: roomRecord ? {
-        id: roomRecord.id,
-        connected_turar_room: roomRecord.connected_turar_room,
-        connected_turar_department: roomRecord.connected_turar_department
-      } : null
+      connectedRecordsCount: connectedRecords.length,
+      connectedRecords: connectedRecords.map(r => ({
+        id: r.id,
+        connected_turar_room: r.connected_turar_room,
+        connected_turar_department: r.connected_turar_department
+      }))
     });
     
-    if (!roomRecord || (!roomRecord.connected_turar_room && !roomRecord.connected_turar_department)) {
+    if (connectedRecords.length === 0) {
       console.log('❌ No connections found');
       return [];
     }
     
-    // Return connection data from the room record itself
-    const connections = [{
-      id: `connection-${roomRecord.id}`,
-      turar_department: roomRecord.connected_turar_department || 'Неизвестное отделение',
-      turar_room: roomRecord.connected_turar_room || 'Неизвестный кабинет',
-      projector_department: departmentName,
-      projector_room: room.name,
-      turar_room_id: roomRecord.connected_turar_room_id,
-      projector_room_id: roomRecord.id,
-      created_at: roomRecord.created_at || new Date().toISOString(),
-      updated_at: roomRecord.updated_at || new Date().toISOString()
-    }];
+    // Return unique connections (remove duplicates)
+    const uniqueConnections = new Map();
+    connectedRecords.forEach(roomRecord => {
+      const key = `${roomRecord.connected_turar_department}-${roomRecord.connected_turar_room}`;
+      if (!uniqueConnections.has(key)) {
+        uniqueConnections.set(key, {
+          id: `connection-${roomRecord.id}`,
+          turar_department: roomRecord.connected_turar_department || 'Неизвестное отделение',
+          turar_room: roomRecord.connected_turar_room || 'Неизвестный кабинет',
+          projector_department: departmentName,
+          projector_room: room.name,
+          turar_room_id: roomRecord.connected_turar_room_id,
+          projector_room_id: roomRecord.id,
+          created_at: roomRecord.created_at || new Date().toISOString(),
+          updated_at: roomRecord.updated_at || new Date().toISOString()
+        });
+      }
+    });
     
+    const connections = Array.from(uniqueConnections.values());
     console.log('✅ Found connections:', connections);
     return connections;
   };
