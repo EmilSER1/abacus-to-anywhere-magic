@@ -5,6 +5,8 @@ export interface DepartmentMapping {
   id: string;
   turar_department: string;
   projector_department: string;
+  turar_department_id?: string;
+  projector_department_id?: string;
   created_at: string;
   updated_at: string;
 }
