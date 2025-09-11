@@ -363,12 +363,10 @@ export default function FloorsPage() {
 
   if (isLoading) {
     return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Загрузка данных проектировщиков...</p>
-          </div>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Загрузка данных проектировщиков...</p>
         </div>
       </div>
     );
@@ -376,9 +374,9 @@ export default function FloorsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
-          <div className="text-center text-red-500">
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="text-red-500">
             <p>Ошибка загрузки данных: {error.message}</p>
           </div>
         </div>
@@ -395,8 +393,12 @@ export default function FloorsPage() {
   }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0, totalArea: 0 });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Проектировщики</h1>
+        <p className="text-muted-foreground">Иерархическая навигация по этажам, блокам и кабинетам</p>
+      </div>
+      <div className="max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">

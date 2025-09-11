@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Navigation } from '@/components/Navigation';
+
 import { Search, Package, MapPin, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -233,9 +233,12 @@ const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Поиск</h1>
+        <p className="text-muted-foreground">Быстрый поиск по всем данным системы</p>
+      </div>
+      <main className="max-w-6xl">
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">

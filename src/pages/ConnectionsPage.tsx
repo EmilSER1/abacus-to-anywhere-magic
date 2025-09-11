@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/Navigation'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -73,9 +73,12 @@ export default function ConnectionsPage() {
   const availableProjectorDepts = departments?.filter(dept => !linkedProjectorIds.includes(dept.id)) || []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Таблица соединения</h1>
+        <p className="text-muted-foreground">Управление связями между кабинетами</p>
+      </div>
+      <div className="max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">

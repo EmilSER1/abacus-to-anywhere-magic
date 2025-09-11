@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Navigation } from '@/components/Navigation';
+
 import { Download, BarChart3, Package, Search, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -182,22 +182,22 @@ const ConsolidationPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="text-center py-16">
-            <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <div className="text-lg">Загрузка данных для консолидации...</div>
-          </div>
-        </main>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <div className="text-lg">Загрузка данных для консолидации...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Консолидация</h1>
+        <p className="text-muted-foreground">Сводные данные по оборудованию и помещениям</p>
+      </div>
+      <main className="max-w-7xl">
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">

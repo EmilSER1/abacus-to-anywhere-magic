@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigation } from '@/components/Navigation';
+
 import { DataSyncPanel } from '@/components/DataSyncPanel';
 import { CsvUploadPanel } from '@/components/CsvUploadPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +7,12 @@ import { Settings, Database, Users, FileText, Upload } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Администрирование</h1>
+        <p className="text-muted-foreground">Управление данными и системными настройками</p>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2">
         
         {/* Header */}
         <div className="text-center mb-8">

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
 import { EditRoomDialog } from '@/components/EditRoomDialog';
-import { Navigation } from '@/components/Navigation';
+
 import { Building2, Users, MapPin, Download, Search, Package, Link } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
@@ -177,39 +177,34 @@ const TurarPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Загрузка данных турар...</p>
-            </div>
-          </div>
-        </main>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Загрузка данных турар...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center text-red-500">
-              <p>Ошибка загрузки данных: {error.message}</p>
-            </div>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="text-red-500">
+            <p>Ошибка загрузки данных: {error.message}</p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Турар</h1>
+        <p className="text-muted-foreground">Медицинские кабинеты и оборудование</p>
+      </div>
+      <main className="max-w-6xl">
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
