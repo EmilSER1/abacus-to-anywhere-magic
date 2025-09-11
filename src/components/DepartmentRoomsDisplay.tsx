@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, X } from 'lucide-react'
 import { useRoomsByDepartmentId } from '@/hooks/useRoomsById'
 import { useRoomConnectionsById, RoomConnectionById } from '@/hooks/useRoomConnectionsById'
+import { useTurarRoomEquipment, useProjectorRoomEquipment } from '@/hooks/useRoomEquipment'
+import RoomEquipmentDisplay from '@/components/RoomEquipmentDisplay'
 
 interface DepartmentRoomsDisplayProps {
   departmentId: string;
@@ -151,8 +153,19 @@ export default function DepartmentRoomsDisplay({
                 <AccordionContent>
                   <div className="pt-4 space-y-3">
                     {/* Информация о кабинете */}
-                    <div className="text-sm text-muted-foreground">
-                      Кабинет: {room.name}
+                    <div className="text-sm font-medium text-primary">
+                      📍 {room.name}
+                    </div>
+                    
+                    {/* Отображение оборудования */}
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium flex items-center gap-2">
+                        🔧 Оборудование в кабинете:
+                      </div>
+                      <RoomEquipmentDisplay 
+                        roomId={room.id}
+                        isProjectorDepartment={isProjectorDepartment}
+                      />
                     </div>
                     
                     {/* Существующие связи */}

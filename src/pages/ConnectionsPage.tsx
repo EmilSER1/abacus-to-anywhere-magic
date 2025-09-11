@@ -174,7 +174,6 @@ export default function ConnectionsPage() {
                                 <Badge variant="outline" className="text-green-600 border-green-300">
                                   {projDept.name}
                                 </Badge>
-                                <div className="text-xs text-muted-foreground">ID: {projDept.department_id}</div>
                               </div>
                             ))}
                           </div>
