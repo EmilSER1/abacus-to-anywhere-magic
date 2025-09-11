@@ -30,15 +30,17 @@ export default function RoomConnectionsManager() {
   const deleteConnectionMutation = useDeleteRoomConnectionById()
   const { toast } = useToast()
 
-  // Фильтруем отделения по типу (предполагаем что есть какая-то логика определения типа)
-  // Пока используем простую логику - первые отделения как Турар, остальные как Проектор
-  const turarDepartments = departments?.slice(0, Math.floor((departments.length || 0) / 2)) || []
-  const projectorDepartments = departments?.slice(Math.floor((departments.length || 0) / 2)) || []
-
-  // Получаем связанные отделения
+  // Получаем связанные отделения (только те, у которых есть ID)
   const linkedDepartmentPairs = departmentMappings?.filter(mapping => 
     mapping.turar_department_id && mapping.projector_department_id
   ) || []
+
+  // Получаем отделения Турар и Проектор из связанных пар
+  const turarDepartmentIds = linkedDepartmentPairs.map(pair => pair.turar_department_id).filter(Boolean)
+  const projectorDepartmentIds = linkedDepartmentPairs.map(pair => pair.projector_department_id).filter(Boolean)
+  
+  const turarDepartments = departments?.filter(dept => turarDepartmentIds.includes(dept.id)) || []
+  const projectorDepartments = departments?.filter(dept => projectorDepartmentIds.includes(dept.id)) || []
 
   const handleLinkRoom = (roomId: string, roomName: string) => {
     if (!linkingRoom) {
@@ -188,30 +190,53 @@ export default function RoomConnectionsManager() {
         </Card>
       </div>
 
-      {/* Отображение кабинетов выбранных отделений */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {selectedTurarDeptId && (
-          <DepartmentRoomsDisplay
-            departmentId={selectedTurarDeptId}
-            departmentName={departments?.find(d => d.id === selectedTurarDeptId)?.name || ''}
-            onLinkRoom={handleLinkRoom}
-            onRemoveConnection={handleRemoveConnection}
-            linkingRoom={linkingRoom}
-            connections={connections}
-            isProjectorDepartment={false}
-          />
-        )}
-
-        {selectedProjectorDeptId && (
-          <DepartmentRoomsDisplay
-            departmentId={selectedProjectorDeptId}
-            departmentName={departments?.find(d => d.id === selectedProjectorDeptId)?.name || ''}
-            onLinkRoom={handleLinkRoom}
-            onRemoveConnection={handleRemoveConnection}
-            linkingRoom={linkingRoom}
-            connections={connections}
-            isProjectorDepartment={true}
-          />
+      {/* Отображение всех связанных пар отделений */}
+      <div className="space-y-8">
+        {linkedDepartmentPairs.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <div className="text-muted-foreground">
+                Нет связанных отделений. Сначала создайте связи на вкладке "Связывание отделений".
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          linkedDepartmentPairs.map((pair) => (
+            <Card key={pair.id} className="border-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="h-5 w-5" />
+                  Связанные отделения
+                </CardTitle>
+                <CardDescription>
+                  {pair.turar_department} ↔ {pair.projector_department}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <DepartmentRoomsDisplay
+                    departmentId={pair.turar_department_id!}
+                    departmentName={pair.turar_department}
+                    onLinkRoom={handleLinkRoom}
+                    onRemoveConnection={handleRemoveConnection}
+                    linkingRoom={linkingRoom}
+                    connections={connections}
+                    isProjectorDepartment={false}
+                  />
+                  
+                  <DepartmentRoomsDisplay
+                    departmentId={pair.projector_department_id!}
+                    departmentName={pair.projector_department}
+                    onLinkRoom={handleLinkRoom}
+                    onRemoveConnection={handleRemoveConnection}
+                    linkingRoom={linkingRoom}
+                    connections={connections}
+                    isProjectorDepartment={true}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
 
