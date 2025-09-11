@@ -12,6 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useRoomConnections, useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections'
 import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping, useGetAllDepartments } from '@/hooks/useDepartmentMappings'
 import { usePopulateMappedDepartments } from '@/hooks/useMappedDepartments'
+import { useBulkPopulateMappedDepartments } from '@/hooks/useBulkPopulateMappedDepartments'
 import TurarDepartmentDisplay from '@/components/TurarDepartmentDisplay'
 import ProjectorDepartmentDisplay from '@/components/ProjectorDepartmentDisplay'
 import MappedTurarDepartmentDisplay from '@/components/MappedTurarDepartmentDisplay'
@@ -49,6 +50,9 @@ export default function ConnectionsPage() {
   const populateMappedDepartmentsMutation = usePopulateMappedDepartments()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  
+  // Добавляем хук для bulk populate
+  const bulkPopulateMutation = useBulkPopulateMappedDepartments()
 
   // Функция для принудительного обновления данных
   const refreshAllData = () => {
@@ -65,8 +69,24 @@ export default function ConnectionsPage() {
 
   // Загрузка данных из Supabase
   useEffect(() => {
-    setIsLoading(false)
-  }, [allDepartments])
+    const initializeData = async () => {
+      setIsLoading(true);
+      try {
+        // Заполняем промежуточные таблицы при загрузке страницы
+        if (departmentMappings && departmentMappings.length > 0) {
+          await bulkPopulateMutation.mutateAsync();
+        }
+      } catch (error) {
+        console.error('Ошибка инициализации данных:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (allDepartments) {
+      initializeData();
+    }
+  }, [allDepartments, departmentMappings])
 
   // Функции для управления связями отделений
   const createDepartmentMapping = async () => {
