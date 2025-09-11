@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Download, Plus, MapPin, Users, Link } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Navigation } from '@/components/Navigation';
+
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData } from '@/hooks/useFloorsData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
@@ -363,9 +363,8 @@ export default function FloorsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Загрузка данных проектировщиков...</p>
@@ -378,7 +377,6 @@ export default function FloorsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <div className="max-w-7xl mx-auto p-6 flex items-center justify-center">
           <div className="text-center text-red-500">
             <p>Ошибка загрузки данных: {error.message}</p>
@@ -398,7 +396,6 @@ export default function FloorsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { AppLayout } from "@/components/AppLayout";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -87,5 +88,5 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return <AppLayout>{children}</AppLayout>;
 }

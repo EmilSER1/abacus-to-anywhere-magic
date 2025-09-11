@@ -22,23 +22,23 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthWrapper>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/floors" element={<FloorsPage />} />
-            <Route path="/turar" element={<TurarPage />} />
-            <Route path="/connections" element={<ConnectionsPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/consolidation" element={<ConsolidationPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/dept-test" element={<DepartmentIdTestPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthWrapper>
-      </BrowserRouter>
+        <BrowserRouter>
+          <AuthWrapper>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/floors" element={<FloorsPage />} />
+              <Route path="/turar" element={<TurarPage />} />
+              <Route path="/connections" element={<ConnectionsPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/consolidation" element={<ConsolidationPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/dept-test" element={<DepartmentIdTestPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthWrapper>
+        </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
