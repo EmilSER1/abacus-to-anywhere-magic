@@ -329,7 +329,7 @@ export default function RoomConnectionsManager() {
 
       {/* Диалог выбора отделения и кабинета для связывания */}
       <Dialog open={showConnectionDialog} onOpenChange={setShowConnectionDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Связывание кабинетов</DialogTitle>
           </DialogHeader>
@@ -383,8 +383,9 @@ export default function RoomConnectionsManager() {
                   <div className="text-sm text-muted-foreground mb-4">
                     Отделение: {availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name}
                   </div>
-                  <DepartmentRoomsDisplay
-                    departmentId={selectedTargetDeptId}
+                  <div className="max-h-96 overflow-y-auto">
+                    <DepartmentRoomsDisplay
+                      departmentId={selectedTargetDeptId}
                     departmentName={availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || ''}
                     onLinkRoom={(roomId) => {
                       setSelectedTargetRoomId(roomId);
@@ -435,7 +436,8 @@ export default function RoomConnectionsManager() {
                     connections={connections}
                     isProjectorDepartment={!linkingRoom.isProjectorDepartment}
                     selectedRoomId={selectedTargetRoomId}
-                  />
+                    />
+                  </div>
                   <div className="flex justify-end gap-2 mt-4">
                     <Button variant="outline" onClick={() => setStep('department')}>
                       Назад

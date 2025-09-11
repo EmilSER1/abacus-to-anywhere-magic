@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, X } from 'lucide-react'
 import { useRoomsByDepartmentId } from '@/hooks/useRoomsById'
 import { useRoomConnectionsById, RoomConnectionById } from '@/hooks/useRoomConnectionsById'
+import { useTurarRoomsByDepartmentId, useProjectorRoomsByDepartmentId } from '@/hooks/useActualRoomsById'
 import { useTurarRoomEquipment, useProjectorRoomEquipment } from '@/hooks/useRoomEquipment'
 import RoomEquipmentDisplay from '@/components/RoomEquipmentDisplay'
 
@@ -38,6 +39,13 @@ export default function DepartmentRoomsDisplay({
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
+  // Используем правильные хуки для получения данных из основных таблиц
+  const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
+  const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
+  
+  // Выбираем правильные данные в зависимости от типа отделения
+  const actualRooms = isProjectorDepartment ? projectorRooms : turarRooms
+  const actualIsLoading = isProjectorDepartment ? isProjectorLoading : isTurarLoading
 
   const toggleRoom = (roomId: string) => {
     const newExpanded = new Set(expandedRooms)
@@ -70,7 +78,7 @@ export default function DepartmentRoomsDisplay({
     }
   };
 
-  if (isLoading) {
+  if (actualIsLoading) {
     return (
       <Card>
         <CardHeader>
@@ -83,7 +91,7 @@ export default function DepartmentRoomsDisplay({
     )
   }
 
-  if (!rooms || rooms.length === 0) {
+  if (!actualRooms || actualRooms.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -101,12 +109,12 @@ export default function DepartmentRoomsDisplay({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{departmentName}</span>
-          <Badge variant="secondary">{rooms.length} кабинетов</Badge>
+          <Badge variant="secondary">{actualRooms.length} кабинетов</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" value={Array.from(expandedRooms)}>
-          {rooms.map((room) => {
+          {actualRooms.map((room) => {
             const connectedRooms = getConnectedRooms(room.id)
             const isLinkingTarget = canLinkRoom(room.id)
             
@@ -118,7 +126,7 @@ export default function DepartmentRoomsDisplay({
                 >
                   <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">{room.name}</span>
+                      <span className="font-medium">{room.room_name}</span>
                       {connectedRooms.length > 0 && (
                         <Badge variant="outline" className="text-xs">
                           <Link2 className="h-3 w-3 mr-1" />
@@ -136,7 +144,7 @@ export default function DepartmentRoomsDisplay({
                           className="gap-2"
                           onClick={(e) => {
                             e.stopPropagation()
-                            onLinkRoom(room.id, room.name)
+                            onLinkRoom(room.id, room.room_name)
                           }}
                         >
                           <Link2 className="h-4 w-4" />
@@ -158,7 +166,7 @@ export default function DepartmentRoomsDisplay({
                   <div className="pt-4 space-y-3">
                     {/* Информация о кабинете */}
                     <div className="text-sm font-medium text-primary">
-                      📍 {room.name}
+                      📍 {room.room_name}
                     </div>
                     
                     {/* Отображение оборудования */}
