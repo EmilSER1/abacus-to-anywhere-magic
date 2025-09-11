@@ -564,15 +564,15 @@ export default function FloorsPage() {
                                             </AccordionTrigger>
                                             <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (
-                                                <div className="bg-background/50 rounded border">
-                                                  <table className="w-full text-xs">
+                                                <div className="rounded-lg border border-border/40 overflow-hidden">
+                                                  <table className="w-full text-xs border-collapse">
                                                     <thead className="bg-muted/30">
                                                       <tr>
-                                                        <th className="text-left p-2 font-medium">Код оборудования</th>
-                                                        <th className="text-left p-2 font-medium">Наименование</th>
-                                                        <th className="text-center p-2 font-medium">Количество</th>
-                                                        <th className="text-center p-2 font-medium">Ед. изм.</th>
-                                                        <th className="text-center p-2 font-medium">Примечания</th>
+                                                        <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Код оборудования</th>
+                                                        <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Наименование</th>
+                                                        <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Количество</th>
+                                                        <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Ед. изм.</th>
+                                                        <th className="text-center p-3 font-semibold">Примечания</th>
                                                       </tr>
                                                     </thead>
                                                     <tbody>
@@ -595,16 +595,16 @@ export default function FloorsPage() {
                                                           <tr 
                                                             key={eqIndex}
                                                             id={equipmentId}
-                                                            className={`border-t border-border/50 transition-all duration-500 ${
+                                                            className={`border-t border-border/40 transition-all duration-500 hover:bg-muted/50 ${
                                                               isHighlighted 
                                                                 ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
                                                                 : ''
                                                             }`}
                                                           >
-                                                            <td className="p-2 font-mono text-xs">
+                                                            <td className="p-3 font-mono text-xs border-r border-border/40 last:border-r-0">
                                                               {eq.code || '-'}
                                                             </td>
-                                                             <td className={`p-2 break-words transition-all duration-300 ${
+                                                             <td className={`p-3 break-words transition-all duration-300 border-r border-border/40 last:border-r-0 ${
                                                                isHighlighted 
                                                                  ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
                                                                  : ''
@@ -612,13 +612,13 @@ export default function FloorsPage() {
                                                               {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
                                                               {eq.name || '-'}
                                                             </td>
-                                                            <td className="p-2 text-center">
+                                                            <td className="p-3 text-center border-r border-border/40 last:border-r-0">
                                                               {eq.quantity || '-'}
                                                             </td>
-                                                            <td className="p-2 text-center">
+                                                            <td className="p-3 text-center border-r border-border/40 last:border-r-0">
                                                               {eq.unit || '-'}
                                                             </td>
-                                                            <td className="p-2 text-center">
+                                                            <td className="p-3 text-center">
                                                               {eq.notes && (
                                                                 <Badge 
                                                                   variant={isHighlighted ? "default" : "secondary"} 
