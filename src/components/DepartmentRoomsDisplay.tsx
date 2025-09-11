@@ -19,9 +19,11 @@ interface DepartmentRoomsDisplayProps {
     roomId: string;
     roomName: string;
     departmentName: string;
+    isProjectorDepartment: boolean;
   } | null;
   connections?: RoomConnectionById[];
   isProjectorDepartment?: boolean;
+  selectedRoomId?: string;
 }
 
 export default function DepartmentRoomsDisplay({
@@ -31,7 +33,8 @@ export default function DepartmentRoomsDisplay({
   onRemoveConnection,
   linkingRoom,
   connections = [],
-  isProjectorDepartment = false
+  isProjectorDepartment = false,
+  selectedRoomId
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
@@ -125,11 +128,11 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {/* Кнопка связывания - всегда доступна */}
+                      {/* Кнопка связывания */}
                       {onLinkRoom && (
                         <Button
                           size="sm"
-                          variant={linkingRoom ? "default" : "outline"}
+                          variant={selectedRoomId === room.id ? "default" : "outline"}
                           className="gap-2"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -137,14 +140,14 @@ export default function DepartmentRoomsDisplay({
                           }}
                         >
                           <Link2 className="h-4 w-4" />
-                          {linkingRoom ? 'Связать' : 'Выбрать'}
+                          {selectedRoomId === room.id ? 'Выбран' : 'Выбрать'}
                         </Button>
                       )}
                       
                       {/* Показать статус при активном режиме связывания */}
                       {linkingRoom && linkingRoom.roomId === room.id && (
                         <Badge variant="default" className="text-xs">
-                          Выбран
+                          Исходный
                         </Badge>
                       )}
                     </div>

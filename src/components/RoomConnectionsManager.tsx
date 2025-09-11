@@ -18,11 +18,14 @@ export default function RoomConnectionsManager() {
     roomId: string;
     roomName: string;
     departmentName: string;
+    isProjectorDepartment: boolean;
   } | null>(null)
   
   const [showConnectionDialog, setShowConnectionDialog] = useState(false)
-  const [selectedTurarDeptId, setSelectedTurarDeptId] = useState('')
-  const [selectedProjectorDeptId, setSelectedProjectorDeptId] = useState('')
+  const [selectedTargetDeptId, setSelectedTargetDeptId] = useState('')
+  const [selectedTargetRoomId, setSelectedTargetRoomId] = useState('')
+  const [availableTargetDepts, setAvailableTargetDepts] = useState<Array<{id: string; name: string}>>([])
+  const [step, setStep] = useState<'department' | 'room'>('department')
 
   const { data: departments } = useDepartments()
   const { data: departmentMappings } = useDepartmentMappingsWithDetails()
@@ -36,56 +39,71 @@ export default function RoomConnectionsManager() {
     mapping.turar_department_id && mapping.projector_department_id
   ) || []
 
-  // Получаем отделения Турар и Проектор из связанных пар
-  const turarDepartmentIds = linkedDepartmentPairs.map(pair => pair.turar_department_id).filter(Boolean)
-  const projectorDepartmentIds = linkedDepartmentPairs.map(pair => pair.projector_department_id).filter(Boolean)
-  
-  const turarDepartments = departments?.filter(dept => turarDepartmentIds.includes(dept.id)) || []
-  const projectorDepartments = departments?.filter(dept => projectorDepartmentIds.includes(dept.id)) || []
+  const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
+    // Устанавливаем выбранный кабинет
+    setLinkingRoom({
+      departmentId,
+      roomId,
+      roomName,
+      departmentName,
+      isProjectorDepartment
+    });
 
-  const handleLinkRoom = (roomId: string, roomName: string) => {
-    if (!linkingRoom) {
-      // Начинаем процесс связывания - ищем отделение этого кабинета
-      const room = departments?.find(dept => 
-        linkedDepartmentPairs.some(pair => 
-          pair.turar_department_id === dept.id || pair.projector_department_id === dept.id
-        )
-      );
-      
-      // Определяем тип отделения по ID
-      const isTurarRoom = linkedDepartmentPairs.some(pair => 
-        pair.turar_department_id && departments?.find(d => d.id === pair.turar_department_id)
-      );
-      
-      setLinkingRoom({
-        departmentId: roomId, // Временно сохраняем room ID
-        roomId,
-        roomName,
-        departmentName: roomName // Временно
-      });
-      
-      toast({
-        title: "Режим связывания активен",
-        description: `Выбран кабинет: ${roomName}. Теперь выберите кабинет для связывания из другого типа отделения.`
-      });
+    // Определяем доступные отделения для связывания
+    if (isProjectorDepartment) {
+      // Если выбран кабинет проектировщиков, ищем связанные отделения Турар
+      const turarDepts = linkedDepartmentPairs
+        .filter(pair => pair.projector_department_id === departmentId)
+        .map(pair => ({
+          id: pair.turar_department_id!,
+          name: pair.turar_department
+        }));
+      setAvailableTargetDepts(turarDepts);
     } else {
-      // Завершаем связывание
-      createConnection(linkingRoom.roomId, roomId);
+      // Если выбран кабинет Турар, ищем связанные отделения проектировщиков
+      const projectorDepts = linkedDepartmentPairs
+        .filter(pair => pair.turar_department_id === departmentId)
+        .map(pair => ({
+          id: pair.projector_department_id!,
+          name: pair.projector_department
+        }));
+      setAvailableTargetDepts(projectorDepts);
     }
+
+    setStep('department');
+    setSelectedTargetDeptId('');
+    setSelectedTargetRoomId('');
+    setShowConnectionDialog(true);
+
+    toast({
+      title: "Выбор отделения для связывания",
+      description: `Выбран кабинет: ${departmentName} - ${roomName}`
+    });
   };
 
-  const createConnection = async (turarRoomId: string, projectorRoomId: string) => {
-    if (!linkingRoom) return;
+  const createConnection = async () => {
+    if (!linkingRoom || !selectedTargetRoomId) return;
+
+    const connectionData = linkingRoom.isProjectorDepartment ? {
+      turar_department_id: selectedTargetDeptId,
+      turar_room_id: selectedTargetRoomId,
+      projector_department_id: linkingRoom.departmentId,
+      projector_room_id: linkingRoom.roomId
+    } : {
+      turar_department_id: linkingRoom.departmentId,
+      turar_room_id: linkingRoom.roomId,
+      projector_department_id: selectedTargetDeptId,
+      projector_room_id: selectedTargetRoomId
+    };
 
     try {
-      await createConnectionMutation.mutateAsync({
-        turar_department_id: linkingRoom.departmentId, // Используем сохраненный ID
-        turar_room_id: turarRoomId,
-        projector_department_id: selectedProjectorDeptId || '', // Нужно определить правильно
-        projector_room_id: projectorRoomId
-      });
+      await createConnectionMutation.mutateAsync(connectionData);
       
       setLinkingRoom(null);
+      setShowConnectionDialog(false);
+      setSelectedTargetDeptId('');
+      setSelectedTargetRoomId('');
+      
       toast({
         title: "Связь создана",
         description: "Кабинеты успешно связаны"
@@ -110,6 +128,9 @@ export default function RoomConnectionsManager() {
 
   const cancelLinking = () => {
     setLinkingRoom(null)
+    setShowConnectionDialog(false)
+    setSelectedTargetDeptId('')
+    setSelectedTargetRoomId('')
     toast({
       title: "Связывание отменено",
       description: "Процесс связывания кабинетов отменен"
@@ -123,7 +144,7 @@ export default function RoomConnectionsManager() {
         <div>
           <h2 className="text-2xl font-bold">Связывание кабинетов</h2>
           <p className="text-muted-foreground">
-            Выберите отделения, затем кабинеты для создания связей
+            Нажмите "Связать" на любом кабинете для начала процесса связывания
           </p>
         </div>
         
@@ -133,10 +154,6 @@ export default function RoomConnectionsManager() {
               Отменить связывание
             </Button>
           )}
-          <Button onClick={() => setShowConnectionDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Настроить отделения
-          </Button>
         </div>
       </div>
 
@@ -156,49 +173,6 @@ export default function RoomConnectionsManager() {
           </CardContent>
         </Card>
       )}
-
-      {/* Выбор отделений для просмотра */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Отделения Турар</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedTurarDeptId} onValueChange={setSelectedTurarDeptId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите отделение Турар" />
-              </SelectTrigger>
-              <SelectContent>
-                {turarDepartments.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Отделения Проектировщиков</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedProjectorDeptId} onValueChange={setSelectedProjectorDeptId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите отделение Проектировщиков" />
-              </SelectTrigger>
-              <SelectContent>
-                {projectorDepartments.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Группировка по отделениям Турар */}
       <div className="space-y-8">
@@ -259,7 +233,9 @@ export default function RoomConnectionsManager() {
                     <DepartmentRoomsDisplay
                       departmentId={group.turar_department_id}
                       departmentName={group.turar_department}
-                      onLinkRoom={handleLinkRoom}
+                      onLinkRoom={(roomId, roomName) => 
+                        handleLinkRoom(roomId, roomName, group.turar_department_id, group.turar_department, false)
+                      }
                       onRemoveConnection={handleRemoveConnection}
                       linkingRoom={linkingRoom}
                       connections={connections}
@@ -290,7 +266,9 @@ export default function RoomConnectionsManager() {
                             <DepartmentRoomsDisplay
                               departmentId={projectorDept.id}
                               departmentName={projectorDept.name}
-                              onLinkRoom={handleLinkRoom}
+                              onLinkRoom={(roomId, roomName) => 
+                                handleLinkRoom(roomId, roomName, projectorDept.id, projectorDept.name, true)
+                              }
                               onRemoveConnection={handleRemoveConnection}
                               linkingRoom={linkingRoom}
                               connections={connections}
@@ -337,31 +315,89 @@ export default function RoomConnectionsManager() {
         </Card>
       )}
 
-      {/* Диалог настройки отделений */}
+      {/* Диалог выбора отделения и кабинета для связывания */}
       <Dialog open={showConnectionDialog} onOpenChange={setShowConnectionDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Связанные отделения</DialogTitle>
+            <DialogTitle>Связывание кабинетов</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {linkedDepartmentPairs.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                Нет связанных отделений. Создайте связи на вкладке "Связывание отделений".
+          
+          {linkingRoom && (
+            <div className="space-y-6">
+              {/* Информация о выбранном кабинете */}
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Выбранный кабинет:</h4>
+                <div className="text-sm">
+                  <div><strong>Отделение:</strong> {linkingRoom.departmentName}</div>
+                  <div><strong>Кабинет:</strong> {linkingRoom.roomName}</div>
+                  <div><strong>Тип:</strong> {linkingRoom.isProjectorDepartment ? 'Проектировщики' : 'Турар'}</div>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {linkedDepartmentPairs.map(mapping => (
-                  <div key={mapping.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="text-sm">
-                      <div className="font-medium">{mapping.turar_department}</div>
-                      <div className="text-muted-foreground">↔ {mapping.projector_department}</div>
-                    </div>
-                    <Badge variant="secondary">Связаны</Badge>
+
+              {/* Шаг 1: Выбор отделения */}
+              {step === 'department' && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Шаг 1: Выберите отделение для связывания</h4>
+                  <Select value={selectedTargetDeptId} onValueChange={setSelectedTargetDeptId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Выберите отделение ${linkingRoom.isProjectorDepartment ? 'Турар' : 'Проектировщиков'}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTargetDepts.map(dept => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={cancelLinking}>
+                      Отмена
+                    </Button>
+                    <Button 
+                      onClick={() => setStep('room')}
+                      disabled={!selectedTargetDeptId}
+                    >
+                      Далее
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+
+              {/* Шаг 2: Выбор кабинета */}
+              {step === 'room' && selectedTargetDeptId && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Шаг 2: Выберите кабинет</h4>
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Отделение: {availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name}
+                  </div>
+                  <DepartmentRoomsDisplay
+                    departmentId={selectedTargetDeptId}
+                    departmentName={availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || ''}
+                    onLinkRoom={(roomId) => setSelectedTargetRoomId(roomId)}
+                    linkingRoom={linkingRoom}
+                    connections={connections}
+                    isProjectorDepartment={!linkingRoom.isProjectorDepartment}
+                    selectedRoomId={selectedTargetRoomId}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setStep('department')}>
+                      Назад
+                    </Button>
+                    <Button variant="outline" onClick={cancelLinking}>
+                      Отмена
+                    </Button>
+                    <Button 
+                      onClick={createConnection}
+                      disabled={!selectedTargetRoomId}
+                    >
+                      Создать связь
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
