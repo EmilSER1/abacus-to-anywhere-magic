@@ -38,6 +38,27 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mapped_projector_rooms: {
         Row: {
           block_name: string
@@ -223,7 +244,9 @@ export type Database = {
           connected_turar_room: string | null
           connected_turar_room_id: string | null
           created_at: string
+          department_id: string | null
           id: string
+          room_id: string | null
           updated_at: string
           БЛОК: string
           "Ед. изм.": string | null
@@ -244,7 +267,9 @@ export type Database = {
           connected_turar_room?: string | null
           connected_turar_room_id?: string | null
           created_at?: string
+          department_id?: string | null
           id?: string
+          room_id?: string | null
           updated_at?: string
           БЛОК: string
           "Ед. изм."?: string | null
@@ -265,7 +290,9 @@ export type Database = {
           connected_turar_room?: string | null
           connected_turar_room_id?: string | null
           created_at?: string
+          department_id?: string | null
           id?: string
+          room_id?: string | null
           updated_at?: string
           БЛОК?: string
           "Ед. изм."?: string | null
@@ -289,6 +316,20 @@ export type Database = {
             referencedRelation: "turar_medical"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "projector_floors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projector_floors_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
         ]
       }
       room_connections: {
@@ -296,36 +337,55 @@ export type Database = {
           created_at: string
           id: string
           projector_department: string
+          projector_department_id: string | null
           projector_room: string
           projector_room_id: string | null
+          projector_room_id_new: string | null
           turar_department: string
+          turar_department_id: string | null
           turar_room: string
           turar_room_id: string | null
+          turar_room_id_new: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           projector_department: string
+          projector_department_id?: string | null
           projector_room: string
           projector_room_id?: string | null
+          projector_room_id_new?: string | null
           turar_department: string
+          turar_department_id?: string | null
           turar_room: string
           turar_room_id?: string | null
+          turar_room_id_new?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           projector_department?: string
+          projector_department_id?: string | null
           projector_room?: string
           projector_room_id?: string | null
+          projector_room_id_new?: string | null
           turar_department?: string
+          turar_department_id?: string | null
           turar_room?: string
           turar_room_id?: string | null
+          turar_room_id_new?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "room_connections_projector_department_id_fkey"
+            columns: ["projector_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "room_connections_projector_room_id_fkey"
             columns: ["projector_room_id"]
@@ -334,10 +394,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "room_connections_projector_room_id_new_fkey"
+            columns: ["projector_room_id_new"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_connections_turar_department_id_fkey"
+            columns: ["turar_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "room_connections_turar_room_id_fkey"
             columns: ["turar_room_id"]
             isOneToOne: false
             referencedRelation: "turar_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_connections_turar_room_id_new_fkey"
+            columns: ["turar_room_id_new"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -348,7 +461,9 @@ export type Database = {
           connected_projector_room: string | null
           connected_projector_room_id: string | null
           created_at: string
+          department_id: string | null
           id: string
+          room_id: string | null
           updated_at: string
           "Код оборудования": string
           "Кол-во": number
@@ -361,7 +476,9 @@ export type Database = {
           connected_projector_room?: string | null
           connected_projector_room_id?: string | null
           created_at?: string
+          department_id?: string | null
           id?: string
+          room_id?: string | null
           updated_at?: string
           "Код оборудования": string
           "Кол-во": number
@@ -374,7 +491,9 @@ export type Database = {
           connected_projector_room?: string | null
           connected_projector_room_id?: string | null
           created_at?: string
+          department_id?: string | null
           id?: string
+          room_id?: string | null
           updated_at?: string
           "Код оборудования"?: string
           "Кол-во"?: number
@@ -388,6 +507,20 @@ export type Database = {
             columns: ["connected_projector_room_id"]
             isOneToOne: false
             referencedRelation: "projector_floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turar_medical_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turar_medical_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
         ]
