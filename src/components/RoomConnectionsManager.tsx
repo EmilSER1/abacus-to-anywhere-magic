@@ -82,7 +82,17 @@ export default function RoomConnectionsManager() {
   };
 
   const createConnection = async () => {
-    if (!linkingRoom || !selectedTargetRoomId) return;
+    if (!linkingRoom || !selectedTargetRoomId) {
+      console.log('Missing data for connection:', { linkingRoom, selectedTargetRoomId, selectedTargetDeptId });
+      return;
+    }
+
+    console.log('Creating connection with data:', {
+      linkingRoom,
+      selectedTargetDeptId,
+      selectedTargetRoomId,
+      isProjectorDepartment: linkingRoom.isProjectorDepartment
+    });
 
     const connectionData = linkingRoom.isProjectorDepartment ? {
       turar_department_id: selectedTargetDeptId,
@@ -95,6 +105,8 @@ export default function RoomConnectionsManager() {
       projector_department_id: selectedTargetDeptId,
       projector_room_id: selectedTargetRoomId
     };
+
+    console.log('Connection data:', connectionData);
 
     try {
       await createConnectionMutation.mutateAsync(connectionData);
@@ -374,24 +386,62 @@ export default function RoomConnectionsManager() {
                   <DepartmentRoomsDisplay
                     departmentId={selectedTargetDeptId}
                     departmentName={availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || ''}
-                    onLinkRoom={(roomId) => setSelectedTargetRoomId(roomId)}
+                    onLinkRoom={(roomId) => {
+                      setSelectedTargetRoomId(roomId);
+                      // Используем правильное значение selectedTargetDeptId в closure
+                      const currentTargetDeptId = selectedTargetDeptId;
+                      // Автоматически создаем связь при выборе кабинета
+                      setTimeout(async () => {
+                        if (!linkingRoom || !currentTargetDeptId) {
+                          console.log('Missing required data for auto-connection');
+                          return;
+                        }
+
+                        const connectionData = linkingRoom.isProjectorDepartment ? {
+                          turar_department_id: currentTargetDeptId,
+                          turar_room_id: roomId,
+                          projector_department_id: linkingRoom.departmentId,
+                          projector_room_id: linkingRoom.roomId
+                        } : {
+                          turar_department_id: linkingRoom.departmentId,
+                          turar_room_id: linkingRoom.roomId,
+                          projector_department_id: currentTargetDeptId,
+                          projector_room_id: roomId
+                        };
+
+                        try {
+                          await createConnectionMutation.mutateAsync(connectionData);
+                          
+                          setLinkingRoom(null);
+                          setShowConnectionDialog(false);
+                          setSelectedTargetDeptId('');
+                          setSelectedTargetRoomId('');
+                          
+                          toast({
+                            title: "Связь создана",
+                            description: "Кабинеты успешно связаны"
+                          });
+                        } catch (error) {
+                          console.error('Ошибка автоматического создания связи:', error);
+                          toast({
+                            title: "Ошибка",
+                            description: "Не удалось создать связь кабинетов",
+                            variant: "destructive"
+                          });
+                        }
+                      }, 100);
+                    }}
                     linkingRoom={linkingRoom}
                     connections={connections}
                     isProjectorDepartment={!linkingRoom.isProjectorDepartment}
                     selectedRoomId={selectedTargetRoomId}
                   />
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-2 mt-4">
                     <Button variant="outline" onClick={() => setStep('department')}>
                       Назад
                     </Button>
                     <Button variant="outline" onClick={cancelLinking}>
                       Отмена
-                    </Button>
-                    <Button 
-                      onClick={createConnection}
-                      disabled={!selectedTargetRoomId}
-                    >
-                      Создать связь
                     </Button>
                   </div>
                 </div>
