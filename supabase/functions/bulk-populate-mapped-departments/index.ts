@@ -49,11 +49,11 @@ serve(async (req) => {
       console.log(`\n🔄 Обрабатываем сопоставление ${processedMappings + 1}/${departmentMappings?.length || 0}`)
       console.log(`📊 Проектировщики: "${mapping.projector_department}", Турар: "${mapping.turar_department}"`)
 
-      // Получаем данные проектировщиков
+      // Получаем данные проектировщиков - используем более точный поиск
       const { data: projectorData, error: projectorError } = await supabase
         .from('projector_floors')
         .select('*')
-        .ilike('"ОТДЕЛЕНИЕ"', `%${mapping.projector_department}%`)
+        .or(`"ОТДЕЛЕНИЕ".ilike.%${mapping.projector_department}%,"ОТДЕЛЕНИЕ".ilike.%${mapping.projector_department.trim()}%`)
 
       if (projectorError) {
         console.error(`❌ Ошибка загрузки данных проектировщиков для "${mapping.projector_department}":`, projectorError)
