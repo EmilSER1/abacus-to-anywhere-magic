@@ -13,6 +13,7 @@ import ConsolidationPage from "./pages/ConsolidationPage";
 import AdminPage from "./pages/AdminPage";
 import AuthPage from "./pages/AuthPage";
 import AuthWrapper from "./components/AuthWrapper";
+import DepartmentIdTestPage from "./pages/DepartmentIdTestPage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/search" element={<SearchPage />} />
             <Route path="/consolidation" element={<ConsolidationPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/dept-test" element={<DepartmentIdTestPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -19,24 +19,45 @@ export type Database = {
           created_at: string
           id: string
           projector_department: string
+          projector_department_id: string | null
           turar_department: string
+          turar_department_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           projector_department: string
+          projector_department_id?: string | null
           turar_department: string
+          turar_department_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           projector_department?: string
+          projector_department_id?: string | null
           turar_department?: string
+          turar_department_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "department_mappings_projector_department_id_fkey"
+            columns: ["projector_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_mappings_turar_department_id_fkey"
+            columns: ["turar_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       departments: {
         Row: {

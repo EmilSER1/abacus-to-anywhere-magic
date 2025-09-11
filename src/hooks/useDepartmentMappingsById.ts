@@ -19,18 +19,13 @@ export interface CreateDepartmentMappingByIdRequest {
   projector_department_id: string;
 }
 
-// Получение связей отделений с подробной информацией
 export const useDepartmentMappingsWithDetails = () => {
   return useQuery({
     queryKey: ["department-mappings-with-details"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("department_mappings")
-        .select(`
-          *,
-          turar_dept:departments!turar_department_id(*),
-          projector_dept:departments!projector_department_id(*)
-        `)
+        .select("*")
         .order("turar_department, projector_department");
 
       if (error) {
