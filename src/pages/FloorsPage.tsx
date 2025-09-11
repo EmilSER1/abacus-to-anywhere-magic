@@ -418,11 +418,12 @@ export default function FloorsPage() {
                                       </span>
                                       {/* Индикатор связей на уровне отделения */}
                                       {roomConnections && (() => {
-                                        const connectedRooms = department.rooms.filter(room => 
-                                          roomConnections.some(conn => 
-                                            conn.projector_department === department.name && conn.projector_room === room.name
-                                          )
-                                        );
+                                         const connectedRooms = department.rooms.filter(room => 
+                                           roomConnections.some(conn => 
+                                             conn.projector_department === department.name && 
+                                             (conn.projector_room === room.name || conn.projector_room === room.code)
+                                           )
+                                         );
                                         return connectedRooms.length > 0 ? (
                                           <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
                                             <Link className="h-3 w-3 mr-1" />
@@ -470,9 +471,10 @@ export default function FloorsPage() {
                                                    <span className="font-medium">{room.name}</span>
                                                    <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
                                                    {roomConnections && (() => {
-                                                     const connections = roomConnections.filter(conn => 
-                                                       conn.projector_department === department.name && conn.projector_room === room.name
-                                                     );
+                                                      const connections = roomConnections.filter(conn => 
+                                                        conn.projector_department === department.name && 
+                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
+                                                      );
                                                      return connections.length > 0 ? (
                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
                                                          <Link className="h-3 w-3 mr-1" />
@@ -563,9 +565,10 @@ export default function FloorsPage() {
                                                    
                                                    {/* Связи с Турар */}
                                                    {roomConnections && (() => {
-                                                     const connections = roomConnections.filter(conn => 
-                                                       conn.projector_department === department.name && conn.projector_room === room.name
-                                                     );
+                                                      const connections = roomConnections.filter(conn => 
+                                                        conn.projector_department === department.name && 
+                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
+                                                      );
                                                      return connections.length > 0 ? (
                                                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                                                          <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
@@ -596,9 +599,10 @@ export default function FloorsPage() {
                                                    
                                                    {/* Связи с Турар для комнат без оборудования */}
                                                    {roomConnections && (() => {
-                                                     const connections = roomConnections.filter(conn => 
-                                                       conn.projector_department === department.name && conn.projector_room === room.name
-                                                     );
+                                                      const connections = roomConnections.filter(conn => 
+                                                        conn.projector_department === department.name && 
+                                                        (conn.projector_room === room.name || conn.projector_room === room.code)
+                                                      );
                                                      return connections.length > 0 ? (
                                                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                                                          <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
