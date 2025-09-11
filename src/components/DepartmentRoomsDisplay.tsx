@@ -55,16 +55,17 @@ export default function DepartmentRoomsDisplay({
   }
 
   const canLinkRoom = (roomId: string) => {
-    if (!linkingRoom) return false
+    if (!linkingRoom) return true; // Всегда можно начать связывание
     
+    // Если уже выбран кабинет, то можно связывать только с кабинетами из другого типа отделения
     if (isProjectorDepartment) {
-      // Проектор может связываться с Турар
-      return linkingRoom && !isProjectorDepartment
+      // Проектор может связываться с Турар (если выбранный кабинет из Турар)
+      return linkingRoom && linkingRoom.departmentId !== departmentId;
     } else {
-      // Турар может связываться с Проектор
-      return linkingRoom && isProjectorDepartment
+      // Турар может связываться с Проектор (если выбранный кабинет из Проектор)
+      return linkingRoom && linkingRoom.departmentId !== departmentId;
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -124,11 +125,11 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {/* Кнопка связывания */}
-                      {isLinkingTarget && onLinkRoom && (
+                      {/* Кнопка связывания - всегда доступна */}
+                      {onLinkRoom && (
                         <Button
                           size="sm"
-                          variant="default"
+                          variant={linkingRoom ? "default" : "outline"}
                           className="gap-2"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -136,14 +137,14 @@ export default function DepartmentRoomsDisplay({
                           }}
                         >
                           <Link2 className="h-4 w-4" />
-                          Связать
+                          {linkingRoom ? 'Связать' : 'Выбрать'}
                         </Button>
                       )}
                       
-                      {/* Показать статус связи при режиме связывания */}
-                      {linkingRoom && !isLinkingTarget && (
-                        <Badge variant="secondary" className="text-xs">
-                          Выберите из другого типа
+                      {/* Показать статус при активном режиме связывания */}
+                      {linkingRoom && linkingRoom.roomId === room.id && (
+                        <Badge variant="default" className="text-xs">
+                          Выбран
                         </Badge>
                       )}
                     </div>

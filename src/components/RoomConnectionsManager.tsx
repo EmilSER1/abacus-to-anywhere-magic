@@ -45,51 +45,60 @@ export default function RoomConnectionsManager() {
 
   const handleLinkRoom = (roomId: string, roomName: string) => {
     if (!linkingRoom) {
-      // Начинаем процесс связывания - определяем тип отделения
-      const isTurarRoom = turarDepartments.some(dept => dept.id === selectedTurarDeptId)
-      const isProjectorRoom = projectorDepartments.some(dept => dept.id === selectedProjectorDeptId)
+      // Начинаем процесс связывания - ищем отделение этого кабинета
+      const room = departments?.find(dept => 
+        linkedDepartmentPairs.some(pair => 
+          pair.turar_department_id === dept.id || pair.projector_department_id === dept.id
+        )
+      );
       
-      // Для упрощения пока используем выбранные отделения
-      const departmentId = selectedTurarDeptId || selectedProjectorDeptId
-      const departmentName = departments?.find(d => d.id === departmentId)?.name || ''
+      // Определяем тип отделения по ID
+      const isTurarRoom = linkedDepartmentPairs.some(pair => 
+        pair.turar_department_id && departments?.find(d => d.id === pair.turar_department_id)
+      );
       
       setLinkingRoom({
-        departmentId,
+        departmentId: roomId, // Временно сохраняем room ID
         roomId,
         roomName,
-        departmentName
-      })
+        departmentName: roomName // Временно
+      });
       
       toast({
-        title: "Выберите кабинет для связывания",
-        description: `Выбран: ${departmentName} - ${roomName}. Теперь выберите кабинет для связывания.`
-      })
+        title: "Режим связывания активен",
+        description: `Выбран кабинет: ${roomName}. Теперь выберите кабинет для связывания из другого типа отделения.`
+      });
     } else {
       // Завершаем связывание
-      createConnection(linkingRoom.roomId, roomId)
+      createConnection(linkingRoom.roomId, roomId);
     }
-  }
+  };
 
   const createConnection = async (turarRoomId: string, projectorRoomId: string) => {
-    if (!linkingRoom) return
-
-    // Определяем какой кабинет Турар, а какой Проектор
-    const isTurarFirst = turarDepartments.some(dept => dept.id === linkingRoom.departmentId)
-    
-    const connectionData = {
-      turar_department_id: isTurarFirst ? linkingRoom.departmentId : selectedProjectorDeptId,
-      turar_room_id: isTurarFirst ? linkingRoom.roomId : projectorRoomId,
-      projector_department_id: isTurarFirst ? selectedProjectorDeptId : linkingRoom.departmentId,
-      projector_room_id: isTurarFirst ? projectorRoomId : linkingRoom.roomId
-    }
+    if (!linkingRoom) return;
 
     try {
-      await createConnectionMutation.mutateAsync(connectionData)
-      setLinkingRoom(null)
+      await createConnectionMutation.mutateAsync({
+        turar_department_id: linkingRoom.departmentId, // Используем сохраненный ID
+        turar_room_id: turarRoomId,
+        projector_department_id: selectedProjectorDeptId || '', // Нужно определить правильно
+        projector_room_id: projectorRoomId
+      });
+      
+      setLinkingRoom(null);
+      toast({
+        title: "Связь создана",
+        description: "Кабинеты успешно связаны"
+      });
     } catch (error) {
-      console.error('Ошибка создания связи:', error)
+      console.error('Ошибка создания связи:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать связь кабинетов",
+        variant: "destructive"
+      });
     }
-  }
+  };
 
   const handleRemoveConnection = async (connectionId: string) => {
     try {

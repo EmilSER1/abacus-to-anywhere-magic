@@ -139,3 +139,26 @@ export const useUpdateDepartmentMappingWithIds = () => {
     },
   });
 };
+
+export const useDeleteDepartmentMappingById = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (mappingId: string) => {
+      const { error } = await supabase
+        .from('department_mappings')
+        .delete()
+        .eq('id', mappingId);
+
+      if (error) {
+        throw error;
+      }
+
+      return mappingId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-mappings-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['department-mappings'] });
+    }
+  });
+};

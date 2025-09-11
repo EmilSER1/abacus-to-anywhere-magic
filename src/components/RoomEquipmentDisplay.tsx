@@ -45,7 +45,7 @@ export default function RoomEquipmentDisplay({ roomId, isProjectorDepartment }: 
         )}
       </div>
       
-      <div className="space-y-2 max-h-32 overflow-y-auto">
+      <div className="space-y-2">
         {equipment.map((item) => (
           <div key={item.id} className="bg-background p-2 rounded border text-xs">
             <div className="flex items-start justify-between gap-2">

@@ -3,8 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, RefreshCw, Building2, Link2 } from 'lucide-react'
-import { useDepartmentMappingsWithDetails, useCreateDepartmentMappingById } from '@/hooks/useDepartmentMappingsById'
+import { Plus, RefreshCw, Building2, Link2, Edit, Trash2 } from 'lucide-react'
+import { useDepartmentMappingsWithDetails, useCreateDepartmentMappingById, useDeleteDepartmentMappingById } from '@/hooks/useDepartmentMappingsById'
 import { useDepartments } from '@/hooks/useDepartments'
 import RoomConnectionsManager from '@/components/RoomConnectionsManager'
 import { useState } from 'react'
@@ -20,6 +20,7 @@ export default function ConnectionsPage() {
   const { data: departmentMappings, refetch } = useDepartmentMappingsWithDetails()
   const { data: departments } = useDepartments()
   const createMappingMutation = useCreateDepartmentMappingById()
+  const deleteMappingMutation = useDeleteDepartmentMappingById()
   const { toast } = useToast()
 
   const createDepartmentMapping = async () => {
@@ -43,6 +44,22 @@ export default function ConnectionsPage() {
       toast({
         title: "Ошибка",
         description: "Не удалось создать связь отделений",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const deleteDepartmentMapping = async (mappingId: string) => {
+    try {
+      await deleteMappingMutation.mutateAsync(mappingId)
+      toast({
+        title: "Связь отделений удалена",
+        description: "Связь успешно удалена"
+      })
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить связь",
         variant: "destructive"
       })
     }
@@ -167,13 +184,41 @@ export default function ConnectionsPage() {
                         
                         {/* Блок связанных отделений Проектировщиков */}
                         <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg border border-green-200">
-                          <h4 className="font-semibold text-green-700 mb-3">Связанные отделения Проектировщиков</h4>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-green-700">Связанные отделения Проектировщиков</h4>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (confirm('Удалить все связи этого отделения Турар?')) {
+                                  group.projector_departments.forEach(projDept => {
+                                    deleteDepartmentMapping(projDept.id);
+                                  });
+                                }
+                              }}
+                              className="text-red-600 hover:bg-red-100"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <div className="space-y-2">
                             {group.projector_departments.map((projDept) => (
                               <div key={projDept.id} className="flex items-center justify-between bg-white dark:bg-background p-2 rounded border">
                                 <Badge variant="outline" className="text-green-600 border-green-300">
                                   {projDept.name}
                                 </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm(`Удалить связь с отделением "${projDept.name}"?`)) {
+                                      deleteDepartmentMapping(projDept.id);
+                                    }
+                                  }}
+                                  className="text-red-600 hover:bg-red-100"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                             ))}
                           </div>
