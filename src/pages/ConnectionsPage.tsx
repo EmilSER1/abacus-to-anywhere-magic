@@ -123,14 +123,44 @@ export default function ConnectionsPage() {
 
   // Функции для управления связями кабинетов
   const createConnection = async (turarDepartment: string, turarRoom: string, projectorDepartment: string, projectorRoom: string) => {
-    const connectionData = {
-      turar_department: turarDepartment,
-      turar_room: turarRoom,
-      projector_department: projectorDepartment,
-      projector_room: projectorRoom
+    // Получаем ID помещений из базы для новой ID-based логики
+    const getTurarRoomId = async () => {
+      const { data } = await supabase
+        .from('turar_medical')
+        .select('id')
+        .eq('Отделение/Блок', turarDepartment)
+        .eq('Помещение/Кабинет', turarRoom)
+        .limit(1)
+        .single();
+      return data?.id || null;
+    };
+
+    const getProjectorRoomId = async () => {
+      const { data } = await supabase
+        .from('projector_floors')
+        .select('id')
+        .eq('ОТДЕЛЕНИЕ', projectorDepartment)
+        .eq('НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ', projectorRoom)
+        .limit(1)
+        .single();
+      return data?.id || null;
     };
 
     try {
+      const [turarRoomId, projectorRoomId] = await Promise.all([
+        getTurarRoomId(),
+        getProjectorRoomId()
+      ]);
+
+      const connectionData = {
+        turar_department: turarDepartment,
+        turar_room: turarRoom,
+        projector_department: projectorDepartment,
+        projector_room: projectorRoom,
+        turar_room_id: turarRoomId,
+        projector_room_id: projectorRoomId
+      };
+
       await createRoomConnectionMutation.mutateAsync(connectionData);
       
       toast({
@@ -413,8 +443,7 @@ export default function ConnectionsPage() {
                                 <h3 className="font-medium text-orange-800 dark:text-orange-300 mb-2">
                                   Кабинеты {turarDept}
                                 </h3>
-                                 <MappedTurarDepartmentDisplay 
-                                   departmentMappingId={mapping.id}
+                                 <TurarDepartmentDisplay 
                                    departmentName={turarDept}
                                    onLinkRoom={(room) => {
                                      setLinkingRoom({
@@ -427,7 +456,15 @@ export default function ConnectionsPage() {
                                    onRemoveConnection={removeConnection}
                                    roomConnections={roomConnections || []}
                                    expandedRooms={expandedRooms}
-                                   setExpandedRooms={setExpandedRooms}
+                                   onToggleRoom={(roomKey) => {
+                                     const newExpanded = new Set(expandedRooms)
+                                     if (newExpanded.has(roomKey)) {
+                                       newExpanded.delete(roomKey)
+                                     } else {
+                                       newExpanded.add(roomKey)
+                                     }
+                                     setExpandedRooms(newExpanded)
+                                   }}
                                  />
                               </div>
                             </div>
