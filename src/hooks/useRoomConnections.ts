@@ -56,7 +56,7 @@ export const useCreateRoomConnection = () => {
         throw error;
       }
 
-      // Update tables using ID-based relationships if IDs are provided
+      // Приоритет ID-based связям, если они есть
       if (connection.projector_room_id && connection.turar_room_id) {
         await Promise.all([
           supabase
@@ -69,7 +69,7 @@ export const useCreateRoomConnection = () => {
             .eq("id", connection.turar_room_id)
         ]);
       } else {
-        // Fallback to string-based updates for backward compatibility
+        // Fallback к string-based обновлениям для обратной совместимости
         await Promise.all([
           supabase
             .from("turar_medical")
