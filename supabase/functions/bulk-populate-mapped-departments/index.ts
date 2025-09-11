@@ -75,10 +75,10 @@ serve(async (req) => {
 
       console.log(`🏥 Найдено ${turarData?.length || 0} записей Турар`)
 
-      // Преобразуем данные проектировщиков для вставки
+      // Преобразуем данные проектировщиков для вставки с материнским ID
       const mappedProjectorData = projectorData?.map(item => ({
         department_mapping_id: mapping.id,
-        original_record_id: item.id,
+        original_record_id: item.id, // Материнский ID из основной таблицы
         floor_number: item["ЭТАЖ"],
         block_name: item["БЛОК"],
         department_name: item["ОТДЕЛЕНИЕ"],
@@ -89,18 +89,20 @@ serve(async (req) => {
         equipment_name: item["Наименование оборудования"],
         equipment_unit: item["Ед. изм."],
         equipment_quantity: item["Кол-во"],
-        equipment_notes: item["Примечания"]
+        equipment_notes: item["Примечания"],
+        is_linked: false // По умолчанию не связано
       })) || []
 
-      // Преобразуем данные Турар для вставки
+      // Преобразуем данные Турар для вставки с материнским ID
       const mappedTurarData = turarData?.map(item => ({
         department_mapping_id: mapping.id,
-        original_record_id: item.id,
+        original_record_id: item.id, // Материнский ID из основной таблицы
         department_name: item["Отделение/Блок"],
         room_name: item["Помещение/Кабинет"],
         equipment_code: item["Код оборудования"],
         equipment_name: item["Наименование"],
-        equipment_quantity: item["Кол-во"]
+        equipment_quantity: item["Кол-во"],
+        is_linked: false // По умолчанию не связано
       })) || []
 
       // Вставляем данные проектировщиков батчами

@@ -123,8 +123,22 @@ export default function ConnectionsPage() {
 
   // Функции для управления связями кабинетов
   const createConnection = async (turarDepartment: string, turarRoom: string, projectorDepartment: string, projectorRoom: string) => {
-    // Получаем ID помещений из базы для новой ID-based логики
+    // Используем промежуточные таблицы для быстрого поиска по материнским ID
     const getTurarRoomId = async () => {
+      // Сначала ищем в промежуточной таблице по названию
+      const { data: mappedData } = await supabase
+        .from('mapped_turar_rooms')
+        .select('original_record_id')
+        .eq('department_name', turarDepartment)
+        .eq('room_name', turarRoom)
+        .limit(1)
+        .single();
+      
+      if (mappedData?.original_record_id) {
+        return mappedData.original_record_id;
+      }
+      
+      // Если не найдено в промежуточной, ищем в основной
       const { data } = await supabase
         .from('turar_medical')
         .select('id')
@@ -136,6 +150,20 @@ export default function ConnectionsPage() {
     };
 
     const getProjectorRoomId = async () => {
+      // Сначала ищем в промежуточной таблице по названию
+      const { data: mappedData } = await supabase
+        .from('mapped_projector_rooms')
+        .select('original_record_id')
+        .eq('department_name', projectorDepartment)
+        .eq('room_name', projectorRoom)
+        .limit(1)
+        .single();
+      
+      if (mappedData?.original_record_id) {
+        return mappedData.original_record_id;
+      }
+      
+      // Если не найдено в промежуточной, ищем в основной
       const { data } = await supabase
         .from('projector_floors')
         .select('id')
@@ -162,6 +190,27 @@ export default function ConnectionsPage() {
       };
 
       await createRoomConnectionMutation.mutateAsync(connectionData);
+      
+      // Обновляем статус связи в промежуточных таблицах
+      if (turarRoomId) {
+        await supabase
+          .from('mapped_turar_rooms')
+          .update({ 
+            is_linked: true, 
+            linked_projector_room_id: projectorRoomId 
+          })
+          .eq('original_record_id', turarRoomId);
+      }
+      
+      if (projectorRoomId) {
+        await supabase
+          .from('mapped_projector_rooms')
+          .update({ 
+            is_linked: true, 
+            linked_turar_room_id: turarRoomId 
+          })
+          .eq('original_record_id', projectorRoomId);
+      }
       
       toast({
         title: "Связь создана",
