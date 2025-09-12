@@ -71,8 +71,8 @@ function ConnectedRoomDisplay({ connectionId, roomId, isProjectorRoom, onRemove 
   }, [roomId, isProjectorRoom]);
 
   return (
-    <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
-      <div className="text-sm">
+    <div className="flex items-center justify-between bg-muted/50 p-2 rounded text-xs">
+      <div className="text-xs">
         {isProjectorRoom ? (
           <span>📍 Проектировщики: {roomName}</span>
         ) : (
@@ -83,11 +83,10 @@ function ConnectedRoomDisplay({ connectionId, roomId, isProjectorRoom, onRemove 
         <Button
           size="sm"
           variant="ghost"
-          className="hover:bg-red-100 hover:text-red-600 gap-1"
+          className="hover:bg-red-100 hover:text-red-600 h-6 w-6 p-0"
           onClick={() => onRemove(connectionId)}
         >
           <X className="h-3 w-3" />
-          Удалить
         </Button>
       )}
     </div>
@@ -142,12 +141,12 @@ export default function DepartmentRoomsDisplay({
 
   if (actualIsLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{departmentName}</CardTitle>
+      <Card className="h-fit">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{departmentName}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground">Загрузка кабинетов...</div>
+        <CardContent className="pt-0">
+          <div className="text-center text-muted-foreground text-sm py-2">Загрузка кабинетов...</div>
         </CardContent>
       </Card>
     )
@@ -155,123 +154,119 @@ export default function DepartmentRoomsDisplay({
 
   if (!actualRooms || actualRooms.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{departmentName}</CardTitle>
+      <Card className="h-fit">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{departmentName}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground">Нет кабинетов в этом отделении</div>
+        <CardContent className="pt-0">
+          <div className="text-center text-muted-foreground text-sm py-2">Нет кабинетов в этом отделении</div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="h-fit">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-base">
           <span>{departmentName}</span>
-          <Badge variant="secondary">{actualRooms.length} кабинетов</Badge>
+          <Badge variant="secondary" className="text-xs">{actualRooms.length}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <Accordion type="multiple" value={Array.from(expandedRooms)}>
+      <CardContent className="pt-0 max-h-96 overflow-y-auto">
+        <div className="space-y-1">
           {actualRooms.map((room) => {
             const connectedRooms = getConnectedRooms(room.id)
+            const isExpanded = expandedRooms.has(room.id)
             
             return (
-              <AccordionItem key={room.id} value={room.id}>
-                <AccordionTrigger 
+              <div key={room.id} className="border rounded-lg">
+                <div 
+                  className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer"
                   onClick={() => toggleRoom(room.id)}
-                  className="hover:no-underline"
                 >
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{room.room_name}</span>
-                      {connectedRooms.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          <Link2 className="h-3 w-3 mr-1" />
-                          {connectedRooms.length}
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="font-medium text-sm">{room.room_name}</span>
+                    {connectedRooms.length > 0 && (
+                      <Badge variant="outline" className="text-xs h-5">
+                        <Link2 className="h-2 w-2 mr-1" />
+                        {connectedRooms.length}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {/* Кнопка связывания */}
+                    {onLinkRoom && canEdit && showConnectButtons && (
+                      <Button
+                        size="sm"
+                        variant={selectedRoomId === room.id ? "default" : "outline"}
+                        className="gap-1 h-7 text-xs px-2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onLinkRoom(room.id, room.room_name)
+                        }}
+                      >
+                        <Link2 className="h-3 w-3" />
+                        Связать
+                      </Button>
+                    )}
                     
-                    <div className="flex items-center gap-2">
-                      {/* Кнопка связывания */}
-                      {onLinkRoom && canEdit && showConnectButtons && (
-                        <Button
-                          size="sm"
-                          variant={selectedRoomId === room.id ? "default" : "outline"}
-                          className="gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onLinkRoom(room.id, room.room_name)
-                          }}
-                        >
-                          <Link2 className="h-4 w-4" />
-                          Связать
-                        </Button>
+                    {/* Показать статус при активном режиме связывания */}
+                    {linkingRoom && linkingRoom.roomId === room.id && (
+                      <Badge variant="default" className="text-xs h-5">
+                        🎯
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                {isExpanded && (
+                  <div className="px-3 pb-3 pt-0 border-t bg-muted/20">
+                    <div className="space-y-2 mt-2">
+                      {/* Отображение оборудования */}
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium flex items-center gap-1">
+                          🔧 Оборудование:
+                        </div>
+                        <RoomEquipmentDisplay 
+                          roomId={room.id}
+                          isProjectorDepartment={isProjectorDepartment}
+                        />
+                      </div>
+                      
+                      {/* Существующие связи */}
+                      {connectedRooms.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="text-xs font-medium flex items-center gap-1">
+                            <Link2 className="h-3 w-3" />
+                            Связи:
+                          </div>
+                          {connectedRooms.map((connection) => (
+                            <ConnectedRoomDisplay
+                              key={connection.id}
+                              connectionId={connection.id}
+                              roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
+                              isProjectorRoom={!isProjectorDepartment}
+                              onRemove={onRemoveConnection}
+                            />
+                          ))}
+                        </div>
                       )}
                       
-                      {/* Показать статус при активном режиме связывания */}
-                      {linkingRoom && linkingRoom.roomId === room.id && (
-                        <Badge variant="default" className="text-xs">
-                          🎯 Исходный кабинет
-                        </Badge>
+                      {/* Сообщение если нет связей */}
+                      {connectedRooms.length === 0 && (
+                        <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded text-center">
+                          Нет связей
+                        </div>
                       )}
                     </div>
                   </div>
-                </AccordionTrigger>
-                
-                <AccordionContent>
-                  <div className="pt-4 space-y-3">
-                    {/* Информация о кабинете */}
-                    <div className="text-sm font-medium text-primary">
-                      📍 {room.room_name}
-                    </div>
-                    
-                    {/* Отображение оборудования */}
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium flex items-center gap-2">
-                        🔧 Оборудование в кабинете:
-                      </div>
-                      <RoomEquipmentDisplay 
-                        roomId={room.id}
-                        isProjectorDepartment={isProjectorDepartment}
-                      />
-                    </div>
-                    
-                    {/* Существующие связи */}
-                    {connectedRooms.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          <Link2 className="h-4 w-4" />
-                          Связанные кабинеты:
-                        </div>
-                        {connectedRooms.map((connection) => (
-                          <ConnectedRoomDisplay
-                            key={connection.id}
-                            connectionId={connection.id}
-                            roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
-                            isProjectorRoom={!isProjectorDepartment}
-                            onRemove={onRemoveConnection}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Сообщение если нет связей */}
-                    {connectedRooms.length === 0 && (
-                      <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg text-center">
-                        Кабинет не связан с другими кабинетами
-                      </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                )}
+              </div>
             )
           })}
-        </Accordion>
+        </div>
       </CardContent>
     </Card>
   )
