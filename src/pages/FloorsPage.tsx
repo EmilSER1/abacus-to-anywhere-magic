@@ -14,6 +14,7 @@ import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection, RoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
 import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
@@ -158,15 +159,24 @@ const processFloorsData = (data: FloorData[]): any[] => {
       number: floorNumber,
       blocks: blocks,
       stats: {
-        totalRooms: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
-          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
-            deptSum + dept.rooms.size, 0), 0),
-        totalEquipment: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
-          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
-            deptSum + dept.totalEquipment, 0), 0),
-        totalArea: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
-          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
-            deptSum + dept.totalArea, 0), 0)
+        totalRooms: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
+          const deptCount: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+            return deptSum + (dept.rooms ? dept.rooms.size : 0);
+          }, 0);
+          return sum + deptCount;
+        }, 0),
+        totalEquipment: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
+          const equipCount: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+            return deptSum + (dept.totalEquipment || 0);
+          }, 0);
+          return sum + equipCount;
+        }, 0),
+        totalArea: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
+          const areaSum: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+            return deptSum + (dept.totalArea || 0);
+          }, 0);
+          return sum + areaSum;
+        }, 0)
       }
     });
   });
@@ -203,7 +213,7 @@ export default function FloorsPage() {
   const deleteRoomConnectionById = useDeleteRoomConnectionById();
   const { data: turarData } = useTurarMedicalData();
   const cleanupUnknownRooms = useCleanupUnknownRooms();
-  const { data: projectorDepartmentLinks } = useProjectorDepartmentTurarLink();
+  const { data: projectorDepartmentLinks } = useDepartmentMappings();
 
   const [openDepartments, setOpenDepartments] = useState<Set<string>>(new Set());
 
@@ -528,7 +538,7 @@ export default function FloorsPage() {
 
   const getDepartmentTurarLink = (department: string) => {
     if (!projectorDepartmentLinks) return null;
-    return projectorDepartmentLinks.find(link => link.projector_department === department);
+    return projectorDepartmentLinks?.find(link => link.projector_department === department);
   };
 
   // Фильтрация данных
@@ -561,6 +571,7 @@ export default function FloorsPage() {
   ))].sort();
 
   return (
+    <>
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -852,6 +863,7 @@ export default function FloorsPage() {
           onSave={handleBulkSave}
         />
       )}
+    </>
   );
 }
 
