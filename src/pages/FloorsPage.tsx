@@ -385,13 +385,6 @@ export default function FloorsPage() {
       });
     }
   };
-      addEquipmentMutation.mutate(newEquipment);
-    }
-    setIsEditDialogOpen(false);
-    setEditingEquipment(null);
-    setIsAddingEquipment(false);
-    setAddingToRoom(null);
-  };
 
   const handleAddEquipment = (department: string, room: string) => {
     setAddingToRoom({ department, room });
