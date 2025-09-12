@@ -34,6 +34,16 @@ export default function RoomConnectionsManager() {
   const { data: departments } = useDepartments()
   const { data: departmentMappings } = useDepartmentMappingsWithDetails()
   const { data: connections, refetch: refetchConnections } = useRoomConnectionsById()
+  
+  // Логируем данные соединений
+  console.log('🔗 RoomConnectionsManager connections:', {
+    total: connections?.length || 0,
+    connections: connections?.map(c => ({
+      id: c.id,
+      turar_room_id: c.turar_room_id,
+      projector_room_id: c.projector_room_id
+    })) || []
+  });
   const createConnectionMutation = useCreateRoomConnectionById()
   const deleteConnectionMutation = useDeleteRoomConnectionById()
   const { toast } = useToast()

@@ -160,6 +160,14 @@ export default function DepartmentRoomsDisplay({
   // Используем проп canEdit если он передан, иначе результат хука
   const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
   
+  // Логируем входящие данные
+  console.log(`🔧 DepartmentRoomsDisplay ${departmentName}:`, {
+    departmentId,
+    connectionsLength: connections.length,
+    connections: connections.map(c => ({id: c.id, turar_room_id: c.turar_room_id, projector_room_id: c.projector_room_id})),
+    isProjectorDepartment
+  });
+  
   // Используем правильные хуки для получения данных из основных таблиц
   const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
   const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
