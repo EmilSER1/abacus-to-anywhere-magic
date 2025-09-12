@@ -62,6 +62,16 @@ export default function RoomConnectionsManager() {
     return () => clearInterval(interval);
   }, [refetchConnections]);
 
+  // Автоматически раскрываем все отделения при загрузке
+  useEffect(() => {
+    if (linkedDepartmentPairs && linkedDepartmentPairs.length > 0) {
+      const allDepartmentKeys = new Set(
+        linkedDepartmentPairs.map(pair => `turar-${pair.turar_department}`)
+      );
+      setExpandedDepartments(allDepartmentKeys);
+    }
+  }, [linkedDepartmentPairs]);
+
   const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
     if (linkingRoom) {
       // Если уже есть выбранный кабинет, сбрасываем
@@ -374,9 +384,9 @@ export default function RoomConnectionsManager() {
                   </CardTitle>
                 </CardHeader>
                 
-                {isExpanded && (
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Контент всегда показываем, убираем условие isExpanded */}
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Кабинеты Турар */}
                       <DepartmentRoomsDisplay
                         departmentId={group.turar_department_id}
@@ -409,10 +419,9 @@ export default function RoomConnectionsManager() {
                             multiSelectMode={false}
                           />
                         ))}
-                      </div>
                     </div>
-                  </CardContent>
-                )}
+                  </div>
+                </CardContent>
               </Card>
             );
           })
