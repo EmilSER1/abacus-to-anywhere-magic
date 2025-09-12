@@ -192,11 +192,11 @@ export default function FloorsPage() {
   const isRoomConnected = (room: Room, departmentName: string) => {
     if (!allData) return false;
     
-    // Find ANY room record with this name and department that has a connection
+    // Find ANY room record with this name and department that has a SPECIFIC room connection (not just department)
     const connectedRecord = allData.find(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
-      (item.connected_turar_room_id || item.connected_turar_room || item.connected_turar_department)
+      (item.connected_turar_room_id || item.connected_turar_room) // Must have specific room connection
     );
     
     console.log('🔍 Checking room connection:', {
@@ -219,11 +219,11 @@ export default function FloorsPage() {
   const getRoomConnections = (room: Room, departmentName: string) => {
     if (!allData) return [];
     
-    // Find ALL room records with this name and department that have connections
+    // Find ALL room records with this name and department that have SPECIFIC room connections (not just department)
     const connectedRecords = allData.filter(item => 
       item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
       item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
-      (item.connected_turar_room_id || item.connected_turar_room || item.connected_turar_department)
+      (item.connected_turar_room_id || item.connected_turar_room) // Must have specific room connection
     );
     
     console.log('🔗 Getting room connections:', {
@@ -245,6 +245,11 @@ export default function FloorsPage() {
     // Return unique connections (remove duplicates)
     const uniqueConnections = new Map();
     connectedRecords.forEach(roomRecord => {
+      // Skip records that only have department connection but no specific room
+      if (roomRecord.connected_turar_department && !roomRecord.connected_turar_room) {
+        return; // Don't show department-only connections as room connections
+      }
+      
       const key = `${roomRecord.connected_turar_department}-${roomRecord.connected_turar_room}`;
       if (!uniqueConnections.has(key)) {
         uniqueConnections.set(key, {

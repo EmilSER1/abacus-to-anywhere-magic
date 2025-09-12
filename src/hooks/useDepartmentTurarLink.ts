@@ -19,6 +19,9 @@ export const useLinkDepartmentToTurar = () => {
         .from("projector_floors")
         .update({
           connected_turar_department: turarDepartment,
+          // Explicitly clear room connections when linking departments
+          connected_turar_room: null,
+          connected_turar_room_id: null,
           updated_at: new Date().toISOString()
         })
         .eq("ОТДЕЛЕНИЕ", departmentName)
@@ -59,6 +62,8 @@ export const useUnlinkDepartmentFromTurar = () => {
         .from("projector_floors")
         .update({
           connected_turar_department: null,
+          connected_turar_room: null,
+          connected_turar_room_id: null,
           updated_at: new Date().toISOString()
         })
         .eq("ОТДЕЛЕНИЕ", departmentName)
