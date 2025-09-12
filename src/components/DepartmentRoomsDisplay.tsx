@@ -179,9 +179,35 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
-    return isProjectorDepartment 
+    // Получаем все связи для данного кабинета
+    const filtered = isProjectorDepartment 
       ? connections.filter(conn => conn.projector_room === roomName)
       : connections.filter(conn => conn.turar_room === roomName);
+    
+    // Убираем дубли по названию кабинета - показываем только уникальные названия
+    const uniqueConnections = filtered.reduce((acc, conn) => {
+      const targetRoom = isProjectorDepartment ? conn.turar_room : conn.projector_room;
+      const existing = acc.find(item => {
+        const existingRoom = isProjectorDepartment ? item.turar_room : item.projector_room;
+        return existingRoom === targetRoom;
+      });
+      
+      if (!existing) {
+        acc.push(conn);
+      }
+      
+      return acc;
+    }, [] as typeof filtered);
+    
+    console.log(`🔍 УНИКАЛЬНЫЕ СВЯЗИ для ${roomName}:`, {
+      всехСвязей: filtered.length,
+      уникальныхСвязей: uniqueConnections.length,
+      уникальныеКабинеты: uniqueConnections.map(c => 
+        isProjectorDepartment ? c.turar_room : c.projector_room
+      )
+    });
+    
+    return uniqueConnections;
   }
 
   if (actualIsLoading) {
