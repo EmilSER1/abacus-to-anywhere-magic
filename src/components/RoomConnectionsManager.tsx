@@ -321,7 +321,7 @@ export default function RoomConnectionsManager() {
                 </CardHeader>
                 
                 {isExpanded && (
-                  <CardContent className="pt-0 max-h-[70vh] overflow-y-auto">
+                  <CardContent className="pt-0">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Кабинеты Турар */}
                       <DepartmentRoomsDisplay
