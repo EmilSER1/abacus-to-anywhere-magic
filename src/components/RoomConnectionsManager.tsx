@@ -62,16 +62,6 @@ export default function RoomConnectionsManager() {
     return () => clearInterval(interval);
   }, [refetchConnections]);
 
-  // Автоматически раскрываем все отделения при загрузке
-  useEffect(() => {
-    if (linkedDepartmentPairs && linkedDepartmentPairs.length > 0) {
-      const allDepartmentKeys = new Set(
-        linkedDepartmentPairs.map(pair => `turar-${pair.turar_department}`)
-      );
-      setExpandedDepartments(allDepartmentKeys);
-    }
-  }, [linkedDepartmentPairs]);
-
   const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
     if (linkingRoom) {
       // Если уже есть выбранный кабинет, сбрасываем
@@ -240,6 +230,13 @@ export default function RoomConnectionsManager() {
     );
   };
 
+  console.log('🔍 Очередь связей:', connectionQueue.map(c => ({
+    source: c.sourceRoomName,
+    target: c.targetRoomName,
+    sourceId: c.sourceRoomId,
+    targetId: c.targetRoomId
+  })));
+
   const toggleDepartment = (deptKey: string) => {
     const newExpanded = new Set(expandedDepartments);
     if (newExpanded.has(deptKey)) {
@@ -384,9 +381,9 @@ export default function RoomConnectionsManager() {
                   </CardTitle>
                 </CardHeader>
                 
-                {/* Контент всегда показываем, убираем условие isExpanded */}
-                <CardContent className="pt-0">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {isExpanded && (
+                  <CardContent className="pt-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Кабинеты Турар */}
                       <DepartmentRoomsDisplay
                         departmentId={group.turar_department_id}
@@ -419,9 +416,10 @@ export default function RoomConnectionsManager() {
                             multiSelectMode={false}
                           />
                         ))}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
+                  </CardContent>
+                )}
               </Card>
             );
           })
