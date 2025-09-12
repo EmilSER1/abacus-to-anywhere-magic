@@ -298,13 +298,23 @@ export default function FloorsPage() {
     if (isAddingEquipment && addingToRoom) {
       // Создание нового оборудования
       const { id, ...equipmentWithoutId } = updatedEquipment; // Убираем id для новых записей
+      
+      // Находим существующую запись кабинета для получения всех полей
+      const existingRoomRecord = allData?.find(item => 
+        item["ОТДЕЛЕНИЕ"] === addingToRoom.department && 
+        item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === addingToRoom.room
+      );
+      
       const newEquipment = {
         ...equipmentWithoutId,
         "ОТДЕЛЕНИЕ": addingToRoom.department,
         "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
-        "КОД ПОМЕЩЕНИЯ": "",
-        "ЭТАЖ": 1,
-        "БЛОК": "",
+        "КОД ПОМЕЩЕНИЯ": existingRoomRecord?.["КОД ПОМЕЩЕНИЯ"] || "",
+        "ЭТАЖ": existingRoomRecord?.["ЭТАЖ"] || 1,
+        "БЛОК": existingRoomRecord?.["БЛОК"] || "",
+        "Код помещения": existingRoomRecord?.["Код помещения"] || "",
+        "Наименование помещения": existingRoomRecord?.["Наименование помещения"] || "",
+        "Площадь (м2)": existingRoomRecord?.["Площадь (м2)"] || null,
       };
       addEquipmentMutation.mutate(newEquipment);
     } else if (editingEquipment?.id) {

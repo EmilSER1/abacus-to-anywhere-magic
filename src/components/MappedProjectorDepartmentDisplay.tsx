@@ -84,13 +84,20 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
   const handleSaveEquipment = (updatedEquipment: any) => {
     if (isAddingEquipment && addingToRoom) {
       const { id, ...equipmentWithoutId } = updatedEquipment; // Убираем id для новых записей
+      
+      // Находим существующую запись кабинета для получения всех полей
+      const existingRoomData = groupedRooms[addingToRoom.room];
+      
       const newEquipment = {
         ...equipmentWithoutId,
         "ОТДЕЛЕНИЕ": addingToRoom.department,
         "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
-        "КОД ПОМЕЩЕНИЯ": "",
-        "ЭТАЖ": 1,
-        "БЛОК": "",
+        "КОД ПОМЕЩЕНИЯ": existingRoomData?.roomInfo.code || "",
+        "ЭТАЖ": existingRoomData?.roomInfo.floor || 1,
+        "БЛОК": existingRoomData?.roomInfo.block || "",
+        "Код помещения": existingRoomData?.roomInfo.code || "",
+        "Наименование помещения": existingRoomData?.roomInfo.name || "",
+        "Площадь (м2)": existingRoomData?.roomInfo.area || null,
       };
       addEquipmentMutation.mutate(newEquipment);
     } else {
