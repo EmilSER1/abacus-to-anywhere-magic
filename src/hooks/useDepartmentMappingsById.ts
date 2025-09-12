@@ -145,20 +145,28 @@ export const useDeleteDepartmentMappingById = () => {
 
   return useMutation({
     mutationFn: async (mappingId: string) => {
+      console.log('🗑️ УДАЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ:', { mappingId });
+      
       const { error } = await supabase
         .from('department_mappings')
         .delete()
         .eq('id', mappingId);
 
       if (error) {
+        console.error('❌ ОШИБКА УДАЛЕНИЯ СВЯЗИ:', error);
         throw error;
       }
 
+      console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА:', mappingId);
       return mappingId;
     },
-    onSuccess: () => {
+    onSuccess: (mappingId) => {
+      console.log('🔄 ОБНОВЛЯЕМ ЗАПРОСЫ после удаления:', mappingId);
       queryClient.invalidateQueries({ queryKey: ['department-mappings-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['department-mappings'] });
+    },
+    onError: (error) => {
+      console.error('❌ ОШИБКА В МУТАЦИИ УДАЛЕНИЯ:', error);
     }
   });
 };
