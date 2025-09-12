@@ -145,25 +145,31 @@ export const useDeleteDepartmentMappingById = () => {
 
   return useMutation({
     mutationFn: async (mappingId: string) => {
-      console.log('🗑️ УДАЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ:', { mappingId });
+      console.log('🗑️ УДАЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ через Edge Function:', { mappingId });
       
-      const { error } = await supabase
-        .from('department_mappings')
-        .delete()
-        .eq('id', mappingId);
+      const { data, error } = await supabase.functions.invoke('delete-department-mapping', {
+        body: { mappingId }
+      });
 
       if (error) {
-        console.error('❌ ОШИБКА УДАЛЕНИЯ СВЯЗИ:', error);
+        console.error('❌ ОШИБКА Edge Function:', error);
         throw error;
       }
 
-      console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА:', mappingId);
+      if (!data?.success) {
+        console.error('❌ ОШИБКА в ответе Edge Function:', data);
+        throw new Error(data?.error || 'Failed to delete department mapping');
+      }
+
+      console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА через Edge Function:', data);
       return mappingId;
     },
     onSuccess: (mappingId) => {
       console.log('🔄 ОБНОВЛЯЕМ ЗАПРОСЫ после удаления:', mappingId);
       queryClient.invalidateQueries({ queryKey: ['department-mappings-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['department-mappings'] });
+      queryClient.invalidateQueries({ queryKey: ['room-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['room-connections-by-id'] });
     },
     onError: (error) => {
       console.error('❌ ОШИБКА В МУТАЦИИ УДАЛЕНИЯ:', error);
