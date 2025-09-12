@@ -120,8 +120,10 @@ export default function RoomConnectionsManager() {
     setConnectionQueue(prev => [...prev, newConnection]);
     toast({
       title: "Связь добавлена в очередь",
-      description: `${linkingRoom.roomName} ↔ ${targetRoomName}`
+      description: `${linkingRoom.roomName} ↔ ${targetRoomName}. Продолжайте добавлять кабинеты.`
     });
+    
+    // НЕ сбрасываем linkingRoom - пользователь может продолжать добавлять кабинеты
   };
 
   const removeFromConnectionQueue = (index: number) => {
@@ -239,7 +241,7 @@ export default function RoomConnectionsManager() {
           <div className="flex items-center gap-4">
             <p className="text-muted-foreground">
               {linkingRoom 
-                ? `Выбран: ${linkingRoom.departmentName} - ${linkingRoom.roomName}. Отметьте кабинеты для связывания.`
+                ? `Выбран: ${linkingRoom.departmentName} - ${linkingRoom.roomName}. Добавляйте кабинеты в очередь.`
                 : "Нажмите 'Связать кабинеты' на любом кабинете для начала процесса связывания"
               }
             </p>
