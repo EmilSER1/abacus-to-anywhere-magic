@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import RoomLinkDropdown from '@/components/RoomLinkDropdown';
 import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink';
 import { useUserRole } from '@/hooks/useUserRole';
+import { BulkEquipmentTable } from '@/components/BulkEquipmentTable';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -182,6 +183,8 @@ export default function FloorsPage() {
   const [addingToRoom, setAddingToRoom] = useState<{ department: string; room: string } | null>(null);
   const [selectedTurarDept, setSelectedTurarDept] = useState('');
   const [selectedTurarRooms, setSelectedTurarRooms] = useState<string[]>([]);
+  const [isBulkTableOpen, setIsBulkTableOpen] = useState(false);
+  const [bulkEditingRoom, setBulkEditingRoom] = useState<{ department: string; room: string } | null>(null);
   
   const updateEquipmentMutation = useUpdateProjectorEquipment();
   const addEquipmentMutation = useAddProjectorEquipment();
@@ -334,7 +337,54 @@ export default function FloorsPage() {
         "КОД ПОМЕЩЕНИЯ": "",
         "ЭТАЖ": 1,
         "БЛОК": "",
-      };
+  };
+
+  const handleBulkAdd = (department: string, room: string) => {
+    setBulkEditingRoom({ department, room });
+    setIsBulkTableOpen(true);
+  };
+
+  const handleBulkSave = async (equipmentRows: any[]) => {
+    if (!bulkEditingRoom) return;
+
+    try {
+      for (const row of equipmentRows) {
+        const newEquipment = {
+          "ОТДЕЛЕНИЕ": bulkEditingRoom.department,
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": bulkEditingRoom.room,
+          "КОД ПОМЕЩЕНИЯ": "",
+          "ЭТАЖ": 1,
+          "БЛОК": "",
+          "Код оборудования": row.code,
+          "Наименование оборудования": row.name,
+          "Кол-во": row.quantity,
+          "Ед. изм.": row.unit,
+          "Примечания": row.notes,
+          equipment_status: row.status,
+          equipment_specification: row.specification,
+          equipment_documents: row.documents,
+          equipment_supplier: row.supplier,
+          equipment_price: row.price ? parseFloat(row.price) : null,
+        };
+
+        await addEquipmentMutation.mutateAsync(newEquipment);
+      }
+
+      toast({
+        title: "Успешно",
+        description: `Добавлено ${equipmentRows.length} позиций оборудования`,
+      });
+
+      setIsBulkTableOpen(false);
+      setBulkEditingRoom(null);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить оборудование",
+        variant: "destructive",
+      });
+    }
+  };
       addEquipmentMutation.mutate(newEquipment);
     }
     setIsEditDialogOpen(false);
@@ -920,7 +970,16 @@ export default function FloorsPage() {
                                              })()}
                                              
                                               <AccordionContent className="px-3 pb-3">
-                                              <div className="mb-3 flex justify-end">
+                                              <div className="mb-3 flex justify-end gap-2">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => handleBulkAdd(department.name, room.name)}
+                                                  className="gap-2"
+                                                >
+                                                  <Plus className="h-3 w-3" />
+                                                  Массовое добавление
+                                                </Button>
                                                 <Button
                                                   size="sm"
                                                   onClick={() => handleAddEquipment(department.name, room.name)}
@@ -929,7 +988,7 @@ export default function FloorsPage() {
                                                   <Plus className="h-3 w-3" />
                                                   Добавить оборудование
                                                 </Button>
-                                               </div>
+                                              </div>
                                                {room.equipment.length > 0 ? (
                                                  <div className="rounded-lg border border-border/40 overflow-hidden">
                                                    <table className="w-full text-xs border-collapse">
@@ -1078,6 +1137,20 @@ export default function FloorsPage() {
         onSave={handleSaveEquipment}
         isNew={isAddingEquipment}
       />
+      
+      {/* Массовое добавление оборудования */}
+      {bulkEditingRoom && (
+        <BulkEquipmentTable
+          department={bulkEditingRoom.department}
+          room={bulkEditingRoom.room}
+          isOpen={isBulkTableOpen}
+          onClose={() => {
+            setIsBulkTableOpen(false);
+            setBulkEditingRoom(null);
+          }}
+          onSave={handleBulkSave}
+        />
+      )}
     </div>
   );
 }
