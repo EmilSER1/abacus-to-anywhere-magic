@@ -212,36 +212,33 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
-    // Получаем все связи для данного кабинета
+    // Получаем все связи для данного кабинета по ID
     console.log(`🔍 ПОИСК СВЯЗЕЙ для кабинета "${roomName}" (ID: ${roomId}):`, {
       isProjectorDepartment,
       totalConnections: connections.length,
-      departmentName,
-      connections: connections.slice(0, 3).map(c => ({
-        id: c.id,
-        turar_room: c.turar_room,
-        projector_room: c.projector_room,
-        turar_department: c.turar_department,
-        projector_department: c.projector_department
-      }))
+      departmentName
     });
     
     const filtered = isProjectorDepartment 
       ? connections.filter(conn => {
-          const match = conn.projector_room === roomName;
-          if (!match) {
-            console.log(`❌ Не совпадает: "${conn.projector_room}" !== "${roomName}"`);
-          } else {
-            console.log(`✅ Совпадает: "${conn.projector_room}" === "${roomName}"`);
+          const match = conn.projector_room_id === roomId;
+          if (match) {
+            console.log(`✅ Найдена связь по ID для "${roomName}":`, {
+              connectionId: conn.id,
+              turar_room: conn.turar_room,
+              projector_room: conn.projector_room
+            });
           }
           return match;
         })
       : connections.filter(conn => {
-          const match = conn.turar_room === roomName;
-          if (!match) {
-            console.log(`❌ Не совпадает: "${conn.turar_room}" !== "${roomName}"`);
-          } else {
-            console.log(`✅ Совпадает: "${conn.turar_room}" === "${roomName}"`);
+          const match = conn.turar_room_id === roomId;
+          if (match) {
+            console.log(`✅ Найдена связь по ID для "${roomName}":`, {
+              connectionId: conn.id,
+              turar_room: conn.turar_room,
+              projector_room: conn.projector_room
+            });
           }
           return match;
         });
