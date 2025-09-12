@@ -317,7 +317,9 @@ export default function FloorsPage() {
       "Примечания": '',
       equipment_status: 'Не найдено',
       equipment_specification: '',
-      equipment_documents: ''
+      equipment_documents: '',
+      equipment_supplier: '',
+      equipment_price: 0
     });
     setIsAddingEquipment(true);
     setIsEditDialogOpen(true);
@@ -881,8 +883,18 @@ export default function FloorsPage() {
                                              })()}
                                              
                                               <AccordionContent className="px-3 pb-3">
-                                              {room.equipment.length > 0 ? (
-                                                <div className="rounded-lg border border-border/40 overflow-hidden">
+                                              <div className="mb-3 flex justify-end">
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => handleAddEquipment(department.name, room.name)}
+                                                  className="gap-2"
+                                                >
+                                                  <Plus className="h-3 w-3" />
+                                                  Добавить оборудование
+                                                </Button>
+                                               </div>
+                                               {room.equipment.length > 0 ? (
+                                                 <div className="rounded-lg border border-border/40 overflow-hidden">
                                                    <table className="w-full text-xs border-collapse">
                                                      <thead className="bg-muted/30">
                                                        <tr>
@@ -983,11 +995,19 @@ export default function FloorsPage() {
                                                      </tbody>
                                                    </table>
                                                   </div>
-                                                ) : (
-                                                  <div className="text-center py-4 text-muted-foreground text-xs">
-                                                    Оборудование не указано
-                                                  </div>
-                                               )}
+                                                 ) : (
+                                                   <div className="text-center py-6 text-muted-foreground text-xs space-y-3">
+                                                     <div>📦 Оборудование не указано</div>
+                                                     <Button
+                                                       size="sm"
+                                                       onClick={() => handleAddEquipment(department.name, room.name)}
+                                                       className="gap-2"
+                                                     >
+                                                       <Plus className="h-3 w-3" />
+                                                       Добавить первое оборудование
+                                                     </Button>
+                                                   </div>
+                                                 )}
                                              </AccordionContent>
                                           </AccordionItem>
                                         </Accordion>
