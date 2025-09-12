@@ -52,6 +52,17 @@ export default function RoomConnectionsManager() {
     mapping.turar_department_id && mapping.projector_department_id
   ) || []
 
+  console.log('🔗 СВЯЗАННЫЕ ОТДЕЛЕНИЯ:', {
+    departmentMappings: departmentMappings?.length || 0,
+    linkedDepartmentPairs: linkedDepartmentPairs.length,
+    отделенияСИды: linkedDepartmentPairs.map(p => ({
+      turar: p.turar_department,
+      projector: p.projector_department,
+      turarId: p.turar_department_id,
+      projectorId: p.projector_department_id
+    }))
+  });
+
   // Автоматическое обновление данных каждые 10 секунд
   useEffect(() => {
     const interval = setInterval(() => {
