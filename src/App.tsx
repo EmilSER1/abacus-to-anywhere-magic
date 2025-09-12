@@ -31,7 +31,6 @@ const App = () => (
               <Route path="/floors" element={<FloorsPage />} />
               <Route path="/turar" element={<TurarPage />} />
               <Route path="/connections" element={<ConnectionsPage />} />
-              <Route path="/connections-old" element={<ConnectionsPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/consolidation" element={<ConsolidationPage />} />
               <Route path="/admin" element={<AdminPage />} />

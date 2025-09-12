@@ -35,7 +35,7 @@ export function Navigation() {
     },
     {
       name: 'Проектировщики',
-      href: '/connections',
+      href: '/floors',
       icon: Building2,
     },
     {
@@ -54,13 +54,8 @@ export function Navigation() {
       icon: BarChart3,
     },
     {
-      name: 'Этажи',
-      href: '/floors',
-      icon: MapPin,
-    },
-    {
       name: 'Таблица соединения',
-      href: '/connections-old',
+      href: '/connections',
       icon: Database,
     },
     {

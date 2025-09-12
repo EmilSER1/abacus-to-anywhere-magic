@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Download, Plus, MapPin, Users, Link } from 'lucide-react';
+import { Building2, Download, Plus, MapPin, Users, Link, Edit, Link2, X } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData } from '@/hooks/useFloorsData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
+import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment } from '@/hooks/useProjectorEquipment';
+import EditEquipmentDialog from '@/components/EditEquipmentDialog';
+import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
+import TurarRoomSelector from '@/components/TurarRoomSelector';
+import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
+import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -32,6 +38,10 @@ interface Equipment {
   unit: string | null;
   quantity: number | string | null;
   notes: string | null;
+  equipment_status?: 'Согласовано' | 'Не согласовано' | 'Не найдено';
+  equipment_specification?: string;
+  equipment_documents?: string;
+  id?: string;
 }
 
 interface Room {
@@ -59,6 +69,12 @@ interface Floor {
     totalArea: number;
   };
 }
+
+const statusConfig = {
+  'Согласовано': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Согласовано' },
+  'Не согласовано': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Не согласовано' },
+  'Не найдено': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Не найдено' }
+} as const;
 
 // Process floor data to group by floors -> departments -> rooms (with block markers)
 const processFloorData = (data: FloorData[]): Floor[] => {
@@ -148,6 +164,18 @@ export default function FloorsPage() {
   const [searchParams] = useSearchParams();
   const { data: allData, isLoading, error, refetch } = useFloorsData();
   const { data: roomConnections } = useRoomConnections();
+  const [editingEquipment, setEditingEquipment] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddingEquipment, setIsAddingEquipment] = useState(false);
+  const [addingToRoom, setAddingToRoom] = useState<{ department: string; room: string } | null>(null);
+  const [selectedTurarDept, setSelectedTurarDept] = useState('');
+  const [selectedTurarRooms, setSelectedTurarRooms] = useState<string[]>([]);
+  
+  const updateEquipmentMutation = useUpdateProjectorEquipment();
+  const addEquipmentMutation = useAddProjectorEquipment();
+  const createConnectionMutation = useCreateRoomConnection();
+  const deleteConnectionMutation = useDeleteRoomConnection();
+  const { toast } = useToast();
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
@@ -232,6 +260,90 @@ export default function FloorsPage() {
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
+
+  // Новые функции для редактирования оборудования
+  const handleEditEquipment = (equipment: any, department: string, room: string) => {
+    setEditingEquipment({
+      ...equipment,
+      "ОТДЕЛЕНИЕ": department,
+      "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEquipment = (updatedEquipment: any) => {
+    if (isAddingEquipment && addingToRoom) {
+      const newEquipment = {
+        ...updatedEquipment,
+        "ОТДЕЛЕНИЕ": addingToRoom.department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
+        "КОД ПОМЕЩЕНИЯ": "",
+        "ЭТАЖ": 1,
+        "БЛОК": "",
+      };
+      addEquipmentMutation.mutate(newEquipment);
+    } else {
+      updateEquipmentMutation.mutate(updatedEquipment);
+    }
+    setIsEditDialogOpen(false);
+    setEditingEquipment(null);
+    setIsAddingEquipment(false);
+    setAddingToRoom(null);
+  };
+
+  const handleAddEquipment = (department: string, room: string) => {
+    setAddingToRoom({ department, room });
+    setEditingEquipment({
+      id: '',
+      "Наименование оборудования": '',
+      "Код оборудования": '',
+      "Кол-во": '',
+      "Ед. изм.": '',
+      "Примечания": '',
+      equipment_status: 'Не найдено',
+      equipment_specification: '',
+      equipment_documents: ''
+    });
+    setIsAddingEquipment(true);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCreateMultipleConnections = () => {
+    selectedTurarRooms.forEach(turarRoom => {
+      // Создаем связи со всеми комнатами проектировщиков в отделении
+      floors.forEach(floor => {
+        floor.departments.forEach(dept => {
+          dept.rooms.forEach(room => {
+            createConnectionMutation.mutate({
+              turar_department: selectedTurarDept,
+              turar_room: turarRoom,
+              projector_department: dept.name,
+              projector_room: room.name
+            });
+          });
+        });
+      });
+    });
+    setSelectedTurarDept('');
+    setSelectedTurarRooms([]);
+    toast({
+      title: "Связи созданы",
+      description: `Создано связей: ${selectedTurarRooms.length} кабинетов Турар`,
+    });
+  };
+
+  const handleDeleteConnection = (turarDept: string, turarRoom: string, projectorDept: string, projectorRoom: string) => {
+    const connection = roomConnections?.find(conn => 
+      conn.turar_department === turarDept && 
+      conn.turar_room === turarRoom &&
+      conn.projector_department === projectorDept &&
+      conn.projector_room === projectorRoom
+    );
+    
+    if (connection) {
+      deleteConnectionMutation.mutate(connection.id);
+    }
+  };
 
   useEffect(() => {
     if (allData) {
@@ -396,8 +508,40 @@ export default function FloorsPage() {
     <div className="p-6 space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Проектировщики</h1>
-        <p className="text-muted-foreground">Иерархическая навигация по этажам, блокам и кабинетам</p>
+        <p className="text-muted-foreground">Иерархическая навигация по этажам, блокам и кабинетам с возможностью редактирования оборудования</p>
       </div>
+
+      {/* Связки с отделениями Турар */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-blue-800 text-base">Связать с отделениями Турар</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <TurarDepartmentSelector
+            value={selectedTurarDept}
+            onValueChange={setSelectedTurarDept}
+            label="Отделение Турар"
+          />
+          <TurarRoomSelector
+            selectedDepartment={selectedTurarDept}
+            selectedRooms={selectedTurarRooms}
+            onRoomsChange={setSelectedTurarRooms}
+            multiple={true}
+            label="Кабинеты Турар (множественный выбор)"
+          />
+          {selectedTurarDept && selectedTurarRooms.length > 0 && (
+            <Button 
+              onClick={handleCreateMultipleConnections}
+              className="w-full"
+              disabled={createConnectionMutation.isPending}
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Создать связи ({selectedTurarRooms.length} кабинетов → все проектировщик)
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -688,6 +832,124 @@ export default function FloorsPage() {
           ))}
         </div>
       </div>
+
+      {/* Диалог редактирования оборудования */}
+      <EditEquipmentDialog
+        equipment={editingEquipment}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingEquipment(null);
+          setIsAddingEquipment(false);
+          setAddingToRoom(null);
+        }}
+        onSave={handleSaveEquipment}
+        isNew={isAddingEquipment}
+      />
     </div>
   );
 }
+
+// Компонент для отображения оборудования с возможностью редактирования
+const EquipmentSection: React.FC<{
+  department: string;
+  room: string;
+  equipment: Equipment[];
+  onEditEquipment: (equipment: any, department: string, room: string) => void;
+}> = ({ department, room, equipment, onEditEquipment }) => {
+  const { data: dbEquipment, isLoading } = useProjectorRoomEquipment(department, room);
+
+  if (isLoading) {
+    return <div className="text-xs text-muted-foreground">Загрузка оборудования...</div>;
+  }
+
+  // Комбинируем данные из файла и базы данных
+  const allEquipment = [...equipment];
+  
+  if (dbEquipment) {
+    dbEquipment.forEach(dbItem => {
+      // Проверяем, есть ли уже такое оборудование в списке из файла
+      const existingIndex = allEquipment.findIndex(eq => 
+        eq.code === dbItem["Код оборудования"] && eq.name === dbItem["Наименование оборудования"]
+      );
+      
+      if (existingIndex >= 0) {
+        // Обновляем существующее с данными из БД
+        allEquipment[existingIndex] = {
+          ...allEquipment[existingIndex],
+          equipment_status: dbItem.equipment_status,
+          equipment_specification: dbItem.equipment_specification,
+          equipment_documents: dbItem.equipment_documents
+        };
+      } else if (dbItem["Наименование оборудования"]) {
+        // Добавляем новое оборудование из БД
+        allEquipment.push({
+          code: dbItem["Код оборудования"],
+          name: dbItem["Наименование оборудования"],
+          unit: dbItem["Ед. изм."],
+          quantity: dbItem["Кол-во"],
+          notes: dbItem["Примечания"],
+          equipment_status: dbItem.equipment_status,
+          equipment_specification: dbItem.equipment_specification,
+          equipment_documents: dbItem.equipment_documents,
+          id: dbItem.id
+        });
+      }
+    });
+  }
+
+  if (allEquipment.length === 0) {
+    return (
+      <div className="text-xs text-muted-foreground italic p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
+        📦 В кабинете нет зарегистрированного оборудования
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-1">
+      {allEquipment.map((item, idx) => (
+        <div key={idx} className="flex items-center justify-between p-2 rounded border text-xs bg-muted/20 border-border/50 hover:border-blue-200 transition-colors">
+          <div className="flex-1">
+            <div className="font-medium text-foreground">{item.name}</div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>Код: {item.code || 'Не указан'} | Количество: {item.quantity || 'Не указано'} {item.unit || ''}</div>
+              {(item as any).equipment_specification && (
+                <div>Спецификация: {(item as any).equipment_specification}</div>
+              )}
+              {(item as any).equipment_documents && (
+                <div>Документы: {(item as any).equipment_documents}</div>
+              )}
+              {item.notes && (
+                <div>Примечания: {item.notes}</div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 ml-2">
+            {(item as any).equipment_status && (
+              <Badge className={statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                {statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.label || (item as any).equipment_status}
+              </Badge>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onEditEquipment({
+                ...(item as any),
+                id: (item as any).id || '',
+                "Код оборудования": item.code,
+                "Наименование оборудования": item.name,
+                "Кол-во": item.quantity,
+                "Ед. изм.": item.unit,
+                "Примечания": item.notes,
+              }, department, room)}
+              className="p-1 h-auto"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
