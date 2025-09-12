@@ -8,11 +8,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData } from '@/hooks/useFloorsData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
-import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment } from '@/hooks/useProjectorEquipment';
+import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment, ProjectorEquipmentItem } from '@/hooks/useProjectorEquipment';
 import EditEquipmentDialog from '@/components/EditEquipmentDialog';
 import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
-import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
+import { useCreateRoomConnection, useDeleteRoomConnection, RoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
 import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
@@ -41,6 +41,7 @@ interface FloorData {
   "Кол-во": number | string | null;
   "Примечания": string | null;
 }
+
 interface Equipment {
   code: string | null;
   name: string | null;
@@ -48,9 +49,12 @@ interface Equipment {
   quantity: number | string | null;
   notes: string | null;
   equipment_status?: 'Согласовано' | 'Не согласовано' | 'Не найдено';
+  equipment_specification?: string;
+  equipment_documents?: string;
+  equipment_supplier?: string;
+  equipment_price?: number;
+  id?: string;
 }
-
-// Helper functions and configurations
 
 // Статусы и их цвета
 const statusConfig = {
@@ -130,10 +134,10 @@ const processFloorsData = (data: FloorData[]): any[] => {
   floorMap.forEach((floorData, floorNumber) => {
     const blocks: any[] = [];
     
-    floorData.blocks.forEach((blockData, blockName) => {
+    floorData.blocks.forEach((blockData: any, blockName: string) => {
       const departments: any[] = [];
       
-      blockData.departments.forEach((deptData, deptName) => {
+      blockData.departments.forEach((deptData: any, deptName: string) => {
         const rooms = Array.from(deptData.rooms.values());
         
         departments.push({
@@ -150,24 +154,19 @@ const processFloorsData = (data: FloorData[]): any[] => {
       });
     });
 
-    // Calculate totalRooms, totalEquipment, totalArea for floor
-    const totalRooms = Array.from(floorData.blocks.values()).reduce((sum, block) => 
-      sum + Array.from(block.departments.values()).reduce((deptSum, dept) => 
-        deptSum + dept.rooms.size, 0), 0);
-    const totalEquipment = Array.from(floorData.blocks.values()).reduce((sum, block) =>
-      sum + Array.from(block.departments.values()).reduce((deptSum, dept) =>
-        deptSum + dept.totalEquipment, 0), 0);
-    const totalArea = Array.from(floorData.blocks.values()).reduce((sum, block) =>
-      sum + Array.from(block.departments.values()).reduce((deptSum, dept) =>
-        deptSum + dept.totalArea, 0), 0);
-
     floors.push({
       number: floorNumber,
       blocks: blocks,
       stats: {
-        totalRooms,
-        totalEquipment,
-        totalArea
+        totalRooms: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
+          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
+            deptSum + dept.rooms.size, 0), 0),
+        totalEquipment: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
+          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
+            deptSum + dept.totalEquipment, 0), 0),
+        totalArea: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => 
+          sum + Array.from(block.departments.values()).reduce((deptSum: number, dept: any) => 
+            deptSum + dept.totalArea, 0), 0)
       }
     });
   });
@@ -208,7 +207,6 @@ export default function FloorsPage() {
 
   const [openDepartments, setOpenDepartments] = useState<Set<string>>(new Set());
 
-  // useEffect to set filters from URL params
   useEffect(() => {
     const floor = searchParams.get('floor');
     const block = searchParams.get('block');
@@ -244,7 +242,7 @@ export default function FloorsPage() {
 
   const processedData = allData ? processFloorsData(allData) : [];
 
-  const getRoomConnections = (department: string, room: string) => {
+  const getRoomConnections = (department: string, room: string): RoomConnection[] => {
     if (!roomConnections) return [];
     return roomConnections.filter(conn => 
       conn.projector_department === department && conn.projector_room === room
@@ -282,40 +280,45 @@ export default function FloorsPage() {
     console.log('Saving equipment:', equipmentData);
     try {
       if (isAddingEquipment) {
-        await addProjectorEquipment.mutateAsync({
-          projector_department: equipmentData.department,
-          projector_room: equipmentData.room,
-          equipment_code: equipmentData["Код оборудования"],
-          equipment_name: equipmentData["Наименование оборудования"],
-          equipment_quantity: equipmentData["Кол-во"],
-          equipment_unit: equipmentData["Ед. изм."],
-          equipment_notes: equipmentData["Примечания"],
+        const newEquipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'> = {
+          "ОТДЕЛЕНИЕ": equipmentData.department,
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": equipmentData.room,
+          "КОД ПОМЕЩЕНИЯ": equipmentData.room,
+          "ЭТАЖ": 1, // Default floor
+          "БЛОК": "A", // Default block
+          "Код оборудования": equipmentData["Код оборудования"],
+          "Наименование оборудования": equipmentData["Наименование оборудования"],
+          "Кол-во": equipmentData["Кол-во"],
+          "Ед. изм.": equipmentData["Ед. изм."],
+          "Примечания": equipmentData["Примечания"],
           equipment_status: equipmentData.equipment_status || 'Не согласовано',
           equipment_specification: equipmentData.equipment_specification || '',
           equipment_documents: equipmentData.equipment_documents || '',
           equipment_supplier: equipmentData.equipment_supplier || '',
           equipment_price: parseFloat(equipmentData.equipment_price) || 0
-        });
+        };
+        
+        await addProjectorEquipment.mutateAsync(newEquipment);
         toast({
           title: "Успех",
           description: "Оборудование добавлено успешно"
         });
       } else {
-        await updateProjectorEquipment.mutateAsync({
-          id: equipmentData.id,
-          projector_department: equipmentData.department,
-          projector_room: equipmentData.room,
-          equipment_code: equipmentData["Код оборудования"],
-          equipment_name: equipmentData["Наименование оборудования"],
-          equipment_quantity: equipmentData["Кол-во"],
-          equipment_unit: equipmentData["Ед. изм."],
-          equipment_notes: equipmentData["Примечания"],
+        const updatedEquipment: ProjectorEquipmentItem = {
+          ...equipmentData,
+          "ОТДЕЛЕНИЕ": equipmentData.department,
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": equipmentData.room,
+          "КОД ПОМЕЩЕНИЯ": equipmentData.room,
+          "ЭТАЖ": 1,
+          "БЛОК": "A",
           equipment_status: equipmentData.equipment_status || 'Не согласовано',
           equipment_specification: equipmentData.equipment_specification || '',
           equipment_documents: equipmentData.equipment_documents || '',
           equipment_supplier: equipmentData.equipment_supplier || '',
           equipment_price: parseFloat(equipmentData.equipment_price) || 0
-        });
+        };
+        
+        await updateProjectorEquipment.mutateAsync(updatedEquipment);
         toast({
           title: "Успех",
           description: "Оборудование обновлено успешно"
@@ -340,10 +343,10 @@ export default function FloorsPage() {
   const handleLinkRoom = async (department: string, room: string, turarDepartment: string, turarRoom: string) => {
     try {
       await createRoomConnection.mutateAsync({
-        projectorDepartment: department,
-        projectorRoom: room,
-        turarDepartment,
-        turarRoom
+        projector_department: department,
+        projector_room: room,
+        turar_department: turarDepartment,
+        turar_room: turarRoom
       });
       
       toast({
@@ -383,7 +386,7 @@ export default function FloorsPage() {
   const handleLinkDepartment = async (department: string, turarDepartment: string) => {
     try {
       await linkDepartmentToTurar.mutateAsync({
-        projectorDepartment: department,
+        departmentName: department,
         turarDepartment
       });
       
@@ -469,22 +472,27 @@ export default function FloorsPage() {
     if (!bulkEditingRoom) return;
     
     try {
-      const promises = equipmentList.map(equipment => 
-        addProjectorEquipment.mutateAsync({
-          projector_department: bulkEditingRoom.department,
-          projector_room: bulkEditingRoom.room,
-          equipment_code: equipment["Код оборудования"] || '',
-          equipment_name: equipment["Наименование оборудования"] || '',
-          equipment_quantity: equipment["Кол-во"] || '',
-          equipment_unit: equipment["Ед. изм."] || '',
-          equipment_notes: equipment["Примечания"] || '',
+      const promises = equipmentList.map(equipment => {
+        const newEquipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'> = {
+          "ОТДЕЛЕНИЕ": bulkEditingRoom.department,
+          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": bulkEditingRoom.room,
+          "КОД ПОМЕЩЕНИЯ": bulkEditingRoom.room,
+          "ЭТАЖ": 1,
+          "БЛОК": "A",
+          "Код оборудования": equipment["Код оборудования"] || '',
+          "Наименование оборудования": equipment["Наименование оборудования"] || '',
+          "Кол-во": equipment["Кол-во"] || '',
+          "Ед. изм.": equipment["Ед. изм."] || '',
+          "Примечания": equipment["Примечания"] || '',
           equipment_status: equipment.equipment_status || 'Не согласовано',
           equipment_specification: equipment.equipment_specification || '',
           equipment_documents: equipment.equipment_documents || '',
           equipment_supplier: isAdmin ? equipment.equipment_supplier || '' : '',
           equipment_price: isAdmin ? parseFloat(equipment.equipment_price) || 0 : 0
-        })
-      );
+        };
+        
+        return addProjectorEquipment.mutateAsync(newEquipment);
+      });
       
       await Promise.all(promises);
       
@@ -527,10 +535,10 @@ export default function FloorsPage() {
   const filteredData = processedData.filter(floor => {
     if (selectedFloor && floor.number.toString() !== selectedFloor) return false;
     
-    floor.blocks = floor.blocks.filter(block => {
+    floor.blocks = floor.blocks.filter((block: any) => {
       if (selectedBlock && block.name !== selectedBlock) return false;
       
-      block.departments = block.departments.filter(department => {
+      block.departments = block.departments.filter((department: any) => {
         if (selectedDepartment && department.name !== selectedDepartment) return false;
         return true;
       });
@@ -544,11 +552,11 @@ export default function FloorsPage() {
   // Получение уникальных значений для фильтров
   const uniqueFloors = [...new Set(processedData.map(floor => floor.number.toString()))].sort();
   const uniqueBlocks = [...new Set(processedData.flatMap(floor => 
-    floor.blocks.map(block => block.name)
+    floor.blocks.map((block: any) => block.name)
   ))].sort();
   const uniqueDepartments = [...new Set(processedData.flatMap(floor => 
-    floor.blocks.flatMap(block => 
-      block.departments.map(dept => dept.name)
+    floor.blocks.flatMap((block: any) => 
+      block.departments.map((dept: any) => dept.name)
     )
   ))].sort();
 
@@ -665,7 +673,7 @@ export default function FloorsPage() {
             </CardHeader>
             <CardContent className="p-0">
               <Accordion type="multiple" className="w-full">
-                {floor.blocks.map((block) => (
+                {floor.blocks.map((block: any) => (
                   <AccordionItem key={block.name} value={block.name} className="border-0">
                     <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
                       <div className="flex items-center gap-2">
@@ -678,7 +686,7 @@ export default function FloorsPage() {
                     </AccordionTrigger>
                     <AccordionContent className="px-0 pb-0">
                       <div className="space-y-0">
-                        {block.departments.map((department) => {
+                        {block.departments.map((department: any) => {
                           const departmentTurarLink = getDepartmentTurarLink(department.name);
                           const isOpen = openDepartments.has(department.name);
                           
@@ -712,11 +720,8 @@ export default function FloorsPage() {
                                     <div className="flex items-center gap-2">
                                       {!departmentTurarLink && (
                                         <TurarDepartmentSelector
-                                          onSelect={(turarDept) => handleLinkDepartment(department.name, turarDept)}
-                                          buttonText="Связать с ТУРАР"
-                                          buttonVariant="outline"
-                                          buttonSize="sm"
-                                          disabled={!turarData}
+                                          value={selectedTurarDepartment}
+                                          onValueChange={(turarDept) => handleLinkDepartment(department.name, turarDept)}
                                         />
                                       )}
                                       {departmentTurarLink && (
@@ -738,7 +743,7 @@ export default function FloorsPage() {
                                 <AccordionContent className="px-0 pb-0">
                                   <div className="bg-muted/10 border-t">
                                     <div className="space-y-0">
-                                      {department.rooms.map((room) => {
+                                      {department.rooms.map((room: any) => {
                                         const connections = getRoomConnections(department.name, room.code);
                                         
                                         return (
@@ -788,13 +793,6 @@ export default function FloorsPage() {
                                                       <Plus className="h-4 w-4 mr-1" />
                                                       Добавить оборудование
                                                     </Button>
-                                                    <RoomLinkDropdown
-                                                      department={department.name}
-                                                      room={room.code}
-                                                      connections={connections}
-                                                      onLink={handleLinkRoom}
-                                                      onUnlink={handleUnlinkRoom}
-                                                    />
                                                   </div>
                                                 </div>
                                               </AccordionTrigger>
@@ -824,8 +822,9 @@ export default function FloorsPage() {
                 ))}
               </Accordion>
             </CardContent>
-          </Card>
-        ))}
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Диалог редактирования оборудования */}
@@ -889,7 +888,10 @@ const EquipmentSection: React.FC<{
           ...allEquipment[existingIndex],
           equipment_status: dbItem.equipment_status,
           equipment_specification: dbItem.equipment_specification,
-          equipment_documents: dbItem.equipment_documents
+          equipment_documents: dbItem.equipment_documents,
+          equipment_supplier: dbItem.equipment_supplier,
+          equipment_price: dbItem.equipment_price,
+          id: dbItem.id
         };
       } else if (dbItem["Наименование оборудования"]) {
         // Добавляем новое оборудование из БД
@@ -902,6 +904,8 @@ const EquipmentSection: React.FC<{
           equipment_status: dbItem.equipment_status,
           equipment_specification: dbItem.equipment_specification,
           equipment_documents: dbItem.equipment_documents,
+          equipment_supplier: dbItem.equipment_supplier,
+          equipment_price: dbItem.equipment_price,
           id: dbItem.id
         });
       }
@@ -924,17 +928,17 @@ const EquipmentSection: React.FC<{
             <div className="font-medium text-foreground">{item.name}</div>
             <div className="text-xs text-muted-foreground space-y-1">
               <div>Код: {item.code || 'Не указан'} | Количество: {item.quantity || 'Не указано'} {item.unit || ''}</div>
-              {(item as any).equipment_specification && (
-                <div>Спецификация: {(item as any).equipment_specification}</div>
+              {item.equipment_specification && (
+                <div>Спецификация: {item.equipment_specification}</div>
               )}
-              {(item as any).equipment_documents && (
-                <div>Документы: {(item as any).equipment_documents}</div>
+              {item.equipment_documents && (
+                <div>Документы: {item.equipment_documents}</div>
               )}
-              {isAdmin && (item as any).equipment_supplier && (
-                <div className="text-blue-600">Поставщик: {(item as any).equipment_supplier}</div>
+              {isAdmin && item.equipment_supplier && (
+                <div className="text-blue-600">Поставщик: {item.equipment_supplier}</div>
               )}
-              {isAdmin && (item as any).equipment_price && (
-                <div className="text-blue-600">Цена: {(item as any).equipment_price.toLocaleString()} руб.</div>
+              {isAdmin && item.equipment_price && (
+                <div className="text-blue-600">Цена: {item.equipment_price.toLocaleString()} руб.</div>
               )}
               {item.notes && (
                 <div>Примечания: {item.notes}</div>
@@ -942,17 +946,17 @@ const EquipmentSection: React.FC<{
             </div>
           </div>
           <div className="flex items-center gap-2 ml-2">
-            {(item as any).equipment_status && (
-              <Badge className={statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
-                {statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.label || (item as any).equipment_status}
+            {item.equipment_status && (
+              <Badge className={statusConfig[item.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                {statusConfig[item.equipment_status as keyof typeof statusConfig]?.label || item.equipment_status}
               </Badge>
             )}
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onEditEquipment({
-                ...(item as any),
-                id: (item as any).id || '',
+                ...item,
+                id: item.id || '',
                 "Код оборудования": item.code,
                 "Наименование оборудования": item.name,
                 "Кол-во": item.quantity,
@@ -969,5 +973,3 @@ const EquipmentSection: React.FC<{
     </div>
   );
 };
-
-export default FloorsPage;
