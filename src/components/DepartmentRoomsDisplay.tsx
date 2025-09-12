@@ -288,45 +288,83 @@ export default function DepartmentRoomsDisplay({
                        </div>
                      )}
                    </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {/* Множественный выбор при активном режиме связывания */}
-                    {multiSelectMode && linkingRoom && linkingRoom.departmentId !== departmentId && canEdit && (
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedRooms.has(room.id)}
-                          onChange={() => onLinkRoom && onLinkRoom(room.id, room.room_name)}
-                          className="w-3 h-3"
-                        />
-                        <span className="text-xs">{selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}</span>
-                      </label>
-                    )}
-                    
-                    {/* Кнопка связывания для начала процесса */}
-                    {onLinkRoom && canEdit && showConnectButtons && !multiSelectMode && (
-                      <Button
-                        size="sm"
-                        variant={selectedRoomId === room.id ? "default" : "outline"}
-                        className="gap-1 h-7 text-xs px-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onLinkRoom(room.id, room.room_name)
-                        }}
-                      >
-                        <Link2 className="h-3 w-3" />
-                        Связать
-                      </Button>
-                    )}
-                    
-                    {/* Показать статус при активном режиме связывания */}
-                    {linkingRoom && linkingRoom.roomId === room.id && (
-                      <Badge variant="default" className="text-xs h-5">
-                        🎯
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+                   
+                   <div className="flex items-center gap-2">
+                     {/* Множественный выбор при активном режиме связывания */}
+                     {multiSelectMode && linkingRoom && linkingRoom.departmentId !== departmentId && canEdit && (
+                       <label className="flex items-center gap-2 cursor-pointer">
+                         <input
+                           type="checkbox"
+                           checked={selectedRooms.has(room.id)}
+                           onChange={() => onLinkRoom && onLinkRoom(room.id, room.room_name)}
+                           className="w-3 h-3"
+                         />
+                         <span className="text-xs">{selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}</span>
+                       </label>
+                     )}
+                     
+                     {/* Кнопка связывания для начала процесса */}
+                     {onLinkRoom && canEdit && showConnectButtons && !multiSelectMode && (
+                       <Button
+                         size="sm"
+                         variant={selectedRoomId === room.id ? "default" : "outline"}
+                         className="gap-1 h-7 text-xs px-2"
+                         onClick={(e) => {
+                           e.stopPropagation()
+                           onLinkRoom(room.id, room.room_name)
+                         }}
+                       >
+                         <Link2 className="h-3 w-3" />
+                         Связать
+                       </Button>
+                     )}
+                     
+                     {/* Показать статус при активном режиме связывания */}
+                     {linkingRoom && linkingRoom.roomId === room.id && (
+                       <Badge variant="default" className="text-xs h-5">
+                         🎯
+                       </Badge>
+                     )}
+                   </div>
+                 </div>
+                 
+                 {/* Компактное отображение связей под названием */}
+                 {connectedRooms.length > 0 && (
+                   <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-200 dark:border-green-800">
+                     <div className="text-xs font-medium text-green-800 dark:text-green-200 mb-1 flex items-center gap-1">
+                       <Link2 className="h-3 w-3" />
+                       Связано с кабинетами {isProjectorDepartment ? 'Турар' : 'Проектировщиков'}:
+                     </div>
+                     <div className="space-y-1">
+                       {(() => {
+                         const uniqueRooms = Array.from(
+                           new Map(connectedRooms.map(conn => [
+                             isProjectorDepartment ? conn.turar_room : conn.projector_room,
+                             conn
+                           ])).values()
+                         );
+                         
+                         return uniqueRooms.map((connection) => {
+                           const targetDepartment = isProjectorDepartment ? connection.turar_department : connection.projector_department;
+                           const targetRoom = isProjectorDepartment ? connection.turar_room : connection.projector_room;
+                           
+                           return (
+                             <div key={connection.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 px-2 py-1 rounded border border-green-200 dark:border-green-700">
+                               <div className="text-xs">
+                                 <div className="font-medium">{targetDepartment}</div>
+                                 <div className="text-green-600 dark:text-green-300">→ {targetRoom}</div>
+                               </div>
+                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs h-5">
+                                 <Link2 className="h-2 w-2 mr-1" />
+                                 Активная связь
+                               </Badge>
+                             </div>
+                           );
+                         });
+                       })()}
+                     </div>
+                   </div>
+                 )}
                 
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-0 border-t bg-muted/20">
