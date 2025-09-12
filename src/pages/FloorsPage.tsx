@@ -608,7 +608,7 @@ export default function FloorsPage() {
               className="gap-2"
             >
               <X className="h-4 w-4" />
-              {cleanupUnknownRoomsMutation.isPending ? 'Очистка...' : 'Удалить неизвестные кабинеты'}
+              {cleanupUnknownRoomsMutation.isPending ? 'Очистка...' : 'Удалить ВСЕ связи'}
             </Button>
           </div>
         </div>

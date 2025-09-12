@@ -8,13 +8,13 @@ export const useCleanupUnknownRooms = () => {
 
   return useMutation({
     mutationFn: async () => {
-      console.log('🧹 Starting cleanup of unknown room connections...');
+      console.log('🧹 Starting complete cleanup of all room connections...');
 
-      // 1. Clean up room_connections table
+      // 1. Delete ALL room connections
       const { data: deletedConnections, error: connectionsError } = await supabase
         .from('room_connections')
         .delete()
-        .or('turar_room.eq.Неизвестный кабинет,turar_room.ilike.%неизвестный%,projector_room.eq.Неизвестный кабинет,projector_room.ilike.%неизвестный%')
+        .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all rows
         .select();
 
       if (connectionsError) {
@@ -22,9 +22,9 @@ export const useCleanupUnknownRooms = () => {
         throw connectionsError;
       }
 
-      console.log('✅ Deleted room connections:', deletedConnections?.length || 0);
+      console.log('✅ Deleted ALL room connections:', deletedConnections?.length || 0);
 
-      // 2. Clean up projector_floors table
+      // 2. Clean ALL projector_floors connections
       const { data: updatedProjectorFloors, error: projectorError } = await supabase
         .from('projector_floors')
         .update({
@@ -32,7 +32,7 @@ export const useCleanupUnknownRooms = () => {
           connected_turar_department: null,
           connected_turar_room_id: null
         })
-        .or('connected_turar_room.eq.Неизвестный кабинет,connected_turar_room.ilike.%неизвестный%')
+        .not('connected_turar_room', 'is', null)
         .select();
 
       if (projectorError) {
@@ -40,9 +40,9 @@ export const useCleanupUnknownRooms = () => {
         throw projectorError;
       }
 
-      console.log('✅ Cleaned projector floors:', updatedProjectorFloors?.length || 0);
+      console.log('✅ Cleaned ALL projector floors:', updatedProjectorFloors?.length || 0);
 
-      // 3. Clean up turar_medical table
+      // 3. Clean ALL turar_medical connections
       const { data: updatedTurarMedical, error: turarError } = await supabase
         .from('turar_medical')
         .update({
@@ -50,7 +50,7 @@ export const useCleanupUnknownRooms = () => {
           connected_projector_department: null,
           connected_projector_room_id: null
         })
-        .or('connected_projector_room.eq.Неизвестный кабинет,connected_projector_room.ilike.%неизвестный%')
+        .not('connected_projector_room', 'is', null)
         .select();
 
       if (turarError) {
@@ -58,7 +58,7 @@ export const useCleanupUnknownRooms = () => {
         throw turarError;
       }
 
-      console.log('✅ Cleaned turar medical:', updatedTurarMedical?.length || 0);
+      console.log('✅ Cleaned ALL turar medical:', updatedTurarMedical?.length || 0);
 
       return {
         deletedConnections: deletedConnections?.length || 0,
@@ -67,7 +67,7 @@ export const useCleanupUnknownRooms = () => {
       };
     },
     onSuccess: (result) => {
-      console.log('🎉 Cleanup completed successfully:', result);
+      console.log('🎉 Complete cleanup completed successfully:', result);
       
       // Invalidate relevant queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['room-connections'] });
@@ -75,15 +75,15 @@ export const useCleanupUnknownRooms = () => {
       queryClient.invalidateQueries({ queryKey: ['turar-medical-data'] });
       
       toast({
-        title: "Очистка завершена",
+        title: "Полная очистка завершена",
         description: `Удалено связей: ${result.deletedConnections}, очищено записей: ${result.cleanedProjectorFloors + result.cleanedTurarMedical}`,
       });
     },
     onError: (error) => {
-      console.error('❌ Cleanup failed:', error);
+      console.error('❌ Complete cleanup failed:', error);
       toast({
         title: "Ошибка очистки",
-        description: "Не удалось удалить связи с неизвестными кабинетами",
+        description: "Не удалось удалить все связи между комнатами",
         variant: "destructive",
       });
     },
