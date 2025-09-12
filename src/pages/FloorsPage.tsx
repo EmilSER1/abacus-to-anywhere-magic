@@ -160,21 +160,21 @@ const processFloorsData = (data: FloorData[]): any[] => {
       blocks: blocks,
       stats: {
         totalRooms: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const deptCount: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+          const deptCount = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
             return deptSum + (dept.rooms ? dept.rooms.size : 0);
-          }, 0);
+          }, 0) as number;
           return sum + deptCount;
         }, 0),
         totalEquipment: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const equipCount: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+          const equipCount = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
             return deptSum + (dept.totalEquipment || 0);
-          }, 0);
+          }, 0) as number;
           return sum + equipCount;
         }, 0),
         totalArea: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const areaSum: number = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
+          const areaSum = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
             return deptSum + (dept.totalArea || 0);
-          }, 0);
+          }, 0) as number;
           return sum + areaSum;
         }, 0)
       }
