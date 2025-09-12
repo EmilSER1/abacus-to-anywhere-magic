@@ -337,49 +337,24 @@ export default function DepartmentRoomsDisplay({
                      )}
                    </div>
                  </div>
-                 
-                 {/* Компактное отображение связей под названием */}
-                 {(() => {
-                   console.log('🟢 ПРОВЕРКА СВЯЗЕЙ ДЛЯ КАБИНЕТА:', {
-                     roomName: room.room_name,
-                     connectedRoomsLength: connectedRooms.length,
-                     connectedRooms: connectedRooms,
-                     shouldShow: connectedRooms.length > 0
-                   });
-                   return connectedRooms.length > 0;
-                 })() && (
-                   <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-200 dark:border-green-800">
-                     <div className="text-xs font-medium text-green-800 dark:text-green-200 mb-1 flex items-center gap-1">
+                  
+                  {/* Существующие связи - перемещены наверх */}
+                 {connectedRooms.length > 0 && (
+                   <div className="px-3 py-2 border-t bg-muted/20">
+                     <div className="text-xs font-medium flex items-center gap-1 mb-2">
                        <Link2 className="h-3 w-3" />
-                       Связано с кабинетами {isProjectorDepartment ? 'Турар' : 'Проектировщиков'}:
+                       Связи:
                      </div>
                      <div className="space-y-1">
-                       {(() => {
-                         const uniqueRooms = Array.from(
-                           new Map(connectedRooms.map(conn => [
-                             isProjectorDepartment ? conn.turar_room : conn.projector_room,
-                             conn
-                           ])).values()
-                         );
-                         
-                         return uniqueRooms.map((connection) => {
-                           const targetDepartment = isProjectorDepartment ? connection.turar_department : connection.projector_department;
-                           const targetRoom = isProjectorDepartment ? connection.turar_room : connection.projector_room;
-                           
-                           return (
-                             <div key={connection.id} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 px-2 py-1 rounded border border-green-200 dark:border-green-700">
-                               <div className="text-xs">
-                                 <div className="font-medium">{targetDepartment}</div>
-                                 <div className="text-green-600 dark:text-green-300">→ {targetRoom}</div>
-                               </div>
-                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs h-5">
-                                 <Link2 className="h-2 w-2 mr-1" />
-                                 Активная связь
-                               </Badge>
-                             </div>
-                           );
-                         });
-                       })()}
+                       {connectedRooms.map((connection) => (
+                         <ConnectedRoomDisplay
+                           key={connection.id}
+                           connectionId={connection.id}
+                           roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
+                           isProjectorRoom={!isProjectorDepartment}
+                           onRemove={onRemoveConnection}
+                         />
+                       ))}
                      </div>
                    </div>
                  )}
@@ -397,27 +372,8 @@ export default function DepartmentRoomsDisplay({
                           isProjectorDepartment={isProjectorDepartment}
                         />
                       </div>
-                      
-                      {/* Существующие связи */}
-                      {connectedRooms.length > 0 && (
-                        <div className="space-y-1">
-                          <div className="text-xs font-medium flex items-center gap-1">
-                            <Link2 className="h-3 w-3" />
-                            Связи:
-                          </div>
-                          {connectedRooms.map((connection) => (
-                            <ConnectedRoomDisplay
-                              key={connection.id}
-                              connectionId={connection.id}
-                              roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
-                              isProjectorRoom={!isProjectorDepartment}
-                              onRemove={onRemoveConnection}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Сообщение если нет связей */}
+                       
+                       {/* Сообщение если нет связей в аккордеоне - убрано */}
                       {connectedRooms.length === 0 && (
                         <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded text-center">
                           Нет связей
