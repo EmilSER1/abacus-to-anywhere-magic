@@ -194,9 +194,9 @@ export default function RoomConnectionsManager() {
         successCount++;
       }
       
-      // Сбрасываем состояние
+      // Сбрасываем только очередь, оставляем linkingRoom для продолжения работы
       setConnectionQueue([]);
-      setLinkingRoom(null);
+      // НЕ сбрасываем linkingRoom, чтобы пользователь мог продолжать связывать кабинеты
       
       // Обновляем данные
       await refetchConnections();
