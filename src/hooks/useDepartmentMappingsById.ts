@@ -170,3 +170,58 @@ export const useDeleteDepartmentMappingById = () => {
     }
   });
 };
+
+export const useUpdateDepartmentMappingById = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ mappingId, turar_department_id, projector_department_id }: {
+      mappingId: string;
+      turar_department_id: string;
+      projector_department_id: string;
+    }) => {
+      console.log('✏️ ОБНОВЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ:', { mappingId, turar_department_id, projector_department_id });
+      
+      // Получаем названия отделений по ID
+      const [turarDept, projectorDept] = await Promise.all([
+        supabase.from("departments").select("name").eq("id", turar_department_id).single(),
+        supabase.from("departments").select("name").eq("id", projector_department_id).single()
+      ]);
+
+      if (turarDept.error || projectorDept.error) {
+        console.error('❌ ОШИБКА ПОЛУЧЕНИЯ НАЗВАНИЙ ОТДЕЛЕНИЙ:', turarDept.error || projectorDept.error);
+        throw turarDept.error || projectorDept.error;
+      }
+
+      // Обновляем связь
+      const { data, error } = await supabase
+        .from('department_mappings')
+        .update({
+          turar_department: turarDept.data.name,
+          projector_department: projectorDept.data.name,
+          turar_department_id,
+          projector_department_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', mappingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ ОШИБКА ОБНОВЛЕНИЯ СВЯЗИ:', error);
+        throw error;
+      }
+
+      console.log('✅ СВЯЗЬ УСПЕШНО ОБНОВЛЕНА:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('🔄 ОБНОВЛЯЕМ ЗАПРОСЫ после обновления:', data.id);
+      queryClient.invalidateQueries({ queryKey: ['department-mappings-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['department-mappings'] });
+    },
+    onError: (error) => {
+      console.error('❌ ОШИБКА В МУТАЦИИ ОБНОВЛЕНИЯ:', error);
+    }
+  });
+};

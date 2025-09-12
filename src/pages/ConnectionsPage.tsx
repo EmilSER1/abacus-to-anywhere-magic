@@ -1,10 +1,9 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, RefreshCw, Building2, Link2, Edit, Trash2 } from 'lucide-react'
-import { useDepartmentMappingsWithDetails, useCreateDepartmentMappingById, useDeleteDepartmentMappingById } from '@/hooks/useDepartmentMappingsById'
+import { useDepartmentMappingsWithDetails, useCreateDepartmentMappingById, useDeleteDepartmentMappingById, useUpdateDepartmentMappingById } from '@/hooks/useDepartmentMappingsById'
 import { useDepartments } from '@/hooks/useDepartments'
 import RoomConnectionsManager from '@/components/RoomConnectionsManager'
 import { useState } from 'react'
@@ -14,12 +13,15 @@ import { useToast } from '@/hooks/use-toast'
 
 export default function ConnectionsPage() {
   const [showMappingDialog, setShowMappingDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingMapping, setEditingMapping] = useState<{id: string; turar_department_id: string; projector_department_id: string} | null>(null)
   const [selectedTurarDeptId, setSelectedTurarDeptId] = useState('')
   const [selectedProjectorDeptId, setSelectedProjectorDeptId] = useState('')
 
   const { data: departmentMappings, refetch } = useDepartmentMappingsWithDetails()
   const { data: departments } = useDepartments()
   const createMappingMutation = useCreateDepartmentMappingById()
+  const updateMappingMutation = useUpdateDepartmentMappingById()
   const deleteMappingMutation = useDeleteDepartmentMappingById()
   const { toast } = useToast()
 
@@ -60,6 +62,41 @@ export default function ConnectionsPage() {
       toast({
         title: "Ошибка",
         description: "Не удалось удалить связь",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const editDepartmentMapping = (mapping: {id: string; turar_department_id: string; projector_department_id: string}) => {
+    setEditingMapping(mapping)
+    setSelectedTurarDeptId(mapping.turar_department_id)
+    setSelectedProjectorDeptId(mapping.projector_department_id)
+    setShowEditDialog(true)
+  }
+
+  const updateDepartmentMapping = async () => {
+    if (!editingMapping || !selectedTurarDeptId || !selectedProjectorDeptId) return
+
+    try {
+      await updateMappingMutation.mutateAsync({
+        mappingId: editingMapping.id,
+        turar_department_id: selectedTurarDeptId,
+        projector_department_id: selectedProjectorDeptId
+      })
+      
+      toast({
+        title: "Связь отделений обновлена",
+        description: "Связь успешно изменена"
+      })
+      
+      setSelectedTurarDeptId('')
+      setSelectedProjectorDeptId('')
+      setEditingMapping(null)
+      setShowEditDialog(false)
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить связь отделений",
         variant: "destructive"
       })
     }
@@ -210,18 +247,32 @@ export default function ConnectionsPage() {
                                 <Badge variant="outline" className="text-green-600 border-green-300">
                                   {projDept.name}
                                 </Badge>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    if (confirm(`Удалить связь с отделением "${projDept.name}"?`)) {
-                                      deleteDepartmentMapping(projDept.id);
-                                    }
-                                  }}
-                                  className="text-red-600 hover:bg-red-100"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => editDepartmentMapping({
+                                      id: projDept.id,
+                                      turar_department_id: group.turar_department_id,
+                                      projector_department_id: projDept.department_id
+                                    })}
+                                    className="text-blue-600 hover:bg-blue-100"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      if (confirm(`Удалить связь с отделением "${projDept.name}"?`)) {
+                                        deleteDepartmentMapping(projDept.id);
+                                      }
+                                    }}
+                                    className="text-red-600 hover:bg-red-100"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -289,6 +340,66 @@ export default function ConnectionsPage() {
                   disabled={!selectedTurarDeptId || !selectedProjectorDeptId || createMappingMutation.isPending}
                 >
                   {createMappingMutation.isPending ? 'Создаем...' : 'Создать связь'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог редактирования связи отделений */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Редактировать связь отделений</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Отделение Турар</label>
+                <Select value={selectedTurarDeptId} onValueChange={setSelectedTurarDeptId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите отделение Турар" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments?.filter(dept => dept.name.includes('Турар') || !dept.name.includes('Проектировщики')).map(dept => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Отделение Проектировщиков</label>
+                <Select value={selectedProjectorDeptId} onValueChange={setSelectedProjectorDeptId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите отделение Проектировщиков" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments?.filter(dept => dept.name.includes('Проектировщики') || (!dept.name.includes('Турар') && !linkedProjectorIds.includes(dept.id))).map(dept => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => {
+                  setShowEditDialog(false)
+                  setEditingMapping(null)
+                  setSelectedTurarDeptId('')
+                  setSelectedProjectorDeptId('')
+                }}>
+                  Отмена
+                </Button>
+                <Button 
+                  onClick={updateDepartmentMapping}
+                  disabled={!selectedTurarDeptId || !selectedProjectorDeptId || updateMappingMutation.isPending}
+                >
+                  {updateMappingMutation.isPending ? 'Обновляем...' : 'Обновить связь'}
                 </Button>
               </div>
             </div>
