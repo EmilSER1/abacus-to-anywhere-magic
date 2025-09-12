@@ -52,6 +52,8 @@ export const useUpdateProjectorEquipment = () => {
 
   return useMutation({
     mutationFn: async (equipment: ProjectorEquipmentItem) => {
+      console.log('🔄 Обновляем оборудование:', equipment);
+      
       const { data, error } = await supabase
         .from("projector_floors")
         .update({
@@ -71,9 +73,11 @@ export const useUpdateProjectorEquipment = () => {
         .single();
 
       if (error) {
+        console.error('❌ Ошибка обновления оборудования:', error);
         throw error;
       }
 
+      console.log('✅ Оборудование обновлено:', data);
       return data;
     },
     onSuccess: () => {
@@ -85,9 +89,10 @@ export const useUpdateProjectorEquipment = () => {
       });
     },
     onError: (error) => {
+      console.error('❌ Полная ошибка обновления:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось обновить оборудование",
+        description: `Не удалось обновить оборудование: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -100,6 +105,8 @@ export const useAddProjectorEquipment = () => {
 
   return useMutation({
     mutationFn: async (equipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('🔄 Создаем новое оборудование:', equipment);
+      
       const { data, error } = await supabase
         .from("projector_floors")
         .insert([equipment])
@@ -107,9 +114,11 @@ export const useAddProjectorEquipment = () => {
         .single();
 
       if (error) {
+        console.error('❌ Ошибка создания оборудования:', error);
         throw error;
       }
 
+      console.log('✅ Оборудование создано:', data);
       return data;
     },
     onSuccess: () => {
@@ -121,9 +130,10 @@ export const useAddProjectorEquipment = () => {
       });
     },
     onError: (error) => {
+      console.error('❌ Полная ошибка создания:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось добавить оборудование",
+        description: `Не удалось добавить оборудование: ${error.message}`,
         variant: "destructive",
       });
     },

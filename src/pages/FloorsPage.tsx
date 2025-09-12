@@ -278,16 +278,38 @@ export default function FloorsPage() {
 
   // Новые функции для редактирования оборудования
   const handleEditEquipment = (equipment: any, department: string, room: string) => {
-    setEditingEquipment({
-      ...equipment,
-      "ОТДЕЛЕНИЕ": department,
-      "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
-    });
+    // Загружаем данные из БД для редактирования, если есть id
+    if (equipment.id) {
+      setEditingEquipment({
+        ...equipment,
+        "ОТДЕЛЕНИЕ": department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
+      });
+    } else {
+      // Если нет id, создаем новую запись на основе данных из файла
+      setEditingEquipment({
+        id: '',
+        "Код оборудования": equipment.code,
+        "Наименование оборудования": equipment.name,
+        "Кол-во": equipment.quantity,
+        "Ед. изм.": equipment.unit,
+        "Примечания": equipment.notes,
+        equipment_status: equipment.equipment_status || 'Не найдено',
+        equipment_specification: equipment.equipment_specification || '',
+        equipment_documents: equipment.equipment_documents || '',
+        equipment_supplier: equipment.equipment_supplier || '',
+        equipment_price: equipment.equipment_price || 0,
+        "ОТДЕЛЕНИЕ": department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
+      });
+      setIsAddingEquipment(true); // Это будет создание, а не редактирование
+    }
     setIsEditDialogOpen(true);
   };
 
   const handleSaveEquipment = (updatedEquipment: any) => {
     if (isAddingEquipment && addingToRoom) {
+      // Создание нового оборудования
       const newEquipment = {
         ...updatedEquipment,
         "ОТДЕЛЕНИЕ": addingToRoom.department,
@@ -297,8 +319,23 @@ export default function FloorsPage() {
         "БЛОК": "",
       };
       addEquipmentMutation.mutate(newEquipment);
+    } else if (editingEquipment?.id) {
+      // Обновление существующего оборудования в БД
+      updateEquipmentMutation.mutate({
+        ...updatedEquipment,
+        id: editingEquipment.id
+      });
     } else {
-      updateEquipmentMutation.mutate(updatedEquipment);
+      // Создание нового оборудования на основе данных из файла
+      const newEquipment = {
+        ...updatedEquipment,
+        "ОТДЕЛЕНИЕ": editingEquipment?.["ОТДЕЛЕНИЕ"] || '',
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": editingEquipment?.["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
+        "КОД ПОМЕЩЕНИЯ": "",
+        "ЭТАЖ": 1,
+        "БЛОК": "",
+      };
+      addEquipmentMutation.mutate(newEquipment);
     }
     setIsEditDialogOpen(false);
     setEditingEquipment(null);
