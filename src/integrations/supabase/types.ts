@@ -267,10 +267,12 @@ export type Database = {
           created_at: string
           department_id: string | null
           equipment_documents: string | null
+          equipment_price: number | null
           equipment_specification: string | null
           equipment_status:
             | Database["public"]["Enums"]["equipment_status_type"]
             | null
+          equipment_supplier: string | null
           id: string
           room_id: string | null
           updated_at: string
@@ -295,10 +297,12 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           equipment_documents?: string | null
+          equipment_price?: number | null
           equipment_specification?: string | null
           equipment_status?:
             | Database["public"]["Enums"]["equipment_status_type"]
             | null
+          equipment_supplier?: string | null
           id?: string
           room_id?: string | null
           updated_at?: string
@@ -323,10 +327,12 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           equipment_documents?: string | null
+          equipment_price?: number | null
           equipment_specification?: string | null
           equipment_status?:
             | Database["public"]["Enums"]["equipment_status_type"]
             | null
+          equipment_supplier?: string | null
           id?: string
           room_id?: string | null
           updated_at?: string

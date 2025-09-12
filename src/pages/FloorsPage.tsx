@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import RoomLinkDropdown from '@/components/RoomLinkDropdown';
 import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink';
+import { useUserRole } from '@/hooks/useUserRole';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -48,6 +49,8 @@ interface Equipment {
   equipment_status?: 'Согласовано' | 'Не согласовано' | 'Не найдено';
   equipment_specification?: string;
   equipment_documents?: string;
+  equipment_supplier?: string;
+  equipment_price?: number;
   id?: string;
 }
 
@@ -168,6 +171,8 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 };
 
 export default function FloorsPage() {
+  const { currentUserRole } = useUserRole();
+  const isAdmin = currentUserRole === 'admin';
   const [searchParams] = useSearchParams();
   const { data: allData, isLoading, error, refetch } = useFloorsData();
   const { data: roomConnections } = useRoomConnections();
@@ -878,16 +883,20 @@ export default function FloorsPage() {
                                               <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (
                                                 <div className="rounded-lg border border-border/40 overflow-hidden">
-                                                  <table className="w-full text-xs border-collapse">
-                                                    <thead className="bg-muted/30">
-                                                      <tr>
-                                                        <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Код оборудования</th>
-                                                        <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Наименование</th>
-                                                        <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Количество</th>
-                                                        <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Ед. изм.</th>
-                                                        <th className="text-center p-3 font-semibold">Примечания</th>
-                                                      </tr>
-                                                    </thead>
+                                                   <table className="w-full text-xs border-collapse">
+                                                     <thead className="bg-muted/30">
+                                                       <tr>
+                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Код оборудования</th>
+                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Наименование</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Количество</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Ед. изм.</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Статус</th>
+                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Поставщик</th>}
+                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Цена</th>}
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Примечания</th>
+                                                         <th className="text-center p-3 font-semibold">Действия</th>
+                                                       </tr>
+                                                     </thead>
                                                     <tbody>
                                                       {room.equipment.map((eq, eqIndex) => {
                                                         const urlSearchTerm = searchParams.get('search');
@@ -928,19 +937,46 @@ export default function FloorsPage() {
                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
                                                               {eq.quantity || '-'}
                                                             </td>
-                                                            <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                              {eq.unit || '-'}
-                                                            </td>
-                                                            <td className="p-3 text-center">
-                                                              {eq.notes && (
-                                                                <Badge 
-                                                                  variant={isHighlighted ? "default" : "secondary"} 
-                                                                  className="text-xs h-5"
-                                                                >
-                                                                  {eq.notes}
-                                                                </Badge>
-                                                              )}
-                                                            </td>
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.unit || '-'}
+                                                             </td>
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.equipment_status && (
+                                                                 <Badge className={statusConfig[eq.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                                                                   {statusConfig[eq.equipment_status as keyof typeof statusConfig]?.label || eq.equipment_status}
+                                                                 </Badge>
+                                                               )}
+                                                             </td>
+                                                             {isAdmin && (
+                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                 {eq.equipment_supplier || '-'}
+                                                               </td>
+                                                             )}
+                                                             {isAdmin && (
+                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                 {eq.equipment_price ? `${eq.equipment_price.toLocaleString()} руб.` : '-'}
+                                                               </td>
+                                                             )}
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.notes && (
+                                                                 <Badge 
+                                                                   variant={isHighlighted ? "default" : "secondary"} 
+                                                                   className="text-xs h-5"
+                                                                 >
+                                                                   {eq.notes}
+                                                                 </Badge>
+                                                               )}
+                                                             </td>
+                                                             <td className="p-3 text-center">
+                                                               <Button
+                                                                 size="sm"
+                                                                 variant="ghost"
+                                                                 onClick={() => handleEditEquipment(eq, department.name, room.name)}
+                                                                 className="p-1 h-auto"
+                                                               >
+                                                                 <Edit className="h-3 w-3" />
+                                                               </Button>
+                                                             </td>
                                                           </tr>
                                                         );
                                                       })}
@@ -995,7 +1031,8 @@ const EquipmentSection: React.FC<{
   room: string;
   equipment: Equipment[];
   onEditEquipment: (equipment: any, department: string, room: string) => void;
-}> = ({ department, room, equipment, onEditEquipment }) => {
+  isAdmin: boolean;
+}> = ({ department, room, equipment, onEditEquipment, isAdmin }) => {
   const { data: dbEquipment, isLoading } = useProjectorRoomEquipment(department, room);
 
   if (isLoading) {
@@ -1058,6 +1095,12 @@ const EquipmentSection: React.FC<{
               )}
               {(item as any).equipment_documents && (
                 <div>Документы: {(item as any).equipment_documents}</div>
+              )}
+              {isAdmin && (item as any).equipment_supplier && (
+                <div className="text-blue-600">Поставщик: {(item as any).equipment_supplier}</div>
+              )}
+              {isAdmin && (item as any).equipment_price && (
+                <div className="text-blue-600">Цена: {(item as any).equipment_price.toLocaleString()} руб.</div>
               )}
               {item.notes && (
                 <div>Примечания: {item.notes}</div>

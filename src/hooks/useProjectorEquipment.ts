@@ -18,6 +18,8 @@ export interface ProjectorEquipmentItem {
   equipment_status?: 'Согласовано' | 'Не согласовано' | 'Не найдено';
   equipment_specification?: string;
   equipment_documents?: string;
+  equipment_supplier?: string;
+  equipment_price?: number;
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +63,8 @@ export const useUpdateProjectorEquipment = () => {
           equipment_status: equipment.equipment_status,
           equipment_specification: equipment.equipment_specification,
           equipment_documents: equipment.equipment_documents,
+          equipment_supplier: equipment.equipment_supplier,
+          equipment_price: equipment.equipment_price,
         })
         .eq("id", equipment.id)
         .select()

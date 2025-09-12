@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Equipment {
   id: string;
@@ -17,6 +18,8 @@ interface Equipment {
   equipment_status?: 'Согласовано' | 'Не согласовано' | 'Не найдено';
   equipment_specification?: string;
   equipment_documents?: string;
+  equipment_supplier?: string;
+  equipment_price?: number;
 }
 
 interface EditEquipmentDialogProps {
@@ -40,6 +43,8 @@ export default function EditEquipmentDialog({
   onSave,
   isNew = false
 }: EditEquipmentDialogProps) {
+  const { currentUserRole } = useUserRole();
+  const isAdmin = currentUserRole === 'admin';
   const [formData, setFormData] = useState<Equipment>(() => ({
     id: equipment?.id || '',
     "Наименование оборудования": equipment?.["Наименование оборудования"] || '',
@@ -49,7 +54,9 @@ export default function EditEquipmentDialog({
     "Примечания": equipment?.["Примечания"] || '',
     equipment_status: equipment?.equipment_status || 'Не найдено',
     equipment_specification: equipment?.equipment_specification || '',
-    equipment_documents: equipment?.equipment_documents || ''
+    equipment_documents: equipment?.equipment_documents || '',
+    equipment_supplier: equipment?.equipment_supplier || '',
+    equipment_price: equipment?.equipment_price || 0
   }));
 
   React.useEffect(() => {
@@ -63,7 +70,9 @@ export default function EditEquipmentDialog({
         "Примечания": equipment["Примечания"] || '',
         equipment_status: equipment.equipment_status || 'Не найдено',
         equipment_specification: equipment.equipment_specification || '',
-        equipment_documents: equipment.equipment_documents || ''
+        equipment_documents: equipment.equipment_documents || '',
+        equipment_supplier: equipment.equipment_supplier || '',
+        equipment_price: equipment.equipment_price || 0
       });
     }
   }, [equipment]);
@@ -199,6 +208,43 @@ export default function EditEquipmentDialog({
               rows={2}
             />
           </div>
+
+          {/* Поля только для администраторов */}
+          {isAdmin && (
+            <>
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Административная информация</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="supplier">Поставщик</Label>
+                    <Input
+                      id="supplier"
+                      value={formData.equipment_supplier}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        equipment_supplier: e.target.value
+                      }))}
+                      placeholder="Название поставщика"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Цена (руб.)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.equipment_price || ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        equipment_price: e.target.value ? parseFloat(e.target.value) : 0
+                      }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
