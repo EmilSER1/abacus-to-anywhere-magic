@@ -148,10 +148,11 @@ export const useDeleteDepartmentMappingById = () => {
       console.log('🗑️ ОЧИСТКА СВЯЗАННЫХ ДАННЫХ перед удалением:', { mappingId });
       
       try {
-        // 1. Удаляем mapped_turar_rooms маленькими порциями (максимум 50 за раз)
+        // 1. Удаляем mapped_turar_rooms очень маленькими порциями (максимум 10 за раз)
         console.log('🧹 Удаляем mapped_turar_rooms...');
         let deleted = 0;
-        let batchSize = 50; // Уменьшили размер порции
+        let batchSize = 10; // Еще больше уменьшили размер порции
+        let maxRetries = 3;
         
         while (true) {
           const { data: toDelete, error: selectError } = await supabase
@@ -170,24 +171,40 @@ export const useDeleteDepartmentMappingById = () => {
             break;
           }
           
-          const idsToDelete = toDelete.map(item => item.id);
-          const { error: deleteError } = await supabase
-            .from('mapped_turar_rooms')
-            .delete()
-            .in('id', idsToDelete);
+          // Попытка удаления с повторными попытками
+          let retryCount = 0;
+          let deleteSuccess = false;
           
-          if (deleteError) {
-            console.error('❌ Ошибка удаления batch mapped_turar_rooms:', deleteError);
+          while (retryCount < maxRetries && !deleteSuccess) {
+            const idsToDelete = toDelete.map(item => item.id);
+            const { error: deleteError } = await supabase
+              .from('mapped_turar_rooms')
+              .delete()
+              .in('id', idsToDelete);
+            
+            if (!deleteError) {
+              deleteSuccess = true;
+              deleted += toDelete.length;
+              console.log(`📊 Удалено ${deleted} mapped_turar_rooms записей...`);
+            } else {
+              retryCount++;
+              console.error(`❌ Ошибка удаления (попытка ${retryCount}/${maxRetries}):`, deleteError);
+              if (retryCount < maxRetries) {
+                console.log(`⏸️ Пауза перед повтором ${retryCount * 500}ms...`);
+                await new Promise(resolve => setTimeout(resolve, retryCount * 500));
+              }
+            }
+          }
+          
+          if (!deleteSuccess) {
+            console.error('❌ Не удалось удалить порцию после всех попыток');
             break;
           }
           
-          deleted += toDelete.length;
-          console.log(`📊 Удалено ${deleted} mapped_turar_rooms записей...`);
-          
-          // Пауза между порциями для снижения нагрузки на БД
+          // Длинная пауза между порциями для снижения нагрузки на БД
           if (toDelete.length === batchSize) {
-            console.log('⏸️ Пауза между порциями...');
-            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms пауза
+            console.log('⏸️ Пауза между порциями 500ms...');
+            await new Promise(resolve => setTimeout(resolve, 500)); // Увеличили паузу до 500ms
           }
           
           // Если удалили меньше чем batch size, значит все удалили
