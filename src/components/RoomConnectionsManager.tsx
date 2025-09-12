@@ -90,12 +90,19 @@ export default function RoomConnectionsManager() {
           }
           
           if (rooms) {
-            const mappedRooms = rooms.map((room: any) => ({
-              id: room.id,
-              name: room['Помещение/Кабинет'],
-              departmentName: dept.turar_department
-            }));
-            targetRooms.push(...mappedRooms);
+            // Дедупликация по названию кабинета
+            const uniqueRooms = new Map();
+            rooms.forEach((room: any) => {
+              const roomName = room['Помещение/Кабинет'];
+              if (!uniqueRooms.has(roomName)) {
+                uniqueRooms.set(roomName, {
+                  id: room.id,
+                  name: roomName,
+                  departmentName: dept.turar_department
+                });
+              }
+            });
+            targetRooms.push(...Array.from(uniqueRooms.values()));
           }
         }
       } else {
@@ -115,12 +122,19 @@ export default function RoomConnectionsManager() {
           }
           
           if (rooms) {
-            const mappedRooms = rooms.map((room: any) => ({
-              id: room.id,
-              name: room['НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ'],
-              departmentName: dept.projector_department
-            }));
-            targetRooms.push(...mappedRooms);
+            // Дедупликация по названию кабинета
+            const uniqueRooms = new Map();
+            rooms.forEach((room: any) => {
+              const roomName = room['НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ'];
+              if (!uniqueRooms.has(roomName)) {
+                uniqueRooms.set(roomName, {
+                  id: room.id,
+                  name: roomName,
+                  departmentName: dept.projector_department
+                });
+              }
+            });
+            targetRooms.push(...Array.from(uniqueRooms.values()));
           }
         }
       }
