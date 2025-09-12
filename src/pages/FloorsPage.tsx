@@ -231,58 +231,36 @@ export default function FloorsPage() {
 
   // Helper function to get connections for a room
   const getRoomConnections = (room: Room, departmentName: string) => {
-    if (!allData) return [];
+    if (!roomConnections) return [];
     
-    // Find ALL room records with this name and department that have SPECIFIC room connections (not just department)
-    const connectedRecords = allData.filter(item => 
-      item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
-      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
-      (item.connected_turar_room_id || item.connected_turar_room) // Must have specific room connection
-    );
-    
-    console.log('🔗 Getting room connections:', {
+    // Фильтруем связи из таблицы room_connections для данной комнаты и отделения
+    const filteredConnections = roomConnections.filter(connection => {
+      const projectorDept = connection.projector_department?.trim();
+      const projectorRoom = connection.projector_room?.trim();
+      const roomName = room.name?.trim();
+      const deptName = departmentName?.trim();
+      
+      return projectorDept === deptName && projectorRoom === roomName;
+    });
+
+    console.log('🔗 Getting room connections from room_connections table:', {
       roomName: room.name,
       departmentName,
-      connectedRecordsCount: connectedRecords.length,
-      connectedRecords: connectedRecords.map(r => ({
-        id: r.id,
-        connected_turar_room: r.connected_turar_room,
-        connected_turar_department: r.connected_turar_department
+      connectionsFound: filteredConnections.length,
+      connections: filteredConnections.map(c => ({
+        id: c.id,
+        turar_department: c.turar_department,
+        turar_room: c.turar_room
       }))
     });
     
-    if (connectedRecords.length === 0) {
+    if (filteredConnections.length === 0) {
       console.log('❌ No connections found');
       return [];
     }
     
-    // Return unique connections (remove duplicates)
-    const uniqueConnections = new Map();
-    connectedRecords.forEach(roomRecord => {
-      // Skip records that only have department connection but no specific room
-      if (roomRecord.connected_turar_department && !roomRecord.connected_turar_room) {
-        return; // Don't show department-only connections as room connections
-      }
-      
-      const key = `${roomRecord.connected_turar_department}-${roomRecord.connected_turar_room}`;
-      if (!uniqueConnections.has(key)) {
-        uniqueConnections.set(key, {
-          id: `connection-${roomRecord.id}`,
-          turar_department: roomRecord.connected_turar_department || 'Неизвестное отделение',
-          turar_room: roomRecord.connected_turar_room || 'Неизвестный кабинет',
-          projector_department: departmentName,
-          projector_room: room.name,
-          turar_room_id: roomRecord.connected_turar_room_id,
-          projector_room_id: roomRecord.id,
-          created_at: roomRecord.created_at || new Date().toISOString(),
-          updated_at: roomRecord.updated_at || new Date().toISOString()
-        });
-      }
-    });
-    
-    const connections = Array.from(uniqueConnections.values());
-    console.log('✅ Found connections:', connections);
-    return connections;
+    console.log('✅ Found connections:', filteredConnections);
+    return filteredConnections;
   };
   const [floors, setFloors] = useState<Floor[]>([]);
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
