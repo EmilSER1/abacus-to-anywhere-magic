@@ -386,20 +386,25 @@ export default function DepartmentRoomsDisplay({
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       {/* Галочка для добавления в очередь при активном режиме связывания */}
                       {(() => {
-                        const shouldShowQueueButton = linkingRoom && linkingRoom.departmentId !== departmentId && onAddToQueue && canEdit;
+                        // ИСПРАВЛЯЕМ ЛОГИКУ: проверяем ID отделений, а не их названия
+                        const shouldShowQueueButton = linkingRoom && 
+                          linkingRoom.departmentId !== departmentId && 
+                          onAddToQueue && 
+                          canEdit;
                         
-                        console.log(`🔍 КНОПКА "В ОЧЕРЕДЬ" для ${room.room_name}:`, {
+                        console.log(`🔍 КНОПКА "В ОЧЕРЕДЬ" для ${room.room_name} в ${departmentName}:`, {
                           linkingRoom: linkingRoom ? {
                             departmentId: linkingRoom.departmentId,
                             roomName: linkingRoom.roomName,
-                            departmentName: linkingRoom.departmentName
+                            departmentName: linkingRoom.departmentName,
+                            isProjectorDepartment: linkingRoom.isProjectorDepartment
                           } : null,
                           currentDepartmentId: departmentId,
                           currentDepartmentName: departmentName,
                           isProjectorDepartment,
                           hasOnAddToQueue: !!onAddToQueue,
                           canEdit,
-                          isDifferentDepartment: linkingRoom ? linkingRoom.departmentId !== departmentId : false,
+                          isDifferentDepartmentById: linkingRoom ? linkingRoom.departmentId !== departmentId : false,
                           shouldShow: shouldShowQueueButton
                         });
                         
