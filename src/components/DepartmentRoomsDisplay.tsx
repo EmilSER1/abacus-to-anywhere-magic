@@ -397,8 +397,8 @@ export default function DepartmentRoomsDisplay({
                         ) : null;
                       })()}
                       
-                      {/* Кнопка связывания для начала процесса */}
-                      {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && (
+                      {/* Кнопка связывания для начала процесса - ВСЕГДА показываем если нет активного режима связывания */}
+                      {!linkingRoom && onLinkRoom && canEdit && (
                         <Button
                           size="sm"
                           variant="outline"

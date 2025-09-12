@@ -294,13 +294,13 @@ export default function RoomConnectionsManager() {
           </div>
         </div>
         
-        {linkingRoom && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {linkingRoom && (
             <Button variant="outline" onClick={cancelLinking}>
               Отменить связывание
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Очередь связей */}
