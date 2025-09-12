@@ -148,10 +148,10 @@ export const useDeleteDepartmentMappingById = () => {
       console.log('🗑️ ОЧИСТКА СВЯЗАННЫХ ДАННЫХ перед удалением:', { mappingId });
       
       try {
-        // 1. Удаляем mapped_turar_rooms небольшими порциями (максимум 1000 за раз)
+        // 1. Удаляем mapped_turar_rooms маленькими порциями (максимум 50 за раз)
         console.log('🧹 Удаляем mapped_turar_rooms...');
         let deleted = 0;
-        let batchSize = 1000;
+        let batchSize = 50; // Уменьшили размер порции
         
         while (true) {
           const { data: toDelete, error: selectError } = await supabase
@@ -183,6 +183,12 @@ export const useDeleteDepartmentMappingById = () => {
           
           deleted += toDelete.length;
           console.log(`📊 Удалено ${deleted} mapped_turar_rooms записей...`);
+          
+          // Пауза между порциями для снижения нагрузки на БД
+          if (toDelete.length === batchSize) {
+            console.log('⏸️ Пауза между порциями...');
+            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms пауза
+          }
           
           // Если удалили меньше чем batch size, значит все удалили
           if (toDelete.length < batchSize) {
