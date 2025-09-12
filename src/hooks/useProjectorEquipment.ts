@@ -83,6 +83,7 @@ export const useUpdateProjectorEquipment = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projector-room-equipment"] });
       queryClient.invalidateQueries({ queryKey: ["projector-equipment"] });
+      queryClient.invalidateQueries({ queryKey: ["projector-floors"] }); // Добавляем основной ключ
       toast({
         title: "Успешно",
         description: "Оборудование обновлено",
@@ -130,6 +131,7 @@ export const useAddProjectorEquipment = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projector-room-equipment"] });
       queryClient.invalidateQueries({ queryKey: ["projector-equipment"] });
+      queryClient.invalidateQueries({ queryKey: ["projector-floors"] }); // Добавляем основной ключ
       toast({
         title: "Успешно",
         description: "Оборудование добавлено",
