@@ -733,11 +733,12 @@ export default function FloorsPage() {
                                       {getDepartmentTurarLink(department.name) && (
                                         <Button
                                           size="sm"
-                                          variant="outline"
+                                          variant="destructive"
                                           onClick={() => handleRemoveDepartmentLink(department.name)}
                                           disabled={unlinkDepartmentMutation.isPending}
                                         >
-                                          <X className="h-3 w-3" />
+                                          <X className="h-3 w-3 mr-1" />
+                                          Удалить связь
                                         </Button>
                                       )}
                                     </div>
