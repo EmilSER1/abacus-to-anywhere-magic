@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Link2, Building2 } from 'lucide-react'
+import { Link2, Building2, X } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useDepartmentMappingsWithDetails } from '@/hooks/useDepartmentMappingsById'
 import { useRoomConnectionsById, useCreateRoomConnectionById, useDeleteRoomConnectionById } from '@/hooks/useRoomConnectionsById'
@@ -118,12 +118,14 @@ export default function RoomConnectionsManager() {
     };
     
     setConnectionQueue(prev => [...prev, newConnection]);
+    
+    // Сбрасываем выбор после добавления в очередь, чтобы можно было выбрать новый исходный кабинет
+    setLinkingRoom(null);
+    
     toast({
       title: "Связь добавлена в очередь",
-      description: `${linkingRoom.roomName} ↔ ${targetRoomName}. Продолжайте добавлять кабинеты.`
+      description: `${linkingRoom.roomName} ↔ ${targetRoomName}. Теперь можете выбрать новый исходный кабинет.`
     });
-    
-    // НЕ сбрасываем linkingRoom - пользователь может продолжать добавлять кабинеты
   };
 
   const removeFromConnectionQueue = (index: number) => {
@@ -241,8 +243,8 @@ export default function RoomConnectionsManager() {
           <div className="flex items-center gap-4">
             <p className="text-muted-foreground">
               {linkingRoom 
-                ? `Выбран: ${linkingRoom.departmentName} - ${linkingRoom.roomName}. Добавляйте кабинеты в очередь.`
-                : "Нажмите 'Связать кабинеты' на любом кабинете для начала процесса связывания"
+                ? `Выбран: ${linkingRoom.departmentName} - ${linkingRoom.roomName}. Теперь добавьте целевые кабинеты в очередь.`
+                : "Выберите исходный кабинет для связывания, затем добавляйте целевые кабинеты в очередь"
               }
             </p>
             <div className="text-xs text-muted-foreground">
@@ -279,18 +281,25 @@ export default function RoomConnectionsManager() {
           <CardContent>
             <div className="space-y-2">
               {connectionQueue.map((connection, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border rounded">
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50/50">
                   <div className="text-sm">
-                    <strong>{connection.sourceRoomName}</strong> ({connection.sourceDepartmentName}) 
-                    <span className="mx-2">↔</span>
-                    <strong>{connection.targetRoomName}</strong> ({connection.targetDepartmentName})
+                    <div className="font-medium">
+                      <span className="text-blue-600">{connection.sourceRoomName}</span> 
+                      <span className="text-muted-foreground mx-2">({connection.sourceDepartmentName})</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">связать с</span>
+                      <span className="font-medium text-green-600">{connection.targetRoomName}</span>
+                      <span className="text-muted-foreground text-xs">({connection.targetDepartmentName})</span>
+                    </div>
                   </div>
                   <Button 
-                    variant="destructive" 
+                    variant="ghost" 
                     size="sm" 
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => removeFromConnectionQueue(index)}
                   >
-                    Удалить
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
