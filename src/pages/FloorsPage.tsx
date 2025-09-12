@@ -827,7 +827,6 @@ export default function FloorsPage() {
         </div>
       </div>
 
-      {/* Диалог редактирования оборудования */}
       <EditEquipmentDialog
         equipment={editingEquipment}
         isOpen={isEditDialogOpen}
@@ -841,7 +840,6 @@ export default function FloorsPage() {
         isNew={isAddingEquipment}
       />
       
-      {/* Массовое добавление оборудования */}
       {bulkEditingRoom && (
         <BulkEquipmentTable
           department={bulkEditingRoom.department}
@@ -854,7 +852,6 @@ export default function FloorsPage() {
           onSave={handleBulkSave}
         />
       )}
-    </div>
   );
 }
 
