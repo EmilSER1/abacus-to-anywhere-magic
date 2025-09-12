@@ -194,9 +194,9 @@ export default function FloorsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [addingToRoom, setAddingToRoom] = useState<{ department: string; room: string } | null>(null);
-  const [selectedFloor, setSelectedFloor] = useState<string>('');
-  const [selectedBlock, setSelectedBlock] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedFloor, setSelectedFloor] = useState<string>('all');
+  const [selectedBlock, setSelectedBlock] = useState<string>('all');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [selectedTurarDepartment, setSelectedTurarDepartment] = useState<string>('');
   const [selectedTurarRoom, setSelectedTurarRoom] = useState<string>('');
   const [isBulkTableOpen, setIsBulkTableOpen] = useState(false);
@@ -543,13 +543,13 @@ export default function FloorsPage() {
 
   // Фильтрация данных
   const filteredData = processedData.filter(floor => {
-    if (selectedFloor && floor.number.toString() !== selectedFloor) return false;
+    if (selectedFloor && selectedFloor !== 'all' && floor.number.toString() !== selectedFloor) return false;
     
     floor.blocks = floor.blocks.filter((block: any) => {
-      if (selectedBlock && block.name !== selectedBlock) return false;
+      if (selectedBlock && selectedBlock !== 'all' && block.name !== selectedBlock) return false;
       
       block.departments = block.departments.filter((department: any) => {
-        if (selectedDepartment && department.name !== selectedDepartment) return false;
+        if (selectedDepartment && selectedDepartment !== 'all' && department.name !== selectedDepartment) return false;
         return true;
       });
       
@@ -612,7 +612,7 @@ export default function FloorsPage() {
                   <SelectValue placeholder="Все этажи" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все этажи</SelectItem>
+                  <SelectItem value="all">Все этажи</SelectItem>
                   {uniqueFloors.map(floor => (
                     <SelectItem key={floor} value={floor}>{floor} этаж</SelectItem>
                   ))}
@@ -627,7 +627,7 @@ export default function FloorsPage() {
                   <SelectValue placeholder="Все блоки" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все блоки</SelectItem>
+                  <SelectItem value="all">Все блоки</SelectItem>
                   {uniqueBlocks.map(block => (
                     <SelectItem key={block} value={block}>{block}</SelectItem>
                   ))}
@@ -642,7 +642,7 @@ export default function FloorsPage() {
                   <SelectValue placeholder="Все отделения" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Все отделения</SelectItem>
+                  <SelectItem value="all">Все отделения</SelectItem>
                   {uniqueDepartments.map(dept => (
                     <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                   ))}
@@ -651,15 +651,15 @@ export default function FloorsPage() {
             </div>
           </div>
           
-          {(selectedFloor || selectedBlock || selectedDepartment) && (
+          {(selectedFloor && selectedFloor !== 'all' || selectedBlock && selectedBlock !== 'all' || selectedDepartment && selectedDepartment !== 'all') && (
             <div className="mt-4">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  setSelectedFloor('');
-                  setSelectedBlock('');
-                  setSelectedDepartment('');
+                  setSelectedFloor('all');
+                  setSelectedBlock('all');
+                  setSelectedDepartment('all');
                 }}
               >
                 Очистить фильтры
