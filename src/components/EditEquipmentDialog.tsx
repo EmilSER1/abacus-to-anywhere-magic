@@ -228,7 +228,7 @@ export default function EditEquipmentDialog({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Цена (руб.)</Label>
+                    <Label htmlFor="price">Цена (тенге)</Label>
                     <Input
                       id="price"
                       type="number"

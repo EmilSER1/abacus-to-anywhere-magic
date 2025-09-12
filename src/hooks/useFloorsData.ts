@@ -12,6 +12,7 @@ export interface FloorData {
   "Наименование помещения": string;
   "Площадь (м2)": number;
   "Код оборудования": string | null;
+  "Наименование": string | null;
   "Наименование оборудования": string | null;
   "Ед. изм.": string | null;
   "Кол-во": number | string | null;

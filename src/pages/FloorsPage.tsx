@@ -6,7 +6,7 @@ import { Building2, Download, Plus, MapPin, Users, Link, Edit, Link2, X } from '
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { useSearchParams } from 'react-router-dom';
-import { useFloorsData } from '@/hooks/useFloorsData';
+import { useFloorsData, FloorData } from '@/hooks/useFloorsData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
 import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment } from '@/hooks/useProjectorEquipment';
 import EditEquipmentDialog from '@/components/EditEquipmentDialog';
@@ -25,21 +25,6 @@ import { useUserRole } from '@/hooks/useUserRole';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
-interface FloorData {
-  "ЭТАЖ": number;
-  "БЛОК": string;
-  "ОТДЕЛЕНИЕ": string;
-  "КОД ПОМЕЩЕНИЯ": string;
-  "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
-  "Код помещения": string;
-  "Наименование помещения": string;
-  "Площадь (м2)": number;
-  "Код оборудования": string | null;
-  "Наименование оборудования": string | null;
-  "Ед. изм.": string | null;
-  "Кол-во": number | string | null;
-  "Примечания": string | null;
-}
 interface Equipment {
   code: string | null;
   name: string | null;
@@ -129,10 +114,10 @@ const processFloorData = (data: FloorData[]): Floor[] => {
       }
     }
 
-    if (item["Наименование оборудования"]) {
+    if (item["Наименование оборудования"] || item["Наименование"]) {
       room.equipment.push({
         code: item["Код оборудования"],
-        name: item["Наименование оборудования"],
+        name: item["Наименование оборудования"] || item["Наименование"],
         unit: item["Ед. изм."],
         quantity: item["Кол-во"],
         notes: item["Примечания"]
