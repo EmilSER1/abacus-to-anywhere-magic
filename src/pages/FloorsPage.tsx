@@ -14,6 +14,7 @@ import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -181,6 +182,7 @@ export default function FloorsPage() {
   const addEquipmentMutation = useAddProjectorEquipment();
   const createConnectionMutation = useCreateRoomConnection();
   const deleteConnectionMutation = useDeleteRoomConnection();
+  const deleteRoomConnectionMutation = useDeleteRoomConnectionById();
   const linkDepartmentMutation = useLinkDepartmentToTurar();
   const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
   const cleanupUnknownRoomsMutation = useCleanupUnknownRooms();
@@ -767,12 +769,22 @@ export default function FloorsPage() {
                                                          const connections = getRoomConnections(room, department.name);
                                                        return connections.length > 0 ? (
                                                          <div className="flex flex-wrap gap-1">
-                                                           {connections.map((conn, idx) => (
-                                                             <Badge key={idx} variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
-                                                               <Link className="h-3 w-3 mr-1" />
-                                                               {conn.turar_room}
-                                                             </Badge>
-                                                           ))}
+                                                       {connections.map((conn, idx) => (
+                                                              <Badge key={idx} variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold relative group">
+                                                                <Link className="h-3 w-3 mr-1" />
+                                                                {conn.turar_room}
+                                                                <button 
+                                                                  onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteRoomConnectionMutation.mutate(conn.id);
+                                                                  }}
+                                                                  className="ml-1 hover:bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                  title="Удалить связь"
+                                                                >
+                                                                  <X className="h-2 w-2" />
+                                                                </button>
+                                                              </Badge>
+                                                            ))}
                                                          </div>
                                                        ) : (
                                                          // Показываем индикатор "не связан" если есть доступное отделение Турар
@@ -802,18 +814,20 @@ export default function FloorsPage() {
                                                      Связано с кабинетами Турар:
                                                    </div>
                                                    <div className="space-y-2">
-                                                     {connections.map((conn, connIndex) => (
-                                                       <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
-                                                         <div className="font-medium">
-                                                           <div className="text-sm">{conn.turar_department}</div>
-                                                           <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
-                                                         </div>
-                                                         <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
-                                                           <Link className="h-3 w-3 mr-1" />
-                                                           Активная связь
-                                                         </Badge>
-                                                       </div>
-                                                     ))}
+                                                      {connections.map((conn, connIndex) => (
+                                                        <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
+                                                          <div className="font-medium">
+                                                            <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                          </div>
+                                                          <button 
+                                                            onClick={() => deleteRoomConnectionMutation.mutate(conn.id)}
+                                                            className="ml-2 hover:bg-red-500 text-red-600 hover:text-white rounded-full p-1 transition-colors"
+                                                            title="Удалить связь"
+                                                          >
+                                                            <X className="h-3 w-3" />
+                                                          </button>
+                                                        </div>
+                                                      ))}
                                                    </div>
                                                  </div>
                                                ) : (
