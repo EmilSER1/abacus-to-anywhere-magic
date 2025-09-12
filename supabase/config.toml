@@ -2,3 +2,6 @@ project_id = "yfmxvrpiqmwrcnkeskqc"
 
 [functions.sync-data]
 verify_jwt = false
+
+[functions.delete-department-mapping]
+verify_jwt = false
