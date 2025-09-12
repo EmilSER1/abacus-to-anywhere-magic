@@ -511,37 +511,6 @@ export default function FloorsPage() {
         <p className="text-muted-foreground">Иерархическая навигация по этажам, блокам и кабинетам с возможностью редактирования оборудования</p>
       </div>
 
-      {/* Связки с отделениями Турар */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-blue-800 text-base">Связать с отделениями Турар</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <TurarDepartmentSelector
-            value={selectedTurarDept}
-            onValueChange={setSelectedTurarDept}
-            label="Отделение Турар"
-          />
-          <TurarRoomSelector
-            selectedDepartment={selectedTurarDept}
-            selectedRooms={selectedTurarRooms}
-            onRoomsChange={setSelectedTurarRooms}
-            multiple={true}
-            label="Кабинеты Турар (множественный выбор)"
-          />
-          {selectedTurarDept && selectedTurarRooms.length > 0 && (
-            <Button 
-              onClick={handleCreateMultipleConnections}
-              className="w-full"
-              disabled={createConnectionMutation.isPending}
-            >
-              <Link2 className="h-4 w-4 mr-2" />
-              Создать связи ({selectedTurarRooms.length} кабинетов → все проектировщик)
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       <div className="max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
