@@ -160,6 +160,16 @@ export default function DepartmentRoomsDisplay({
   // Используем проп canEdit если он передан, иначе результат хука
   const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
   
+  // ПОДРОБНАЯ ДИАГНОСТИКА
+  console.log('🚨 ПОДРОБНАЯ ДИАГНОСТИКА:', {
+    departmentName,
+    departmentId,
+    isProjectorDepartment,
+    connectionsTotal: connections?.length || 0,
+    connectionsArray: connections,
+    hasConnections: !!connections && connections.length > 0
+  });
+  
   // Используем правильные хуки для получения данных из основных таблиц
   const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
   const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
@@ -329,7 +339,15 @@ export default function DepartmentRoomsDisplay({
                  </div>
                  
                  {/* Компактное отображение связей под названием */}
-                 {connectedRooms.length > 0 && (
+                 {(() => {
+                   console.log('🟢 ПРОВЕРКА СВЯЗЕЙ ДЛЯ КАБИНЕТА:', {
+                     roomName: room.room_name,
+                     connectedRoomsLength: connectedRooms.length,
+                     connectedRooms: connectedRooms,
+                     shouldShow: connectedRooms.length > 0
+                   });
+                   return connectedRooms.length > 0;
+                 })() && (
                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-200 dark:border-green-800">
                      <div className="text-xs font-medium text-green-800 dark:text-green-200 mb-1 flex items-center gap-1">
                        <Link2 className="h-3 w-3" />
