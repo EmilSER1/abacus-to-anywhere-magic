@@ -160,14 +160,6 @@ export default function DepartmentRoomsDisplay({
   // Используем проп canEdit если он передан, иначе результат хука
   const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
   
-  // Логируем входящие данные
-  console.log(`🔧 DepartmentRoomsDisplay ${departmentName}:`, {
-    departmentId,
-    connectionsLength: connections.length,
-    connections: connections.map(c => ({id: c.id, turar_room_id: c.turar_room_id, projector_room_id: c.projector_room_id})),
-    isProjectorDepartment
-  });
-  
   // Используем правильные хуки для получения данных из основных таблиц
   const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
   const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
@@ -187,26 +179,9 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
-    // Простая фильтрация по названию без привязки к отделению
-    const filtered = isProjectorDepartment 
+    return isProjectorDepartment 
       ? connections.filter(conn => conn.projector_room === roomName)
       : connections.filter(conn => conn.turar_room === roomName);
-    
-    console.log(`🔍 ПРОСТАЯ ФИЛЬТРАЦИЯ Room ${roomName}:`, {
-      searchBy: isProjectorDepartment ? 'projector_room' : 'turar_room',
-      roomName,
-      allConnections: connections.length,
-      connectionsWithSameName: filtered.length,
-      filtered: filtered.map(c => ({
-        id: c.id, 
-        projector_room: c.projector_room,
-        turar_room: c.turar_room,
-        projector_department: c.projector_department,
-        turar_department: c.turar_department
-      }))
-    });
-    
-    return filtered;
   }
 
   if (actualIsLoading) {
@@ -260,13 +235,22 @@ export default function DepartmentRoomsDisplay({
                     {connectedRooms.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {(() => {
-                          console.log(`🏷️ Rendering ${connectedRooms.length} badges for room ${room.room_name}`);
-                          return connectedRooms.map((connection, index) => {
+                          // Группируем по названию кабинета для избежания дублей
+                          const uniqueRooms = Array.from(
+                            new Map(connectedRooms.map(conn => [
+                              isProjectorDepartment ? conn.turar_room : conn.projector_room,
+                              conn
+                            ])).values()
+                          );
+                          
+                          
+                          return uniqueRooms.map((connection, index) => {
                             const targetRoomId = isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id;
-                            console.log(`Badge ${index + 1}: connection.id=${connection.id}, targetRoomId=${targetRoomId}`);
+                            const targetRoomName = isProjectorDepartment ? connection.turar_room : connection.projector_room;
+                            
                             return (
                               <ConnectedRoomBadge
-                                key={`${connection.id}-${targetRoomId}`}
+                                key={`${targetRoomName}-${targetRoomId}`}
                                 roomId={targetRoomId}
                                 isProjectorRoom={!isProjectorDepartment}
                               />
