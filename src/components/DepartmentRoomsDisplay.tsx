@@ -212,12 +212,39 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
-    // Ручное связывание - показываем только те связи, которые пользователь создал сам
-    const filtered = isProjectorDepartment 
-      ? connections.filter(conn => conn.projector_room === roomName)
-      : connections.filter(conn => conn.turar_room === roomName);
+    // Получаем все связи для данного кабинета
+    console.log(`🔍 ПОИСК СВЯЗЕЙ для кабинета "${roomName}" (ID: ${roomId}):`, {
+      isProjectorDepartment,
+      totalConnections: connections.length,
+      departmentName,
+      connections: connections.slice(0, 3).map(c => ({
+        id: c.id,
+        turar_room: c.turar_room,
+        projector_room: c.projector_room,
+        turar_department: c.turar_department,
+        projector_department: c.projector_department
+      }))
+    });
     
-    return filtered;
+    const filtered = isProjectorDepartment 
+      ? connections.filter(conn => {
+          const match = conn.projector_room === roomName;
+          if (!match) {
+            console.log(`❌ Не совпадает: "${conn.projector_room}" !== "${roomName}"`);
+          } else {
+            console.log(`✅ Совпадает: "${conn.projector_room}" === "${roomName}"`);
+          }
+          return match;
+        })
+      : connections.filter(conn => {
+          const match = conn.turar_room === roomName;
+          if (!match) {
+            console.log(`❌ Не совпадает: "${conn.turar_room}" !== "${roomName}"`);
+          } else {
+            console.log(`✅ Совпадает: "${conn.turar_room}" === "${roomName}"`);
+          }
+          return match;
+        });
     
     // Убираем дубли по названию кабинета - показываем только уникальные названия
     const uniqueConnections = filtered.reduce((acc, conn) => {
@@ -357,28 +384,48 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      {/* Кнопка добавления в очередь при активном режиме связывания */}
-                      {linkingRoom && 
-                       linkingRoom.roomId !== room.id &&
-                       linkingRoom.isProjectorDepartment !== isProjectorDepartment &&
-                       onAddToQueue && 
-                       canEdit && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1 h-7 text-xs px-2"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onAddToQueue(room.id, room.room_name, departmentId, departmentName)
-                          }}
-                        >
-                          <Link2 className="h-3 w-3" />
-                          В очередь
-                        </Button>
-                      )}
+                      {/* Галочка для добавления в очередь при активном режиме связывания */}
+                      {(() => {
+                        // ИСПРАВЛЯЕМ ЛОГИКУ: проверяем ID отделений, а не их названия
+                        const shouldShowQueueButton = linkingRoom && 
+                          linkingRoom.departmentId !== departmentId && 
+                          onAddToQueue && 
+                          canEdit;
+                        
+                        console.log(`🔍 КНОПКА "В ОЧЕРЕДЬ" для ${room.room_name} в ${departmentName}:`, {
+                          linkingRoom: linkingRoom ? {
+                            departmentId: linkingRoom.departmentId,
+                            roomName: linkingRoom.roomName,
+                            departmentName: linkingRoom.departmentName,
+                            isProjectorDepartment: linkingRoom.isProjectorDepartment
+                          } : null,
+                          currentDepartmentId: departmentId,
+                          currentDepartmentName: departmentName,
+                          isProjectorDepartment,
+                          hasOnAddToQueue: !!onAddToQueue,
+                          canEdit,
+                          isDifferentDepartmentById: linkingRoom ? linkingRoom.departmentId !== departmentId : false,
+                          shouldShow: shouldShowQueueButton
+                        });
+                        
+                        return shouldShowQueueButton ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 h-7 text-xs px-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAddToQueue(room.id, room.room_name, departmentId, departmentName)
+                            }}
+                          >
+                            <Link2 className="h-3 w-3" />
+                            В очередь
+                          </Button>
+                        ) : null;
+                      })()}
                       
-                      {/* Кнопка связывания для начала процесса - ВСЕГДА показываем если нет активного режима связывания */}
-                      {!linkingRoom && onLinkRoom && canEdit && (
+                      {/* Кнопка связывания для начала процесса */}
+                      {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && (
                         <Button
                           size="sm"
                           variant="outline"

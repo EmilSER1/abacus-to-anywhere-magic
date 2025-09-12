@@ -294,13 +294,13 @@ export default function RoomConnectionsManager() {
           </div>
         </div>
         
-        <div className="flex gap-2">
-          {linkingRoom && (
+        {linkingRoom && (
+          <div className="flex gap-2">
             <Button variant="outline" onClick={cancelLinking}>
               Отменить связывание
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Очередь связей */}
@@ -422,7 +422,6 @@ export default function RoomConnectionsManager() {
                         linkingRoom={linkingRoom}
                         onAddToQueue={addToConnectionQueue}
                         isRoomInQueue={isRoomInQueue}
-                        isProjectorDepartment={false}
                         selectedRooms={new Set()}
                         multiSelectMode={false}
                       />
