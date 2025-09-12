@@ -44,6 +44,7 @@ export default function RoomConnectionsManager() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveProgress, setSaveProgress] = useState(0)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set())
 
   const { data: departments } = useDepartments()
   const { data: departmentMappings } = useDepartmentMappingsWithDetails()
@@ -71,7 +72,25 @@ export default function RoomConnectionsManager() {
   }, [isSaving, refetchConnections]);
 
   const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
-    // Устанавливаем выбранный кабинет
+    // Если уже есть выбранный кабинет, переходим в режим множественного выбора
+    if (linkingRoom) {
+      // Добавляем/убираем кабинет из выбранных
+      const newSelectedRooms = new Set(selectedRooms);
+      if (newSelectedRooms.has(roomId)) {
+        newSelectedRooms.delete(roomId);
+      } else {
+        newSelectedRooms.add(roomId);
+      }
+      setSelectedRooms(newSelectedRooms);
+      
+      toast({
+        title: "Кабинет выбран",
+        description: `${newSelectedRooms.has(roomId) ? 'Добавлен' : 'Убран'}: ${departmentName} - ${roomName}. Всего выбрано: ${newSelectedRooms.size}`
+      });
+      return;
+    }
+
+    // Устанавливаем выбранный кабинет как основной для связывания
     setLinkingRoom({
       departmentId,
       roomId,
@@ -113,48 +132,56 @@ export default function RoomConnectionsManager() {
   };
 
   const addPendingConnection = () => {
-    if (!linkingRoom || !selectedTargetRoomId || !selectedTargetDeptId) {
+    if (!linkingRoom || selectedRooms.size === 0) {
+      toast({
+        title: "Выберите кабинеты",
+        description: "Необходимо выбрать хотя бы один кабинет для связывания",
+        variant: "destructive"
+      });
       return;
     }
 
     const targetDeptName = availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || '';
-    const targetRoomName = connections?.find(c => 
-      linkingRoom.isProjectorDepartment 
-        ? c.turar_room_id === selectedTargetRoomId 
-        : c.projector_room_id === selectedTargetRoomId
-    ) || {};
-
-    const newConnection: PendingConnection = linkingRoom.isProjectorDepartment ? {
-      id: crypto.randomUUID(),
-      turar_department_id: selectedTargetDeptId,
-      turar_room_id: selectedTargetRoomId,
-      projector_department_id: linkingRoom.departmentId,
-      projector_room_id: linkingRoom.roomId,
-      turar_department: targetDeptName,
-      turar_room: selectedTargetRoomId, // Временно используем ID
-      projector_department: linkingRoom.departmentName,
-      projector_room: linkingRoom.roomName
-    } : {
-      id: crypto.randomUUID(),
-      turar_department_id: linkingRoom.departmentId,
-      turar_room_id: linkingRoom.roomId,
-      projector_department_id: selectedTargetDeptId,
-      projector_room_id: selectedTargetRoomId,
-      turar_department: linkingRoom.departmentName,
-      turar_room: linkingRoom.roomName,
-      projector_department: targetDeptName,
-      projector_room: selectedTargetRoomId // Временно используем ID
-    };
-
-    setPendingConnections(prev => [...prev, newConnection]);
     
-    // Сбрасываем только выбор кабинета, но оставляем режим связывания
+    // Создаем связи для всех выбранных кабинетов
+    const newConnections: PendingConnection[] = [];
+    
+    selectedRooms.forEach(roomId => {
+      const newConnection: PendingConnection = linkingRoom.isProjectorDepartment ? {
+        id: crypto.randomUUID(),
+        turar_department_id: selectedTargetDeptId,
+        turar_room_id: roomId,
+        projector_department_id: linkingRoom.departmentId,
+        projector_room_id: linkingRoom.roomId,
+        turar_department: targetDeptName,
+        turar_room: roomId, // Временно используем ID
+        projector_department: linkingRoom.departmentName,
+        projector_room: linkingRoom.roomName
+      } : {
+        id: crypto.randomUUID(),
+        turar_department_id: linkingRoom.departmentId,
+        turar_room_id: linkingRoom.roomId,
+        projector_department_id: selectedTargetDeptId,
+        projector_room_id: roomId,
+        turar_department: linkingRoom.departmentName,
+        turar_room: linkingRoom.roomName,
+        projector_department: targetDeptName,
+        projector_room: roomId // Временно используем ID
+      };
+      
+      newConnections.push(newConnection);
+    });
+
+    setPendingConnections(prev => [...prev, ...newConnections]);
+    
+    // Сбрасываем выбор кабинетов, но оставляем режим связывания
+    setSelectedRooms(new Set());
     setSelectedTargetRoomId('');
     setStep('room');
     
     toast({
-      title: "Связь добавлена",
-      description: "Связь добавлена в очередь на сохранение"
+      title: "Связи добавлены",
+      description: `Добавлено ${newConnections.length} связей в очередь на сохранение`
     });
   };
 
@@ -235,6 +262,7 @@ export default function RoomConnectionsManager() {
     }
     
     setLinkingRoom(null)
+    setSelectedRooms(new Set()) // Сбрасываем множественный выбор
     setShowConnectionDialog(false)
     setSelectedTargetDeptId('')
     setSelectedTargetRoomId('')
@@ -281,6 +309,16 @@ export default function RoomConnectionsManager() {
               </Button>
             </>
           )}
+          {/* Кнопка создания связей для множественного выбора */}
+          {linkingRoom && selectedRooms.size > 0 && (
+            <Button 
+              onClick={addPendingConnection}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="h-4 w-4" />
+              Создать связи ({selectedRooms.size})
+            </Button>
+          )}
           {linkingRoom && (
             <Button variant="outline" onClick={cancelLinking}>
               Отменить связывание
@@ -295,11 +333,21 @@ export default function RoomConnectionsManager() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Link2 className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium">Режим связывания активен</div>
+              <div className="flex-1">
+                <div className="font-medium">Режим множественного связывания активен</div>
                 <div className="text-sm text-muted-foreground">
-                  Выбран: {linkingRoom.departmentName} - {linkingRoom.roomName}
+                  Исходный кабинет: {linkingRoom.departmentName} - {linkingRoom.roomName}
                 </div>
+                {selectedRooms.size > 0 && (
+                  <div className="text-sm text-green-600 font-medium">
+                    ✅ Выбрано кабинетов для связывания: {selectedRooms.size}
+                  </div>
+                )}
+                {selectedRooms.size === 0 && (
+                  <div className="text-sm text-orange-600">
+                    👆 Выберите кабинеты на противоположной стороне для связывания
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -450,6 +498,8 @@ export default function RoomConnectionsManager() {
                       linkingRoom={linkingRoom}
                       connections={connections}
                       isProjectorDepartment={false}
+                      selectedRooms={selectedRooms}
+                      isMultiSelectMode={!!linkingRoom}
                     />
                   </div>
                   
@@ -519,6 +569,8 @@ export default function RoomConnectionsManager() {
                               linkingRoom={linkingRoom}
                               connections={connections}
                               isProjectorDepartment={true}
+                              selectedRooms={selectedRooms}
+                              isMultiSelectMode={!!linkingRoom}
                             />
                           </AccordionContent>
                         </AccordionItem>

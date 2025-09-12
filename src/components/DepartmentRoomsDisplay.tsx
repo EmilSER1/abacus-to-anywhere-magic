@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, X } from 'lucide-react'
@@ -27,6 +28,8 @@ interface DepartmentRoomsDisplayProps {
   connections?: RoomConnectionById[];
   isProjectorDepartment?: boolean;
   selectedRoomId?: string;
+  selectedRooms?: Set<string>; // Добавляем поддержку множественного выбора
+  isMultiSelectMode?: boolean; // Флаг для режима множественного выбора
 }
 
 // Компонент для отображения связанного кабинета с названием
@@ -99,7 +102,9 @@ export default function DepartmentRoomsDisplay({
   linkingRoom,
   connections = [],
   isProjectorDepartment = false,
-  selectedRoomId
+  selectedRoomId,
+  selectedRooms = new Set(),
+  isMultiSelectMode = false
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
@@ -201,8 +206,26 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {/* Кнопка связывания */}
-                      {onLinkRoom && canEdit() && (
+                      {/* Множественный выбор с чекбоксами */}
+                      {linkingRoom && linkingRoom.departmentId !== departmentId && canEdit() && (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`room-${room.id}`}
+                            checked={selectedRooms.has(room.id)}
+                            onCheckedChange={(checked) => {
+                              if (onLinkRoom) {
+                                onLinkRoom(room.id, room.room_name)
+                              }
+                            }}
+                          />
+                          <label htmlFor={`room-${room.id}`} className="text-sm font-medium cursor-pointer">
+                            {selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}
+                          </label>
+                        </div>
+                      )}
+                      
+                      {/* Кнопка связывания для начала процесса */}
+                      {onLinkRoom && canEdit() && !linkingRoom && (
                         <Button
                           size="sm"
                           variant={selectedRoomId === room.id ? "default" : "outline"}
@@ -213,14 +236,14 @@ export default function DepartmentRoomsDisplay({
                           }}
                         >
                           <Link2 className="h-4 w-4" />
-                          {selectedRoomId === room.id ? 'Выбран' : 'Выбрать'}
+                          Связать кабинеты
                         </Button>
                       )}
                       
                       {/* Показать статус при активном режиме связывания */}
                       {linkingRoom && linkingRoom.roomId === room.id && (
                         <Badge variant="default" className="text-xs">
-                          Исходный
+                          🎯 Исходный кабинет
                         </Badge>
                       )}
                     </div>
