@@ -6,7 +6,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Link2, Check, X, Search, LinkIcon } from 'lucide-react';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
-import { useCreateRoomConnectionById, useRoomConnectionsById } from '@/hooks/useRoomConnectionsById';
+import { useRoomConnectionsById } from '@/hooks/useRoomConnectionsById';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface RoomLinkDropdownProps {
   roomId: string;
@@ -32,8 +35,9 @@ export default function RoomLinkDropdown({
   const [isCreatingConnections, setIsCreatingConnections] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { data: turarData } = useTurarMedicalData();
-  const createConnection = useCreateRoomConnectionById();
   const { data: existingConnections } = useRoomConnectionsById();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Получаем кабинеты для выбранного отделения с фильтрацией по поиску
   const availableRooms = useMemo(() => {
@@ -88,7 +92,8 @@ export default function RoomLinkDropdown({
       selectedRoomsCount: selectedRooms.size,
       selectedRooms: Array.from(selectedRooms),
       roomId,
-      departmentId
+      roomName,
+      departmentName
     });
 
     setIsCreatingConnections(true);
@@ -106,28 +111,58 @@ export default function RoomLinkDropdown({
         });
 
         if (turarRoom?.id) {
+          // Создаем связь напрямую в Supabase без промежуточного хука
           const connectionData = {
-            projector_room_id: roomId,
+            turar_department: connectedTurarDepartment,
+            turar_room: turarRoomName,
+            projector_department: departmentName,
+            projector_room: roomName,
             turar_room_id: turarRoom.id,
-            projector_department_id: departmentId,
-            turar_department_id: ''
+            projector_room_id: roomId
           };
           
           console.log('📤 Sending connection data:', connectionData);
+
+          const { data, error } = await supabase
+            .from("room_connections")
+            .insert([connectionData])
+            .select()
+            .single();
+
+          if (error) {
+            console.error('❌ Error creating connection:', error);
+            throw error;
+          }
           
-          await createConnection.mutateAsync(connectionData);
-          console.log('✅ Connection created successfully for:', turarRoomName);
+          console.log('✅ Connection created successfully:', data);
         } else {
           console.error('❌ Turar room not found:', turarRoomName);
         }
       }
 
       console.log('🎉 All connections created successfully');
+      
+      // Обновляем кэш
+      queryClient.invalidateQueries({ queryKey: ["room-connections"] });
+      queryClient.invalidateQueries({ queryKey: ["floors-data"] });
+      queryClient.invalidateQueries({ queryKey: ["projector-equipment"] });
+      
+      // Показываем уведомление об успехе
+      toast({
+        title: "Связи созданы",
+        description: `Создано ${selectedRooms.size} связей для кабинета ${roomName}`,
+      });
+      
       setSelectedRooms(new Set()); // Очищаем выбор
       setIsOpen(false);
       onSuccess?.();
     } catch (error) {
       console.error('❌ Error creating room connections:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать связи. Попробуйте еще раз.",
+        variant: "destructive",
+      });
     } finally {
       setIsCreatingConnections(false);
     }
@@ -144,21 +179,6 @@ export default function RoomLinkDropdown({
       >
         <Link2 className="h-3 w-3" />
         Нет связи с Турар
-      </Button>
-    );
-  }
-
-  // Если нет доступных кабинетов
-  if (availableRooms.length === 0 && searchTerm === '') {
-    return (
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1 h-7 text-xs px-2"
-        disabled
-      >
-        <Link2 className="h-3 w-3" />
-        Нет кабинетов
       </Button>
     );
   }
