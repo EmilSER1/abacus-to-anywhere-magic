@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, X } from 'lucide-react'
@@ -28,8 +27,9 @@ interface DepartmentRoomsDisplayProps {
   connections?: RoomConnectionById[];
   isProjectorDepartment?: boolean;
   selectedRoomId?: string;
-  selectedRooms?: Set<string>; // Добавляем поддержку множественного выбора
-  isMultiSelectMode?: boolean; // Флаг для режима множественного выбора
+  compact?: boolean;
+  canEdit?: boolean;
+  showConnectButtons?: boolean;
 }
 
 // Компонент для отображения связанного кабинета с названием
@@ -103,12 +103,17 @@ export default function DepartmentRoomsDisplay({
   connections = [],
   isProjectorDepartment = false,
   selectedRoomId,
-  selectedRooms = new Set(),
-  isMultiSelectMode = false
+  compact = false,
+  canEdit: propCanEdit,
+  showConnectButtons = true
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
-  const { canEdit } = useUserRole()
+  const { canEdit: hookCanEdit } = useUserRole()
+  
+  // Используем проп canEdit если он передан, иначе результат хука
+  const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
+  
   // Используем правильные хуки для получения данных из основных таблиц
   const { data: turarRooms, isLoading: isTurarLoading } = useTurarRoomsByDepartmentId(departmentId)
   const { data: projectorRooms, isLoading: isProjectorLoading } = useProjectorRoomsByDepartmentId(departmentId)
@@ -134,19 +139,6 @@ export default function DepartmentRoomsDisplay({
       return connections.filter(conn => conn.turar_room_id === roomId)
     }
   }
-
-  const canLinkRoom = (roomId: string) => {
-    if (!linkingRoom) return true; // Всегда можно начать связывание
-    
-    // Если уже выбран кабинет, то можно связывать только с кабинетами из другого типа отделения
-    if (isProjectorDepartment) {
-      // Проектор может связываться с Турар (если выбранный кабинет из Турар)
-      return linkingRoom && linkingRoom.departmentId !== departmentId;
-    } else {
-      // Турар может связываться с Проектор (если выбранный кабинет из Проектор)
-      return linkingRoom && linkingRoom.departmentId !== departmentId;
-    }
-  };
 
   if (actualIsLoading) {
     return (
@@ -186,7 +178,6 @@ export default function DepartmentRoomsDisplay({
         <Accordion type="multiple" value={Array.from(expandedRooms)}>
           {actualRooms.map((room) => {
             const connectedRooms = getConnectedRooms(room.id)
-            const isLinkingTarget = canLinkRoom(room.id)
             
             return (
               <AccordionItem key={room.id} value={room.id}>
@@ -206,26 +197,8 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {/* Множественный выбор с чекбоксами */}
-                      {linkingRoom && linkingRoom.departmentId !== departmentId && canEdit() && (
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id={`room-${room.id}`}
-                            checked={selectedRooms.has(room.id)}
-                            onCheckedChange={(checked) => {
-                              if (onLinkRoom) {
-                                onLinkRoom(room.id, room.room_name)
-                              }
-                            }}
-                          />
-                          <label htmlFor={`room-${room.id}`} className="text-sm font-medium cursor-pointer">
-                            {selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}
-                          </label>
-                        </div>
-                      )}
-                      
-                      {/* Кнопка связывания для начала процесса */}
-                      {onLinkRoom && canEdit() && !linkingRoom && (
+                      {/* Кнопка связывания */}
+                      {onLinkRoom && canEdit && showConnectButtons && (
                         <Button
                           size="sm"
                           variant={selectedRoomId === room.id ? "default" : "outline"}
@@ -236,7 +209,7 @@ export default function DepartmentRoomsDisplay({
                           }}
                         >
                           <Link2 className="h-4 w-4" />
-                          Связать кабинеты
+                          Связать
                         </Button>
                       )}
                       
