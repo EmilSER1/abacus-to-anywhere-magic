@@ -17,6 +17,7 @@ interface DepartmentRoomsDisplayProps {
   departmentName: string;
   onLinkRoom?: (roomId: string, roomName: string) => void;
   onRemoveConnection?: (connectionId: string) => void;
+  onAddToQueue?: (targetRoomId: string, targetRoomName: string, targetDepartmentId: string, targetDepartmentName: string) => void;
   linkingRoom?: {
     departmentId: string;
     roomId: string;
@@ -144,6 +145,7 @@ export default function DepartmentRoomsDisplay({
   departmentName,
   onLinkRoom,
   onRemoveConnection,
+  onAddToQueue,
   linkingRoom,
   connections = [],
   isProjectorDepartment = false,
@@ -323,21 +325,24 @@ export default function DepartmentRoomsDisplay({
                     </div>
                     
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      {/* Множественный выбор при активном режиме связывания */}
-                      {multiSelectMode && linkingRoom && linkingRoom.departmentId !== departmentId && canEdit && (
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedRooms.has(room.id)}
-                            onChange={() => onLinkRoom && onLinkRoom(room.id, room.room_name)}
-                            className="w-3 h-3"
-                          />
-                          <span className="text-xs">{selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}</span>
-                        </label>
+                      {/* Галочка для добавления в очередь при активном режиме связывания */}
+                      {linkingRoom && linkingRoom.departmentId !== departmentId && onAddToQueue && canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-7 text-xs px-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onAddToQueue(room.id, room.room_name, departmentId, departmentName)
+                          }}
+                        >
+                          <Link2 className="h-3 w-3" />
+                          В очередь
+                        </Button>
                       )}
                       
                       {/* Кнопка связывания для начала процесса */}
-                      {onLinkRoom && canEdit && showConnectButtons && !multiSelectMode && (
+                      {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -355,7 +360,7 @@ export default function DepartmentRoomsDisplay({
                       {/* Показать статус при активном режиме связывания */}
                       {linkingRoom && linkingRoom.roomId === room.id && (
                         <Badge variant="default" className="text-xs h-5">
-                          🎯
+                          🎯 Выбран
                         </Badge>
                       )}
                     </div>
