@@ -212,36 +212,12 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
-    // Получаем все связи для данного кабинета по ID
-    console.log(`🔍 ПОИСК СВЯЗЕЙ для кабинета "${roomName}" (ID: ${roomId}):`, {
-      isProjectorDepartment,
-      totalConnections: connections.length,
-      departmentName
-    });
-    
+    // Ручное связывание - показываем только те связи, которые пользователь создал сам
     const filtered = isProjectorDepartment 
-      ? connections.filter(conn => {
-          const match = conn.projector_room_id === roomId;
-          if (match) {
-            console.log(`✅ Найдена связь по ID для "${roomName}":`, {
-              connectionId: conn.id,
-              turar_room: conn.turar_room,
-              projector_room: conn.projector_room
-            });
-          }
-          return match;
-        })
-      : connections.filter(conn => {
-          const match = conn.turar_room_id === roomId;
-          if (match) {
-            console.log(`✅ Найдена связь по ID для "${roomName}":`, {
-              connectionId: conn.id,
-              turar_room: conn.turar_room,
-              projector_room: conn.projector_room
-            });
-          }
-          return match;
-        });
+      ? connections.filter(conn => conn.projector_room === roomName)
+      : connections.filter(conn => conn.turar_room === roomName);
+    
+    return filtered;
     
     // Убираем дубли по названию кабинета - показываем только уникальные названия
     const uniqueConnections = filtered.reduce((acc, conn) => {
