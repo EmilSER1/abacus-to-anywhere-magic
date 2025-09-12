@@ -8,13 +8,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData } from '@/hooks/useFloorsData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
-import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment, ProjectorEquipmentItem } from '@/hooks/useProjectorEquipment';
+import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment } from '@/hooks/useProjectorEquipment';
 import EditEquipmentDialog from '@/components/EditEquipmentDialog';
 import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
-import { useCreateRoomConnection, useDeleteRoomConnection, RoomConnection } from '@/hooks/useRoomConnections';
+import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
-import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
 import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
@@ -23,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import RoomLinkDropdown from '@/components/RoomLinkDropdown';
 import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink';
 import { useUserRole } from '@/hooks/useUserRole';
-import { BulkEquipmentTable } from '@/components/BulkEquipmentTable';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -42,7 +40,6 @@ interface FloorData {
   "Кол-во": number | string | null;
   "Примечания": string | null;
 }
-
 interface Equipment {
   code: string | null;
   name: string | null;
@@ -57,126 +54,115 @@ interface Equipment {
   id?: string;
 }
 
-// Статусы и их цвета
-const statusConfig = {
-  'Согласовано': { label: 'Согласовано', color: 'bg-green-100 text-green-800 border-green-200' },
-  'Не согласовано': { label: 'Не согласовано', color: 'bg-red-100 text-red-800 border-red-200' },
-  'Не найдено': { label: 'Не найдено', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' }
-};
+interface Room {
+  code: string;
+  name: string;
+  area: number;
+  equipment: Equipment[];
+}
 
-const processFloorsData = (data: FloorData[]): any[] => {
-  const floorMap = new Map();
+interface Department {
+  name: string;
+  block: string;
+  rooms: Room[];
+  equipmentCount: number;
+  totalArea: number;
+}
+
+interface Floor {
+  number: string;
+  departments: Department[];
+  stats: {
+    totalDepartments: number;
+    totalRooms: number;
+    totalEquipment: number;
+    totalArea: number;
+  };
+}
+
+const statusConfig = {
+  'Согласовано': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Согласовано' },
+  'Не согласовано': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Не согласовано' },
+  'Не найдено': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Не найдено' }
+} as const;
+
+// Process floor data to group by floors -> departments -> rooms (with block markers)
+const processFloorData = (data: FloorData[]): Floor[] => {
+  const floorsMap = new Map<string, Map<string, Department>>();
 
   data.forEach(item => {
-    const floorNumber = item["ЭТАЖ"];
-    const block = item["БЛОК"];
-    const department = item["ОТДЕЛЕНИЕ"];
-    const roomCode = item["КОД ПОМЕЩЕНИЯ"];
-    const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
-    const roomArea = item["Площадь (м2)"] || 0;
-
-    if (!floorMap.has(floorNumber)) {
-      floorMap.set(floorNumber, {
-        number: floorNumber,
-        blocks: new Map()
-      });
+    const floorNumber = String(item["ЭТАЖ"]);
+    const blockName = item["БЛОК"];
+    const departmentName = item["ОТДЕЛЕНИЕ"];
+    const roomArea = parseFloat(String(item["Площадь (м2)"] || 0).replace(',', '.')) || 0;
+    
+    if (!floorsMap.has(floorNumber)) {
+      floorsMap.set(floorNumber, new Map());
     }
-
-    const floor = floorMap.get(floorNumber);
-
-    if (!floor.blocks.has(block)) {
-      floor.blocks.set(block, {
-        name: block,
-        departments: new Map()
-      });
-    }
-
-    const blockData = floor.blocks.get(block);
-
-    if (!blockData.departments.has(department)) {
-      blockData.departments.set(department, {
-        name: department,
-        rooms: new Map(),
-        totalEquipment: 0,
+    
+    const floor = floorsMap.get(floorNumber)!;
+    
+    if (!floor.has(departmentName)) {
+      floor.set(departmentName, {
+        name: departmentName,
+        block: blockName,
+        rooms: [],
+        equipmentCount: 0,
         totalArea: 0
       });
     }
 
-    const departmentData = blockData.departments.get(department);
-
-    if (!departmentData.rooms.has(roomCode)) {
-      departmentData.rooms.set(roomCode, {
-        code: roomCode,
-        name: roomName,
+    const department = floor.get(departmentName)!;
+    let room = department.rooms.find(r => r.code === item["КОД ПОМЕЩЕНИЯ"]);
+    
+    if (!room) {
+      room = {
+        code: item["КОД ПОМЕЩЕНИЯ"],
+        name: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"],
         area: roomArea,
         equipment: []
-      });
+      };
+      department.rooms.push(room);
+    } else {
+      if (roomArea > 0 && (!room.area || room.area === 0)) {
+        room.area = roomArea;
+      }
     }
 
-    const room = departmentData.rooms.get(roomCode);
-
     if (item["Наименование оборудования"]) {
-      const equipment: Equipment = {
+      room.equipment.push({
         code: item["Код оборудования"],
         name: item["Наименование оборудования"],
         unit: item["Ед. изм."],
         quantity: item["Кол-во"],
         notes: item["Примечания"]
-      };
-      
-      room.equipment.push(equipment);
-      departmentData.totalEquipment += 1;
+      });
+      department.equipmentCount++;
     }
-
-    departmentData.totalArea += roomArea;
   });
 
-  const floors: any[] = [];
-  floorMap.forEach((floorData, floorNumber) => {
-    const blocks: any[] = [];
+  // Convert to Floor[] structure and recalculate areas
+  const floors: Floor[] = [];
+  
+  floorsMap.forEach((departmentsMap, floorNumber) => {
+    const departments = Array.from(departmentsMap.values());
     
-    floorData.blocks.forEach((blockData: any, blockName: string) => {
-      const departments: any[] = [];
-      
-      blockData.departments.forEach((deptData: any, deptName: string) => {
-        const rooms = Array.from(deptData.rooms.values());
-        
-        departments.push({
-          name: deptName,
-          rooms: rooms,
-          totalEquipment: deptData.totalEquipment,
-          totalArea: deptData.totalArea
-        });
-      });
-
-      blocks.push({
-        name: blockName,
-        departments: departments
-      });
+    departments.forEach(dept => {
+      dept.totalArea = dept.rooms.reduce((sum, room) => sum + (room.area || 0), 0);
     });
-
+    
+    const totalRooms = departments.reduce((sum, dept) => sum + dept.rooms.length, 0);
+    const totalEquipment = departments.reduce((sum, dept) => sum + dept.equipmentCount, 0);
+    const totalArea = departments.reduce((sum, dept) => sum + (dept.totalArea || 0), 0);
+    
     floors.push({
       number: floorNumber,
-      blocks: blocks,
+      departments,
       stats: {
-        totalRooms: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const deptCount = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
-            return deptSum + (dept.rooms ? dept.rooms.size : 0);
-          }, 0) as number;
-          return sum + deptCount;
-        }, 0),
-        totalEquipment: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const equipCount = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
-            return deptSum + (dept.totalEquipment || 0);
-          }, 0) as number;
-          return sum + equipCount;
-        }, 0),
-        totalArea: Array.from(floorData.blocks.values()).reduce((sum: number, block: any) => {
-          const areaSum = Array.from(block.departments.values()).reduce((deptSum: number, dept: any): number => {
-            return deptSum + (dept.totalArea || 0);
-          }, 0) as number;
-          return sum + areaSum;
-        }, 0)
+        totalDepartments: departments.length,
+        totalRooms,
+        totalEquipment,
+        totalArea
       }
     });
   });
@@ -194,47 +180,394 @@ export default function FloorsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [addingToRoom, setAddingToRoom] = useState<{ department: string; room: string } | null>(null);
-  const [selectedFloor, setSelectedFloor] = useState<string>('all');
-  const [selectedBlock, setSelectedBlock] = useState<string>('all');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
-  const [selectedTurarDepartment, setSelectedTurarDepartment] = useState<string>('');
-  const [selectedTurarRoom, setSelectedTurarRoom] = useState<string>('');
-  const [isBulkTableOpen, setIsBulkTableOpen] = useState(false);
-  const [bulkEditingRoom, setBulkEditingRoom] = useState<{ department: string; room: string } | null>(null);
-
+  const [selectedTurarDept, setSelectedTurarDept] = useState('');
+  const [selectedTurarRooms, setSelectedTurarRooms] = useState<string[]>([]);
+  
+  const updateEquipmentMutation = useUpdateProjectorEquipment();
+  const addEquipmentMutation = useAddProjectorEquipment();
+  const createConnectionMutation = useCreateRoomConnection();
+  const deleteConnectionMutation = useDeleteRoomConnection();
+  const deleteRoomConnectionMutation = useDeleteRoomConnectionById();
+  const linkDepartmentMutation = useLinkDepartmentToTurar();
+  const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
+  const cleanupUnknownRoomsMutation = useCleanupUnknownRooms();
+  const { data: turarData } = useTurarMedicalData();
   const { toast } = useToast();
 
-  const updateProjectorEquipment = useUpdateProjectorEquipment();
-  const addProjectorEquipment = useAddProjectorEquipment();
-  const createRoomConnection = useCreateRoomConnection();
-  const deleteRoomConnection = useDeleteRoomConnection();
-  const linkDepartmentToTurar = useLinkDepartmentToTurar();
-  const unlinkDepartmentFromTurar = useUnlinkDepartmentFromTurar();
-  const deleteRoomConnectionById = useDeleteRoomConnectionById();
-  const { data: turarData } = useTurarMedicalData();
-  const cleanupUnknownRooms = useCleanupUnknownRooms();
-  const { data: projectorDepartmentLinks } = useDepartmentMappings();
+  // Состояния для связывания отделений
+  const [departmentTurarSelections, setDepartmentTurarSelections] = useState<Record<string, string>>({});
+  
+  // Функция для получения связанного отделения Турар
+  const getDepartmentTurarLink = (departmentName: string): string | null => {
+    if (!allData) return null;
+    
+    const linkedRecord = allData.find(item => 
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() && 
+      item.connected_turar_department
+    );
+    
+    return linkedRecord?.connected_turar_department || null;
+  };
+  
+  // Helper function to check if a room is connected using new ID-based structure
+  const isRoomConnected = (room: Room, departmentName: string) => {
+    if (!allData) return false;
+    
+    // Find ANY room record with this name and department that has a SPECIFIC room connection (not just department)
+    const connectedRecord = allData.find(item => 
+      item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] === room.name && 
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() &&
+      (item.connected_turar_room_id || item.connected_turar_room) // Must have specific room connection
+    );
+    
+    console.log('🔍 Checking room connection:', {
+      roomName: room.name,
+      departmentName,
+      connectedRecord: connectedRecord ? {
+        id: connectedRecord.id,
+        connected_turar_room_id: connectedRecord.connected_turar_room_id,
+        connected_turar_room: connectedRecord.connected_turar_room,
+        connected_turar_department: connectedRecord.connected_turar_department
+      } : null
+    });
+    
+    const isConnected = !!connectedRecord;
+    console.log('✅ Room connected result:', isConnected);
+    return isConnected;
+  };
 
-  const [openDepartments, setOpenDepartments] = useState<Set<string>>(new Set());
+  // Helper function to get connections for a room
+  const getRoomConnections = (room: Room, departmentName: string) => {
+    if (!roomConnections) return [];
+    
+    // Фильтруем связи из таблицы room_connections для данной комнаты и отделения
+    const filteredConnections = roomConnections.filter(connection => {
+      const projectorDept = connection.projector_department?.trim();
+      const projectorRoom = connection.projector_room?.trim();
+      const roomName = room.name?.trim();
+      const deptName = departmentName?.trim();
+      
+      return projectorDept === deptName && projectorRoom === roomName;
+    });
+
+    console.log('🔗 Getting room connections from room_connections table:', {
+      roomName: room.name,
+      departmentName,
+      connectionsFound: filteredConnections.length,
+      connections: filteredConnections.map(c => ({
+        id: c.id,
+        turar_department: c.turar_department,
+        turar_room: c.turar_room
+      }))
+    });
+    
+    if (filteredConnections.length === 0) {
+      console.log('❌ No connections found');
+      return [];
+    }
+    
+    console.log('✅ Found connections:', filteredConnections);
+    return filteredConnections;
+  };
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
+  const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
+  const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
+  const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
+  const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
+
+  // Новые функции для редактирования оборудования
+  const handleEditEquipment = (equipment: any, department: string, room: string) => {
+    // Загружаем данные из БД для редактирования, если есть id
+    if (equipment.id) {
+      setEditingEquipment({
+        ...equipment,
+        "ОТДЕЛЕНИЕ": department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
+      });
+    } else {
+      // Если нет id, создаем новую запись на основе данных из файла
+      setEditingEquipment({
+        id: '',
+        "Код оборудования": equipment.code,
+        "Наименование оборудования": equipment.name,
+        "Кол-во": equipment.quantity,
+        "Ед. изм.": equipment.unit,
+        "Примечания": equipment.notes,
+        equipment_status: equipment.equipment_status || 'Не найдено',
+        equipment_specification: equipment.equipment_specification || '',
+        equipment_documents: equipment.equipment_documents || '',
+        equipment_supplier: equipment.equipment_supplier || '',
+        equipment_price: equipment.equipment_price || 0,
+        "ОТДЕЛЕНИЕ": department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": room
+      });
+      setIsAddingEquipment(true); // Это будет создание, а не редактирование
+    }
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEquipment = (updatedEquipment: any) => {
+    if (isAddingEquipment && addingToRoom) {
+      // Создание нового оборудования
+      const newEquipment = {
+        ...updatedEquipment,
+        "ОТДЕЛЕНИЕ": addingToRoom.department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
+        "КОД ПОМЕЩЕНИЯ": "",
+        "ЭТАЖ": 1,
+        "БЛОК": "",
+      };
+      addEquipmentMutation.mutate(newEquipment);
+    } else if (editingEquipment?.id) {
+      // Обновление существующего оборудования в БД
+      updateEquipmentMutation.mutate({
+        ...updatedEquipment,
+        id: editingEquipment.id
+      });
+    } else {
+      // Создание нового оборудования на основе данных из файла
+      const newEquipment = {
+        ...updatedEquipment,
+        "ОТДЕЛЕНИЕ": editingEquipment?.["ОТДЕЛЕНИЕ"] || '',
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": editingEquipment?.["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
+        "КОД ПОМЕЩЕНИЯ": "",
+        "ЭТАЖ": 1,
+        "БЛОК": "",
+      };
+      addEquipmentMutation.mutate(newEquipment);
+    }
+    setIsEditDialogOpen(false);
+    setEditingEquipment(null);
+    setIsAddingEquipment(false);
+    setAddingToRoom(null);
+  };
+
+  const handleAddEquipment = (department: string, room: string) => {
+    setAddingToRoom({ department, room });
+    setEditingEquipment({
+      id: '',
+      "Наименование оборудования": '',
+      "Код оборудования": '',
+      "Кол-во": '',
+      "Ед. изм.": '',
+      "Примечания": '',
+      equipment_status: 'Не найдено',
+      equipment_specification: '',
+      equipment_documents: '',
+      equipment_supplier: '',
+      equipment_price: 0
+    });
+    setIsAddingEquipment(true);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCreateMultipleConnections = () => {
+    selectedTurarRooms.forEach(turarRoom => {
+      // Создаем связи со всеми комнатами проектировщиков в отделении
+      floors.forEach(floor => {
+        floor.departments.forEach(dept => {
+          dept.rooms.forEach(room => {
+            createConnectionMutation.mutate({
+              turar_department: selectedTurarDept,
+              turar_room: turarRoom,
+              projector_department: dept.name,
+              projector_room: room.name
+            });
+          });
+        });
+      });
+    });
+    setSelectedTurarDept('');
+    setSelectedTurarRooms([]);
+    toast({
+      title: "Связи созданы",
+      description: `Создано связей: ${selectedTurarRooms.length} кабинетов Турар`,
+    });
+  };
+
+  // Получение уникальных отделений Турар
+  const turarDepartments = React.useMemo(() => {
+    if (!turarData) return [];
+    
+    const departments = new Set<string>();
+    turarData.forEach(item => {
+      if (item["Отделение/Блок"]) {
+        departments.add(item["Отделение/Блок"]);
+      }
+    });
+    
+    return Array.from(departments).sort();
+  }, [turarData]);
+
+
+  // Сохранение связи отделения с Турар
+  const handleSaveDepartmentLink = (departmentName: string) => {
+    const selectedTurar = departmentTurarSelections[departmentName];
+    if (selectedTurar) {
+      linkDepartmentMutation.mutate({
+        departmentName,
+        turarDepartment: selectedTurar
+      });
+    }
+  };
+
+  // Удаление связи отделения с Турар
+  const handleRemoveDepartmentLink = (departmentName: string) => {
+    unlinkDepartmentMutation.mutate(departmentName);
+    setDepartmentTurarSelections(prev => ({
+      ...prev,
+      [departmentName]: ''
+    }));
+  };
+
+  const handleDeleteConnection = (turarDept: string, turarRoom: string, projectorDept: string, projectorRoom: string) => {
+    const connection = roomConnections?.find(conn => 
+      conn.turar_department === turarDept && 
+      conn.turar_room === turarRoom &&
+      conn.projector_department === projectorDept &&
+      conn.projector_room === projectorRoom
+    );
+    
+    if (connection) {
+      deleteConnectionMutation.mutate(connection.id);
+    }
+  };
 
   useEffect(() => {
-    const floor = searchParams.get('floor');
-    const block = searchParams.get('block');
-    const department = searchParams.get('department');
-    
-    if (floor) setSelectedFloor(floor);
-    if (block) setSelectedBlock(block);
-    if (department) {
-      setSelectedDepartment(department);
-      setOpenDepartments(prev => new Set([...prev, department]));
+    if (allData) {
+      const processedFloors = processFloorData(allData);
+      setFloors(processedFloors);
     }
-  }, [searchParams]);
+  }, [allData]);
+
+  useEffect(() => {
+    // Handle search params from URL
+    const urlSearchTerm = searchParams.get('search');
+    const urlDepartment = searchParams.get('department');
+    const urlRoom = searchParams.get('room');
+    
+    if (urlSearchTerm && urlDepartment) {
+      console.log('FloorsPage URL params:', { urlSearchTerm, urlDepartment, urlRoom });
+      setHighlightTimeout(false); // Reset highlight
+      
+      // Find and expand relevant sections
+      floors.forEach((floor, floorIndex) => {
+        const deptIndex = floor.departments.findIndex(dept => dept.name === urlDepartment);
+        console.log(`Floor ${floor.number}: found department index ${deptIndex} for ${urlDepartment}`);
+        if (deptIndex !== -1) {
+          setExpandedFloors([`floor-${floor.number}`]);
+          setExpandedDepartments([`dept-${deptIndex}`]);
+          console.log('Expanded floors:', [`floor-${floor.number}`]);
+          console.log('Expanded departments:', [`dept-${deptIndex}`]);
+          
+          // Find and expand rooms that contain the search term
+          if (urlRoom) {
+            const department = floor.departments[deptIndex];
+            const roomIndex = department.rooms.findIndex(room => room.name === urlRoom);
+            if (roomIndex !== -1) {
+              setExpandedRooms([`room-${roomIndex}`]);
+              console.log('Expanded rooms:', [`room-${roomIndex}`]);
+            }
+          } else {
+            // If no specific room, look for equipment matching search term
+            const department = floor.departments[deptIndex];
+            const matchingRooms: string[] = [];
+            department.rooms.forEach((room, roomIndex) => {
+              const hasMatchingEquipment = room.equipment.some(eq => 
+                eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase())
+              );
+              if (hasMatchingEquipment) {
+                matchingRooms.push(`room-${roomIndex}`);
+              }
+            });
+            if (matchingRooms.length > 0) {
+              setExpandedRooms(matchingRooms);
+              console.log('Expanded rooms with matching equipment:', matchingRooms);
+            }
+          }
+          
+          // Set target equipment for scrolling
+          if (urlRoom) {
+            const targetId = `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase();
+            setTargetEquipmentId(targetId);
+            
+            // Scroll to element after animations complete
+            setTimeout(() => {
+              const element = document.getElementById(targetId);
+              if (element) {
+                element.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'center',
+                  inline: 'nearest'
+                });
+              }
+            }, 1200);
+          }
+        }
+      });
+      
+      // Auto-remove highlight after 3 seconds
+      setTimeout(() => setHighlightTimeout(true), 3000);
+    }
+  }, [searchParams, floors]);
+
+  const exportData = () => {
+    // Prepare data for Excel export from Supabase data
+    const excelData: any[] = [];
+    
+    floors.forEach(floor => {
+      floor.departments.forEach(department => {
+        department.rooms.forEach(room => {
+          if (room.equipment.length > 0) {
+            room.equipment.forEach(equipment => {
+              excelData.push({
+                'Этаж': floor.number,
+                'Блок': department.block,
+                'Отделение': department.name,
+                'Код помещения': room.code,
+                'Наименование помещения': room.name,
+                'Площадь (м2)': room.area,
+                'Код оборудования': equipment.code || '',
+                'Наименование оборудования': equipment.name || '',
+                'Единица измерения': equipment.unit || '',
+                'Количество': equipment.quantity || '',
+                'Примечания': equipment.notes || ''
+              });
+            });
+          } else {
+            // Add room without equipment
+            excelData.push({
+              'Этаж': floor.number,
+              'Блок': department.block,
+              'Отделение': department.name,
+              'Код помещения': room.code,
+              'Наименование помещения': room.name,
+              'Площадь (м2)': room.area,
+              'Код оборудования': '',
+              'Наименование оборудования': '',
+              'Единица измерения': '',
+              'Количество': '',
+              'Примечания': ''
+            });
+          }
+        });
+      });
+    });
+
+    // Create and download Excel file
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Проектировщики');
+    XLSX.writeFile(workbook, 'floors_data.xlsx');
+  };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Загрузка данных...</div>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Загрузка данных проектировщиков...</p>
         </div>
       </div>
     );
@@ -242,602 +575,497 @@ export default function FloorsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-red-600">Ошибка загрузки данных: {error.message}</div>
+      <div className="p-6 space-y-6">
+        <div className="text-center py-16">
+          <div className="text-red-500">
+            <p>Ошибка загрузки данных: {error.message}</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  const processedData = allData ? processFloorsData(allData) : [];
-
-  const getRoomConnections = (department: string, room: string): RoomConnection[] => {
-    if (!roomConnections) return [];
-    return roomConnections.filter(conn => 
-      conn.projector_department === department && conn.projector_room === room
-    );
-  };
-
-  const handleEditEquipment = (equipment: any, department: string, room: string) => {
-    console.log('Editing equipment:', equipment);
-    setEditingEquipment({
-      ...equipment,
-      department,
-      room
-    });
-    setIsEditDialogOpen(true);
-    setIsAddingEquipment(false);
-  };
-
-  const handleAddEquipment = (department: string, room: string) => {
-    console.log('Adding equipment to:', department, room);
-    setAddingToRoom({ department, room });
-    setEditingEquipment({
-      "Код оборудования": '',
-      "Наименование оборудования": '',
-      "Кол-во": '',
-      "Ед. изм.": '',
-      "Примечания": '',
-      department,
-      room
-    });
-    setIsEditDialogOpen(true);
-    setIsAddingEquipment(true);
-  };
-
-  const handleSaveEquipment = async (equipmentData: any) => {
-    console.log('Saving equipment:', equipmentData);
-    try {
-      if (isAddingEquipment) {
-        const newEquipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'> = {
-          "ОТДЕЛЕНИЕ": equipmentData.department,
-          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": equipmentData.room,
-          "КОД ПОМЕЩЕНИЯ": equipmentData.room,
-          "ЭТАЖ": 1, // Default floor
-          "БЛОК": "A", // Default block
-          "Код оборудования": equipmentData["Код оборудования"],
-          "Наименование оборудования": equipmentData["Наименование оборудования"],
-          "Кол-во": equipmentData["Кол-во"],
-          "Ед. изм.": equipmentData["Ед. изм."],
-          "Примечания": equipmentData["Примечания"],
-          equipment_status: equipmentData.equipment_status || 'Не согласовано',
-          equipment_specification: equipmentData.equipment_specification || '',
-          equipment_documents: equipmentData.equipment_documents || '',
-          equipment_supplier: equipmentData.equipment_supplier || '',
-          equipment_price: parseFloat(equipmentData.equipment_price) || 0
-        };
-        
-        await addProjectorEquipment.mutateAsync(newEquipment);
-        toast({
-          title: "Успех",
-          description: "Оборудование добавлено успешно"
-        });
-      } else {
-        const updatedEquipment: ProjectorEquipmentItem = {
-          ...equipmentData,
-          "ОТДЕЛЕНИЕ": equipmentData.department,
-          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": equipmentData.room,
-          "КОД ПОМЕЩЕНИЯ": equipmentData.room,
-          "ЭТАЖ": 1,
-          "БЛОК": "A",
-          equipment_status: equipmentData.equipment_status || 'Не согласовано',
-          equipment_specification: equipmentData.equipment_specification || '',
-          equipment_documents: equipmentData.equipment_documents || '',
-          equipment_supplier: equipmentData.equipment_supplier || '',
-          equipment_price: parseFloat(equipmentData.equipment_price) || 0
-        };
-        
-        await updateProjectorEquipment.mutateAsync(updatedEquipment);
-        toast({
-          title: "Успех",
-          description: "Оборудование обновлено успешно"
-        });
-      }
-      
-      setIsEditDialogOpen(false);
-      setEditingEquipment(null);
-      setIsAddingEquipment(false);
-      setAddingToRoom(null);
-      refetch();
-    } catch (error) {
-      console.error('Error saving equipment:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить оборудование",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleLinkRoom = async (department: string, room: string, turarDepartment: string, turarRoom: string) => {
-    try {
-      await createRoomConnection.mutateAsync({
-        projector_department: department,
-        projector_room: room,
-        turar_department: turarDepartment,
-        turar_room: turarRoom
-      });
-      
-      toast({
-        title: "Успех",
-        description: "Помещение успешно связано"
-      });
-      
-      setSelectedTurarDepartment('');
-      setSelectedTurarRoom('');
-    } catch (error) {
-      console.error('Error linking room:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось связать помещение",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUnlinkRoom = async (connectionId: string) => {
-    try {
-      await deleteRoomConnectionById.mutateAsync(connectionId);
-      toast({
-        title: "Успех",
-        description: "Связь помещения удалена"
-      });
-    } catch (error) {
-      console.error('Error unlinking room:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось удалить связь помещения",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleLinkDepartment = async (department: string, turarDepartment: string) => {
-    try {
-      await linkDepartmentToTurar.mutateAsync({
-        departmentName: department,
-        turarDepartment
-      });
-      
-      toast({
-        title: "Успех",
-        description: "Отделение успешно связано"
-      });
-    } catch (error) {
-      console.error('Error linking department:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось связать отделение",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUnlinkDepartment = async (department: string) => {
-    try {
-      await unlinkDepartmentFromTurar.mutateAsync(department);
-      toast({
-        title: "Успех",
-        description: "Связь отделения удалена"
-      });
-    } catch (error) {
-      console.error('Error unlinking department:', error);
-      toast({
-        title: "Ошибка", 
-        description: "Не удалось удалить связь отделения",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleExportFloorData = () => {
-    if (!allData || allData.length === 0) {
-      toast({
-        title: "Предупреждение",
-        description: "Нет данных для экспорта",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(allData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Этажи");
-    
-    const now = new Date();
-    const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    XLSX.writeFile(workbook, `floors_data_${timestamp}.xlsx`);
-    
-    toast({
-      title: "Успех",
-      description: "Данные экспортированы в Excel файл"
-    });
-  };
-
-  const handleCleanupUnknownRooms = async () => {
-    try {
-      await cleanupUnknownRooms.mutateAsync();
-      toast({
-        title: "Успех",
-        description: "Неизвестные помещения очищены"
-      });
-    } catch (error) {
-      console.error('Error cleaning up unknown rooms:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось очистить неизвестные помещения",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleBulkAdd = (department: string, room: string) => {
-    setBulkEditingRoom({ department, room });
-    setIsBulkTableOpen(true);
-  };
-
-  const handleBulkSave = async (equipmentList: any[]) => {
-    if (!bulkEditingRoom) return;
-    
-    try {
-      const promises = equipmentList.map(equipment => {
-        const newEquipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'> = {
-          "ОТДЕЛЕНИЕ": bulkEditingRoom.department,
-          "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": bulkEditingRoom.room,
-          "КОД ПОМЕЩЕНИЯ": bulkEditingRoom.room,
-          "ЭТАЖ": 1,
-          "БЛОК": "A",
-          "Код оборудования": equipment["Код оборудования"] || '',
-          "Наименование оборудования": equipment["Наименование оборудования"] || '',
-          "Кол-во": equipment["Кол-во"] || '',
-          "Ед. изм.": equipment["Ед. изм."] || '',
-          "Примечания": equipment["Примечания"] || '',
-          equipment_status: equipment.equipment_status || 'Не согласовано',
-          equipment_specification: equipment.equipment_specification || '',
-          equipment_documents: equipment.equipment_documents || '',
-          equipment_supplier: isAdmin ? equipment.equipment_supplier || '' : '',
-          equipment_price: isAdmin ? parseFloat(equipment.equipment_price) || 0 : 0
-        };
-        
-        return addProjectorEquipment.mutateAsync(newEquipment);
-      });
-      
-      await Promise.all(promises);
-      
-      toast({
-        title: "Успех",
-        description: `Добавлено ${equipmentList.length} единиц оборудования`
-      });
-      
-      setIsBulkTableOpen(false);
-      setBulkEditingRoom(null);
-      refetch();
-    } catch (error) {
-      console.error('Error bulk saving equipment:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось добавить оборудование",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const toggleDepartment = (department: string) => {
-    setOpenDepartments(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(department)) {
-        newSet.delete(department);
-      } else {
-        newSet.add(department);
-      }
-      return newSet;
-    });
-  };
-
-  const getDepartmentTurarLink = (department: string) => {
-    if (!projectorDepartmentLinks) return null;
-    return projectorDepartmentLinks?.find(link => link.projector_department === department);
-  };
-
-  // Фильтрация данных
-  const filteredData = processedData.filter(floor => {
-    if (selectedFloor && selectedFloor !== 'all' && floor.number.toString() !== selectedFloor) return false;
-    
-    floor.blocks = floor.blocks.filter((block: any) => {
-      if (selectedBlock && selectedBlock !== 'all' && block.name !== selectedBlock) return false;
-      
-      block.departments = block.departments.filter((department: any) => {
-        if (selectedDepartment && selectedDepartment !== 'all' && department.name !== selectedDepartment) return false;
-        return true;
-      });
-      
-      return block.departments.length > 0;
-    });
-    
-    return floor.blocks.length > 0;
-  });
-
-  // Получение уникальных значений для фильтров
-  const uniqueFloors = [...new Set(processedData.map(floor => floor.number.toString()))].sort();
-  const uniqueBlocks = [...new Set(processedData.flatMap(floor => 
-    floor.blocks.map((block: any) => block.name)
-  ))].sort();
-  const uniqueDepartments = [...new Set(processedData.flatMap(floor => 
-    floor.blocks.flatMap((block: any) => 
-      block.departments.map((dept: any) => dept.name)
-    )
-  ))].sort();
+  // Calculate total statistics
+  const totalStats = floors.reduce((acc, floor) => ({
+    totalDepartments: acc.totalDepartments + (floor.stats.totalDepartments || 0),
+    totalRooms: acc.totalRooms + (floor.stats.totalRooms || 0),
+    totalEquipment: acc.totalEquipment + (floor.stats.totalEquipment || 0),
+    totalArea: acc.totalArea + (floor.stats.totalArea || 0)
+  }), { totalDepartments: 0, totalRooms: 0, totalEquipment: 0, totalArea: 0 });
 
   return (
-    <>
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Building2 className="h-8 w-8" />
-            Управление этажами
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Просмотр и управление помещениями и оборудованием по этажам
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleExportFloorData}>
-            <Download className="h-4 w-4 mr-2" />
-            Экспорт данных
-          </Button>
-          {isAdmin && (
-            <Button variant="outline" onClick={handleCleanupUnknownRooms}>
-              <X className="h-4 w-4 mr-2" />
-              Очистить неизвестные
-            </Button>
-          )}
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Проектировщики</h1>
+        <p className="text-muted-foreground">Иерархическая навигация по этажам, блокам и кабинетам с возможностью редактирования оборудования</p>
       </div>
 
-      {/* Фильтры */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Фильтры</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Этаж</label>
-              <Select value={selectedFloor} onValueChange={setSelectedFloor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Все этажи" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все этажи</SelectItem>
-                  {uniqueFloors.map(floor => (
-                    <SelectItem key={floor} value={floor}>{floor} этаж</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <div className="max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+            <Building2 className="h-6 w-6 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold mb-2">Управление этажами и блоками</h1>
+          <p className="text-muted-foreground">
+            Иерархическая навигация по этажам → блокам → кабинетам с полным функционалом редактирования
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalDepartments}</strong> отделений</span>
             </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Блок</label>
-              <Select value={selectedBlock} onValueChange={setSelectedBlock}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Все блоки" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все блоки</SelectItem>
-                  {uniqueBlocks.map(block => (
-                    <SelectItem key={block} value={block}>{block}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalRooms}</strong> помещений</span>
             </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Отделение</label>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Все отделения" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все отделения</SelectItem>
-                  {uniqueDepartments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <span><strong>{totalStats.totalEquipment}</strong> ед. оборудования</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <span><strong>{(totalStats.totalArea || 0).toFixed(1)}</strong> м² общая площадь</span>
             </div>
           </div>
-          
-          {(selectedFloor && selectedFloor !== 'all' || selectedBlock && selectedBlock !== 'all' || selectedDepartment && selectedDepartment !== 'all') && (
-            <div className="mt-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setSelectedFloor('all');
-                  setSelectedBlock('all');
-                  setSelectedDepartment('all');
+          <div className="mt-4 flex gap-2">
+            <Button onClick={exportData} className="gap-2">
+              <Download className="h-4 w-4" />
+              Экспорт Проектировщики в Excel
+            </Button>
+          </div>
+        </div>
+
+        {/* Floors with Accordion */}
+        <div className="space-y-6">
+          {floors.map((floor) => (
+            <Card key={floor.number} className="overflow-hidden">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full"
+                value={expandedFloors.includes(`floor-${floor.number}`) ? `floor-${floor.number}` : undefined}
+                onValueChange={(value) => {
+                  if (value) {
+                    setExpandedFloors([value]);
+                  } else {
+                    setExpandedFloors([]);
+                  }
                 }}
               >
-                Очистить фильтры
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Данные этажей */}
-      <div className="space-y-6">
-        {filteredData.map((floor) => (
-          <Card key={floor.number} className="overflow-hidden">
-            <CardHeader className="bg-muted/50">
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                {floor.number} этаж
-              </CardTitle>
-              <CardDescription>
-                Общая площадь: {floor.stats?.totalArea?.toLocaleString() || 0} м²
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Accordion type="multiple" className="w-full">
-                {floor.blocks.map((block: any) => (
-                  <AccordionItem key={block.name} value={block.name} className="border-0">
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span className="font-medium">Блок {block.name}</span>
-                        <Badge variant="secondary" className="ml-2">
-                          {block.departments.length} отделений
-                        </Badge>
+                <AccordionItem value={`floor-${floor.number}`} className="border-none">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
+                    <div className="flex items-center justify-between w-full mr-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-primary" />
+                          <h2 className="text-xl font-semibold">{floor.number} этаж</h2>
+                        </div>
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-0 pb-0">
-                      <div className="space-y-0">
-                        {block.departments.map((department: any) => {
-                          const departmentTurarLink = getDepartmentTurarLink(department.name);
-                          const isOpen = openDepartments.has(department.name);
-                          
-                          return (
-                            <Accordion key={department.name} type="multiple" className="w-full border-0">
-                              <AccordionItem value={department.name} className="border-0">
-                                <AccordionTrigger 
-                                  className="px-6 py-3 hover:no-underline hover:bg-muted/20 border-t"
-                                  onClick={() => toggleDepartment(department.name)}
-                                >
+                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                         <span>{floor.stats.totalDepartments} отделений</span>
+                         <span>{floor.stats.totalRooms} помещений</span>
+                         <span>{floor.stats.totalEquipment} ед. оборуд.</span>
+                         <span>{(floor.stats.totalArea || 0).toFixed(1)} м²</span>
+                       </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <div className="space-y-4">
+                      {floor.departments.map((department, deptIndex) => (
+                        <div key={deptIndex} className="border rounded-lg overflow-hidden">
+                           <Accordion 
+                            type="single" 
+                            collapsible
+                            value={expandedDepartments.includes(`dept-${deptIndex}`) ? `dept-${deptIndex}` : undefined}
+                            onValueChange={(value) => {
+                              if (value) {
+                                setExpandedDepartments([value]);
+                              } else {
+                                setExpandedDepartments([]);
+                              }
+                            }}
+                          >
+                            <AccordionItem value={`dept-${deptIndex}`} className="border-none">
+                               <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
                                   <div className="flex items-center justify-between w-full mr-4">
-                                    <div className="flex items-center gap-2">
-                                      <Users className="h-4 w-4" />
-                                      <span className="font-medium">{department.name}</span>
-                                      <Badge variant="outline" className="ml-2">
-                                        {department.rooms.length} помещений
+                                    <div className="flex items-center gap-3">
+                                      <Badge variant="outline" className="font-mono">
+                                        Блок {department.block}
                                       </Badge>
-                                      <Badge variant="outline">
-                                        {department.totalEquipment} ед. оборудования
-                                      </Badge>
-                                      <Badge variant="outline">
-                                        {department.totalArea.toLocaleString()} м²
-                                      </Badge>
-                                      {departmentTurarLink && (
-                                        <Badge className="bg-green-100 text-green-800 border-green-200">
-                                          <Link2 className="h-3 w-3 mr-1" />
-                                          Связано с ТУРАР
-                                        </Badge>
-                                      )}
+                                       <span className="font-medium">{department.name}</span>
+                                       <span className="text-sm text-muted-foreground">
+                                         {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
+                                       </span>
+                                       {/* Индикатор связи с Турар */}
+                                       {(() => {
+                                         const turarLink = getDepartmentTurarLink(department.name);
+                                         return turarLink ? (
+                                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                                             <Link2 className="h-3 w-3 mr-1" />
+                                             Турар: {turarLink}
+                                           </Badge>
+                                         ) : null;
+                                       })()}
+                                       {/* Индикатор связей на уровне отделения */}
+                                       {roomConnections && (() => {
+                                          const connectedRooms = department.rooms.filter(room => 
+                                            roomConnections.some(conn => 
+                                              conn.projector_department === department.name && 
+                                              (conn.projector_room === room.name || conn.projector_room === room.code)
+                                            )
+                                          );
+                                         return connectedRooms.length > 0 ? (
+                                           <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
+                                             <Link className="h-3 w-3 mr-1" />
+                                             {connectedRooms.length} связанных комнат
+                                           </Badge>
+                                         ) : null;
+                                       })()}
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                       <Badge variant="secondary" className="text-xs">
+                                         {department.equipmentCount} ед. оборуд.
+                                       </Badge>
+                                     </div>
+                                  </div>
+                                </AccordionTrigger>
+                               <AccordionContent className="px-4 pb-4">
+                                  {/* Блок связывания с отделениями Турар */}
+                                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Link2 className="h-4 w-4 text-blue-600" />
+                                      <span className="font-medium text-blue-800">Связать с отделением Турар</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      {!departmentTurarLink && (
-                                        <TurarDepartmentSelector
-                                          value={selectedTurarDepartment}
-                                          onValueChange={(turarDept) => handleLinkDepartment(department.name, turarDept)}
-                                        />
-                                      )}
-                                      {departmentTurarLink && (
+                                      <Select
+                                        value={departmentTurarSelections[department.name] || getDepartmentTurarLink(department.name) || ''}
+                                        onValueChange={(value) => setDepartmentTurarSelections(prev => ({
+                                          ...prev,
+                                          [department.name]: value
+                                        }))}
+                                      >
+                                        <SelectTrigger className="flex-1">
+                                          <SelectValue placeholder="Выберите отделение Турар" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {turarDepartments.map((dept) => (
+                                            <SelectItem key={dept} value={dept}>
+                                              {dept}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveDepartmentLink(department.name)}
+                                        disabled={
+                                          !departmentTurarSelections[department.name] || 
+                                          linkDepartmentMutation.isPending
+                                        }
+                                      >
+                                        Сохранить
+                                      </Button>
+                                      {getDepartmentTurarLink(department.name) && (
                                         <Button
-                                          variant="outline"
                                           size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleUnlinkDepartment(department.name);
-                                          }}
+                                          variant="destructive"
+                                          onClick={() => handleRemoveDepartmentLink(department.name)}
+                                          disabled={unlinkDepartmentMutation.isPending}
                                         >
-                                          <X className="h-4 w-4 mr-1" />
-                                          Отвязать
+                                          <X className="h-3 w-3 mr-1" />
+                                          Удалить связь
                                         </Button>
                                       )}
                                     </div>
                                   </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-0 pb-0">
-                                  <div className="bg-muted/10 border-t">
-                                    <div className="space-y-0">
-                                      {department.rooms.map((room: any) => {
-                                        const connections = getRoomConnections(department.name, room.code);
-                                        
-                                        return (
-                                          <Accordion key={room.code} type="multiple" className="border-0">
-                                            <AccordionItem value={room.code} className="border-0">
-                                              <AccordionTrigger className="px-8 py-3 hover:no-underline hover:bg-muted/30 border-t border-border/50">
-                                                <div className="flex items-center justify-between w-full mr-4">
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="font-medium">{room.code}</span>
-                                                    <span className="text-muted-foreground">—</span>
-                                                    <span className="text-sm">{room.name}</span>
-                                                    <Badge variant="outline" className="ml-2">
-                                                      {room.area.toLocaleString()} м²
-                                                    </Badge>
-                                                    <Badge variant="outline">
-                                                      {room.equipment.length} ед. оборудования
-                                                    </Badge>
-                                                    {connections.length > 0 && (
-                                                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                                                        <Link2 className="h-3 w-3 mr-1" />
-                                                        Связано
-                                                      </Badge>
-                                                    )}
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleBulkAdd(department.name, room.code);
-                                                      }}
-                                                      className="text-blue-600 hover:text-blue-700"
-                                                    >
-                                                      <Plus className="h-4 w-4 mr-1" />
-                                                      Массовое добавление
-                                                    </Button>
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleAddEquipment(department.name, room.code);
-                                                      }}
-                                                      className="text-blue-600 hover:text-blue-700"
-                                                    >
-                                                      <Plus className="h-4 w-4 mr-1" />
-                                                      Добавить оборудование
-                                                    </Button>
-                                                  </div>
+
+                                  <div className="space-y-3">
+                                   <div className="text-xs font-medium text-muted-foreground mb-2">
+                                     КАБИНЕТЫ В ОТДЕЛЕНИИ:
+                                   </div>
+                                   <div className="grid grid-cols-1 gap-2">
+                                      {department.rooms.map((room, roomIndex) => (
+                                        <Accordion 
+                                          key={roomIndex} 
+                                          type="single" 
+                                          collapsible
+                                          value={expandedRooms.includes(`room-${roomIndex}`) ? `room-${roomIndex}` : undefined}
+                                          onValueChange={(value) => {
+                                            if (value) {
+                                              setExpandedRooms([value]);
+                                            } else {
+                                              setExpandedRooms([]);
+                                            }
+                                          }}
+                                        >
+                                          <AccordionItem value={`room-${roomIndex}`} className="border border-border/50 rounded-lg">
+                                             <AccordionTrigger className={`px-3 py-2 text-xs hover:no-underline hover:bg-muted/30 ${
+                                               isRoomConnected(room, department.name) 
+                                                 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''
+                                             }`}>
+                                               <div className="flex justify-between items-center w-full mr-4">
+                                                 <div className="flex items-center gap-2 flex-1">
+                                                   <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                   <span className="font-medium">{room.name}</span>
+                                                   <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
+                                                      {(() => {
+                                                         const connections = getRoomConnections(room, department.name);
+                                                       return connections.length > 0 ? (
+                                                         <div className="flex flex-wrap gap-1">
+                                                       {connections.map((conn, idx) => (
+                                                              <Badge key={idx} variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold relative group">
+                                                                <Link className="h-3 w-3 mr-1" />
+                                                                {conn.turar_room}
+                                                                <button 
+                                                                  onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    deleteRoomConnectionMutation.mutate(conn.id);
+                                                                  }}
+                                                                  className="ml-1 hover:bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                  title="Удалить связь"
+                                                                >
+                                                                  <X className="h-2 w-2" />
+                                                                </button>
+                                                              </Badge>
+                                                            ))}
+                                                         </div>
+                                                       ) : (
+                                                         // Показываем индикатор "не связан" если есть доступное отделение Турар
+                                                         getDepartmentTurarLink(department.name) ? (
+                                                           <Badge variant="outline" className="text-xs text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-600">
+                                                             🔗 Не связан
+                                                           </Badge>
+                                                         ) : null
+                                                       );
+                                                     })()}
+                                                 </div>
+                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                   <span>{(room.area || 0).toFixed(1)} м²</span>
+                                                   <Badge variant="secondary" className="text-xs">
+                                                     {room.equipment.length} ед.
+                                                   </Badge>
+                                                 </div>
                                                 </div>
-                                              </AccordionTrigger>
-                                              <AccordionContent className="px-8 pb-4">
-                                                <EquipmentSection
-                                                  department={department.name}
-                                                  room={room.code}
-                                                  equipment={room.equipment}
-                                                  onEditEquipment={handleEditEquipment}
-                                                  isAdmin={isAdmin}
-                                                />
-                                              </AccordionContent>
-                                            </AccordionItem>
-                                          </Accordion>
-                                        );
-                                      })}
+                                             </AccordionTrigger>
+                                             
+                                              {(() => {
+                                                 const connections = getRoomConnections(room, department.name);
+                                               return connections.length > 0 ? (
+                                                 <div className="px-3 py-2 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                                   <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                     <Link className="h-4 w-4" />
+                                                     Связано с кабинетами Турар:
+                                                   </div>
+                                                   <div className="space-y-2">
+                                                      {connections.map((conn, connIndex) => (
+                                                        <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
+                                                          <div className="font-medium">
+                                                            <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                          </div>
+                                                          <button 
+                                                            onClick={() => deleteRoomConnectionMutation.mutate(conn.id)}
+                                                            className="ml-2 hover:bg-red-500 text-red-600 hover:text-white rounded-full p-1 transition-colors"
+                                                            title="Удалить связь"
+                                                          >
+                                                            <X className="h-3 w-3" />
+                                                          </button>
+                                                        </div>
+                                                      ))}
+                                                   </div>
+                                                 </div>
+                                               ) : (
+                                                 // Показываем кнопку связывания если нет связей и есть связанное отделение Турар
+                                                 (() => {
+                                                   const connectedTurarDept = getDepartmentTurarLink(department.name);
+                                                    // Проверяем есть ли уже связи для этого кабинета
+                                                    const hasExistingConnections = roomConnections?.some(
+                                                      conn => conn.projector_room === room.name && 
+                                                              conn.projector_department === department.name
+                                                    );
+
+                                                    return connectedTurarDept ? (
+                                                      <div className={`px-3 py-2 border-t ${
+                                                        hasExistingConnections 
+                                                          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' 
+                                                          : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
+                                                      }`}>
+                                                        <div className="flex items-center justify-between">
+                                                          <div className={`text-sm ${
+                                                            hasExistingConnections 
+                                                              ? 'text-green-800 dark:text-green-200' 
+                                                              : 'text-blue-800 dark:text-blue-200'
+                                                          }`}>
+                                                            {hasExistingConnections 
+                                                              ? `✅ Добавить еще связи с: ${connectedTurarDept}` 
+                                                              : `🔗 Связать с кабинетом из: ${connectedTurarDept}`
+                                                            }
+                                                          </div>
+                                                           <RoomLinkDropdown
+                                                             roomId={room.code}
+                                                             roomName={room.name}
+                                                             departmentId={department.name}
+                                                             departmentName={department.name}
+                                                             connectedTurarDepartment={connectedTurarDept}
+                                                             isProjectorDepartment={true}
+                                                             onSuccess={() => {
+                                                               console.log('✅ Связи созданы успешно');
+                                                             }}
+                                                           />
+                                                        </div>
+                                                      </div>
+                                                    ) : null;
+                                                 })()
+                                               );
+                                             })()}
+                                             
+                                              <AccordionContent className="px-3 pb-3">
+                                              <div className="mb-3 flex justify-end">
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => handleAddEquipment(department.name, room.name)}
+                                                  className="gap-2"
+                                                >
+                                                  <Plus className="h-3 w-3" />
+                                                  Добавить оборудование
+                                                </Button>
+                                               </div>
+                                               {room.equipment.length > 0 ? (
+                                                 <div className="rounded-lg border border-border/40 overflow-hidden">
+                                                   <table className="w-full text-xs border-collapse">
+                                                     <thead className="bg-muted/30">
+                                                       <tr>
+                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Код оборудования</th>
+                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Наименование</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Количество</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Ед. изм.</th>
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Статус</th>
+                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Поставщик</th>}
+                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Цена</th>}
+                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Примечания</th>
+                                                         <th className="text-center p-3 font-semibold">Действия</th>
+                                                       </tr>
+                                                     </thead>
+                                                    <tbody>
+                                                      {room.equipment.map((eq, eqIndex) => {
+                                                        const urlSearchTerm = searchParams.get('search');
+                                                        const urlDepartment = searchParams.get('department');
+                                                        const urlRoom = searchParams.get('room');
+                                                        
+                                                        const isHighlighted = urlSearchTerm && 
+                                                          urlDepartment === department.name && 
+                                                          urlRoom === room.name && 
+                                                          eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                                          !highlightTimeout;
+
+                                                        const equipmentId = isHighlighted ? 
+                                                          `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                                          undefined;
+
+                                                        return (
+                                                          <tr 
+                                                            key={eqIndex}
+                                                            id={equipmentId}
+                                                            className={`border-t border-border/40 transition-all duration-500 hover:bg-muted/50 ${
+                                                              isHighlighted 
+                                                                ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
+                                                                : ''
+                                                            }`}
+                                                          >
+                                                            <td className="p-3 font-mono text-xs border-r border-border/40 last:border-r-0">
+                                                              {eq.code || '-'}
+                                                            </td>
+                                                             <td className={`p-3 break-words transition-all duration-300 border-r border-border/40 last:border-r-0 ${
+                                                               isHighlighted 
+                                                                 ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
+                                                                 : ''
+                                                             }`}>
+                                                              {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                                              {eq.name || '-'}
+                                                            </td>
+                                                            <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                              {eq.quantity || '-'}
+                                                            </td>
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.unit || '-'}
+                                                             </td>
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.equipment_status && (
+                                                                 <Badge className={statusConfig[eq.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                                                                   {statusConfig[eq.equipment_status as keyof typeof statusConfig]?.label || eq.equipment_status}
+                                                                 </Badge>
+                                                               )}
+                                                             </td>
+                                                             {isAdmin && (
+                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                 {eq.equipment_supplier || '-'}
+                                                               </td>
+                                                             )}
+                                                             {isAdmin && (
+                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                 {eq.equipment_price ? `${eq.equipment_price.toLocaleString()} руб.` : '-'}
+                                                               </td>
+                                                             )}
+                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                               {eq.notes && (
+                                                                 <Badge 
+                                                                   variant={isHighlighted ? "default" : "secondary"} 
+                                                                   className="text-xs h-5"
+                                                                 >
+                                                                   {eq.notes}
+                                                                 </Badge>
+                                                               )}
+                                                             </td>
+                                                             <td className="p-3 text-center">
+                                                               <Button
+                                                                 size="sm"
+                                                                 variant="ghost"
+                                                                 onClick={() => handleEditEquipment(eq, department.name, room.name)}
+                                                                 className="p-1 h-auto"
+                                                               >
+                                                                 <Edit className="h-3 w-3" />
+                                                               </Button>
+                                                             </td>
+                                                          </tr>
+                                                        );
+                                                      })}
+                                                     </tbody>
+                                                   </table>
+                                                  </div>
+                                                 ) : (
+                                                   <div className="text-center py-6 text-muted-foreground text-xs space-y-3">
+                                                     <div>📦 Оборудование не указано</div>
+                                                     <Button
+                                                       size="sm"
+                                                       onClick={() => handleAddEquipment(department.name, room.name)}
+                                                       className="gap-2"
+                                                     >
+                                                       <Plus className="h-3 w-3" />
+                                                       Добавить первое оборудование
+                                                     </Button>
+                                                   </div>
+                                                 )}
+                                             </AccordionContent>
+                                          </AccordionItem>
+                                        </Accordion>
+                                      ))}
                                     </div>
                                   </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            </Accordion>
-                          );
-                        })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
-            </CardContent>
             </Card>
           ))}
         </div>
       </div>
 
+      {/* Диалог редактирования оборудования */}
       <EditEquipmentDialog
         equipment={editingEquipment}
         isOpen={isEditDialogOpen}
@@ -850,20 +1078,7 @@ export default function FloorsPage() {
         onSave={handleSaveEquipment}
         isNew={isAddingEquipment}
       />
-      
-      {bulkEditingRoom && (
-        <BulkEquipmentTable
-          department={bulkEditingRoom.department}
-          room={bulkEditingRoom.room}
-          isOpen={isBulkTableOpen}
-          onClose={() => {
-            setIsBulkTableOpen(false);
-            setBulkEditingRoom(null);
-          }}
-          onSave={handleBulkSave}
-        />
-      )}
-    </>
+    </div>
   );
 }
 
@@ -897,10 +1112,7 @@ const EquipmentSection: React.FC<{
           ...allEquipment[existingIndex],
           equipment_status: dbItem.equipment_status,
           equipment_specification: dbItem.equipment_specification,
-          equipment_documents: dbItem.equipment_documents,
-          equipment_supplier: dbItem.equipment_supplier,
-          equipment_price: dbItem.equipment_price,
-          id: dbItem.id
+          equipment_documents: dbItem.equipment_documents
         };
       } else if (dbItem["Наименование оборудования"]) {
         // Добавляем новое оборудование из БД
@@ -913,8 +1125,6 @@ const EquipmentSection: React.FC<{
           equipment_status: dbItem.equipment_status,
           equipment_specification: dbItem.equipment_specification,
           equipment_documents: dbItem.equipment_documents,
-          equipment_supplier: dbItem.equipment_supplier,
-          equipment_price: dbItem.equipment_price,
           id: dbItem.id
         });
       }
@@ -937,17 +1147,17 @@ const EquipmentSection: React.FC<{
             <div className="font-medium text-foreground">{item.name}</div>
             <div className="text-xs text-muted-foreground space-y-1">
               <div>Код: {item.code || 'Не указан'} | Количество: {item.quantity || 'Не указано'} {item.unit || ''}</div>
-              {item.equipment_specification && (
-                <div>Спецификация: {item.equipment_specification}</div>
+              {(item as any).equipment_specification && (
+                <div>Спецификация: {(item as any).equipment_specification}</div>
               )}
-              {item.equipment_documents && (
-                <div>Документы: {item.equipment_documents}</div>
+              {(item as any).equipment_documents && (
+                <div>Документы: {(item as any).equipment_documents}</div>
               )}
-              {isAdmin && item.equipment_supplier && (
-                <div className="text-blue-600">Поставщик: {item.equipment_supplier}</div>
+              {isAdmin && (item as any).equipment_supplier && (
+                <div className="text-blue-600">Поставщик: {(item as any).equipment_supplier}</div>
               )}
-              {isAdmin && item.equipment_price && (
-                <div className="text-blue-600">Цена: {item.equipment_price.toLocaleString()} руб.</div>
+              {isAdmin && (item as any).equipment_price && (
+                <div className="text-blue-600">Цена: {(item as any).equipment_price.toLocaleString()} руб.</div>
               )}
               {item.notes && (
                 <div>Примечания: {item.notes}</div>
@@ -955,17 +1165,17 @@ const EquipmentSection: React.FC<{
             </div>
           </div>
           <div className="flex items-center gap-2 ml-2">
-            {item.equipment_status && (
-              <Badge className={statusConfig[item.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
-                {statusConfig[item.equipment_status as keyof typeof statusConfig]?.label || item.equipment_status}
+            {(item as any).equipment_status && (
+              <Badge className={statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                {statusConfig[(item as any).equipment_status as keyof typeof statusConfig]?.label || (item as any).equipment_status}
               </Badge>
             )}
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onEditEquipment({
-                ...item,
-                id: item.id || '',
+                ...(item as any),
+                id: (item as any).id || '',
                 "Код оборудования": item.code,
                 "Наименование оборудования": item.name,
                 "Кол-во": item.quantity,
