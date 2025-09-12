@@ -8,6 +8,10 @@ export interface RoomConnectionById {
   turar_room_id: string;
   projector_department_id: string;
   projector_room_id: string;
+  turar_department: string;
+  turar_room: string;
+  projector_department: string;
+  projector_room: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +35,10 @@ export const useRoomConnectionsById = () => {
           turar_room_id,
           projector_department_id,
           projector_room_id,
+          turar_department,
+          turar_room,
+          projector_department,
+          projector_room,
           created_at,
           updated_at
         `)

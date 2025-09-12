@@ -187,15 +187,26 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
+    // Фильтруем не по ID, а по названию кабинета и отделения
     const filtered = isProjectorDepartment 
-      ? connections.filter(conn => conn.projector_room_id === roomId)
-      : connections.filter(conn => conn.turar_room_id === roomId);
+      ? connections.filter(conn => 
+          conn.projector_room === roomName && 
+          conn.projector_department === departmentName
+        )
+      : connections.filter(conn => 
+          conn.turar_room === roomName && 
+          conn.turar_department === departmentName
+        );
     
-    console.log(`🔍 Room ${roomName} (${roomId}):`, {
+    console.log(`🔍 Room ${roomName}:`, {
+      searchBy: isProjectorDepartment ? 'projector' : 'turar',
       allConnections: connections.length,
-      isProjectorDepartment,
       filteredConnections: filtered.length,
-      filtered: filtered.map(c => ({id: c.id, turar_room_id: c.turar_room_id, projector_room_id: c.projector_room_id}))
+      filtered: filtered.map(c => ({
+        id: c.id, 
+        projector_room: c.projector_room,
+        turar_room: c.turar_room
+      }))
     });
     
     return filtered;
