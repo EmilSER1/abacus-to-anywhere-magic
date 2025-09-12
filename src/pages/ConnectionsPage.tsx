@@ -52,13 +52,19 @@ export default function ConnectionsPage() {
   }
 
   const deleteDepartmentMapping = async (mappingId: string) => {
+    console.log('🗑️ НАЧИНАЕМ УДАЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ:', { mappingId });
+    
     try {
       await deleteMappingMutation.mutateAsync(mappingId)
+      console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА:', mappingId);
+      
       toast({
         title: "Связь отделений удалена",
         description: "Связь успешно удалена"
       })
     } catch (error) {
+      console.error('❌ ОШИБКА УДАЛЕНИЯ СВЯЗИ:', error);
+      
       toast({
         title: "Ошибка",
         description: "Не удалось удалить связь",
