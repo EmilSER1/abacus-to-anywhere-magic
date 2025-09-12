@@ -297,8 +297,9 @@ export default function FloorsPage() {
   const handleSaveEquipment = (updatedEquipment: any) => {
     if (isAddingEquipment && addingToRoom) {
       // Создание нового оборудования
+      const { id, ...equipmentWithoutId } = updatedEquipment; // Убираем id для новых записей
       const newEquipment = {
-        ...updatedEquipment,
+        ...equipmentWithoutId,
         "ОТДЕЛЕНИЕ": addingToRoom.department,
         "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
         "КОД ПОМЕЩЕНИЯ": "",

@@ -83,8 +83,9 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
 
   const handleSaveEquipment = (updatedEquipment: any) => {
     if (isAddingEquipment && addingToRoom) {
+      const { id, ...equipmentWithoutId } = updatedEquipment; // Убираем id для новых записей
       const newEquipment = {
-        ...updatedEquipment,
+        ...equipmentWithoutId,
         "ОТДЕЛЕНИЕ": addingToRoom.department,
         "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
         "КОД ПОМЕЩЕНИЯ": "",

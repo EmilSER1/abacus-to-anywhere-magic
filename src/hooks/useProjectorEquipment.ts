@@ -107,9 +107,15 @@ export const useAddProjectorEquipment = () => {
     mutationFn: async (equipment: Omit<ProjectorEquipmentItem, 'id' | 'created_at' | 'updated_at'>) => {
       console.log('🔄 Создаем новое оборудование:', equipment);
       
+      // Убираем поле id если оно пустое
+      const cleanEquipment = { ...equipment };
+      if ('id' in cleanEquipment && (!cleanEquipment.id || cleanEquipment.id === '')) {
+        delete (cleanEquipment as any).id;
+      }
+      
       const { data, error } = await supabase
         .from("projector_floors")
-        .insert([equipment])
+        .insert([cleanEquipment])
         .select()
         .single();
 
