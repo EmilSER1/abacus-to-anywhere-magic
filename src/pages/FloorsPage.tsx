@@ -562,9 +562,37 @@ export default function FloorsPage() {
                                                      {room.equipment.length} ед.
                                                    </Badge>
                                                  </div>
-                                               </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent className="px-3 pb-3">
+                                                </div>
+                                             </AccordionTrigger>
+                                             
+                                             {/* Связи с Турар - вынесены из аккордеона */}
+                                             {(() => {
+                                                const connections = getRoomConnections(room, department.name);
+                                              return connections.length > 0 ? (
+                                                <div className="px-3 py-2 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                                  <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                    <Link className="h-4 w-4" />
+                                                    Связано с кабинетами Турар:
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                    {connections.map((conn, connIndex) => (
+                                                      <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
+                                                        <div className="font-medium">
+                                                          <div className="text-sm">{conn.turar_department}</div>
+                                                          <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                        </div>
+                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
+                                                          <Link className="h-3 w-3 mr-1" />
+                                                          Активная связь
+                                                        </Badge>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              ) : null;
+                                            })()}
+                                             
+                                              <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (
                                                 <div className="rounded-lg border border-border/40 overflow-hidden">
                                                   <table className="w-full text-xs border-collapse">
@@ -635,67 +663,13 @@ export default function FloorsPage() {
                                                       })}
                                                      </tbody>
                                                    </table>
-                                                   
-                                                   {/* Связи с Турар */}
-                                                    {(() => {
-                                                       const connections = getRoomConnections(room, department.name);
-                                                     return connections.length > 0 ? (
-                                                       <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                                                         <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                                                           <Link className="h-4 w-4" />
-                                                           Связано с кабинетами Турар:
-                                                         </div>
-                                                         <div className="space-y-2">
-                                                           {connections.map((conn, connIndex) => (
-                                                             <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-3 rounded-md border border-green-200 dark:border-green-700">
-                                                               <div className="font-medium">
-                                                                 <div className="text-sm">{conn.turar_department}</div>
-                                                                 <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
-                                                               </div>
-                                                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
-                                                                 <Link className="h-3 w-3 mr-1" />
-                                                                 Активная связь
-                                                               </Badge>
-                                                             </div>
-                                                           ))}
-                                                         </div>
-                                                       </div>
-                                                     ) : null;
-                                                   })()}
-                                                 </div>
-                                               ) : (
-                                                 <div className="text-center py-4 text-muted-foreground text-xs">
-                                                   Оборудование не указано
-                                                   
-                                                   {/* Связи с Турар для комнат без оборудования */}
-                                                    {(() => {
-                                                       const connections = getRoomConnections(room, department.name);
-                                                     return connections.length > 0 ? (
-                                                       <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                                                         <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                                                           <Link className="h-4 w-4" />
-                                                           Связано с кабинетами Турар:
-                                                         </div>
-                                                         <div className="space-y-2">
-                                                           {connections.map((conn, connIndex) => (
-                                                             <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-3 rounded-md border border-green-200 dark:border-green-700">
-                                                               <div className="font-medium">
-                                                                 <div className="text-sm">{conn.turar_department}</div>
-                                                                 <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
-                                                               </div>
-                                                               <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
-                                                                 <Link className="h-3 w-3 mr-1" />
-                                                                 Активная связь
-                                                               </Badge>
-                                                             </div>
-                                                           ))}
-                                                         </div>
-                                                       </div>
-                                                     ) : null;
-                                                   })()}
-                                                 </div>
-                                              )}
-                                            </AccordionContent>
+                                                  </div>
+                                                ) : (
+                                                  <div className="text-center py-4 text-muted-foreground text-xs">
+                                                    Оборудование не указано
+                                                  </div>
+                                               )}
+                                             </AccordionContent>
                                           </AccordionItem>
                                         </Accordion>
                                       ))}
