@@ -299,40 +299,41 @@ export default function DepartmentRoomsDisplay({
                       : ''
                 }`}
               >
-                <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className={`font-medium text-sm truncate ${isInQueue ? 'text-yellow-700' : ''}`}>
-                        {room.room_name}
-                        {isInQueue && <span className="ml-1 text-xs">📋</span>}
-                      </span>
-                      {connectedRooms.length > 0 && (
-                        <div className="flex flex-wrap gap-1 shrink-0">
-                          {(() => {
-                            const uniqueRooms = Array.from(
-                              new Map(connectedRooms.map(conn => [
-                                isProjectorDepartment ? conn.turar_room : conn.projector_room,
-                                conn
-                              ])).values()
-                            );
-                            
-                            return uniqueRooms.map((connection) => {
-                              const targetRoomName = isProjectorDepartment ? connection.turar_room : connection.projector_room;
-                              
-                              return (
-                                <Badge 
-                                  key={`${targetRoomName}-${connection.id}`} 
-                                  variant="outline" 
-                                  className="text-xs h-5 bg-green-50 text-green-700 border-green-200 shrink-0"
-                                >
-                                  <Link2 className="h-2 w-2 mr-1" />
-                                  {targetRoomName.replace('кабинет врача ', '')}
-                                </Badge>
+                  <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className={`font-medium text-sm break-words hyphens-auto ${isInQueue ? 'text-yellow-700' : ''}`}>
+                          {room.room_name}
+                          {isInQueue && <span className="ml-1 text-xs">📋</span>}
+                        </span>
+                        {connectedRooms.length > 0 && (
+                          <div className="flex flex-wrap gap-1 shrink-0">
+                            {(() => {
+                              const uniqueRooms = Array.from(
+                                new Map(connectedRooms.map(conn => [
+                                  isProjectorDepartment ? conn.turar_room : conn.projector_room,
+                                  conn
+                                ])).values()
                               );
-                            });
-                          })()}
-                        </div>
-                      )}
+                              
+                              return uniqueRooms.map((connection) => {
+                                const targetRoomName = isProjectorDepartment ? connection.turar_room : connection.projector_room;
+                                
+                                return (
+                                  <Badge 
+                                    key={`${targetRoomName}-${connection.id}`} 
+                                    variant="outline" 
+                                    className="text-xs h-5 bg-green-50 text-green-700 border-green-200 shrink-0 max-w-32 truncate"
+                                    title={targetRoomName}
+                                  >
+                                    <Link2 className="h-2 w-2 mr-1 shrink-0" />
+                                    <span className="truncate">{targetRoomName.replace('кабинет врача ', '')}</span>
+                                  </Badge>
+                                );
+                              });
+                            })()}
+                          </div>
+                        )}
                     </div>
                     
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -383,15 +384,15 @@ export default function DepartmentRoomsDisplay({
                   <div className="px-3 py-1 bg-muted/10 border-y">
                     <div className="text-xs font-medium text-muted-foreground mb-1">Связи:</div>
                     <div className="space-y-1">
-                      {connectedRooms.map((connection) => (
-                        <div key={connection.id} className="flex items-center justify-between text-xs bg-white/50 p-1 rounded">
-                          <span>
-                            {isProjectorDepartment ? (
-                              <span>📍 Турар: {connection.turar_room}</span>
-                            ) : (
-                              <span>📍 Проектировщики: {connection.projector_room}</span>
-                            )}
-                          </span>
+                        {connectedRooms.map((connection) => (
+                          <div key={connection.id} className="flex items-center justify-between text-xs bg-white/50 p-1 rounded">
+                            <span className="break-words hyphens-auto flex-1 pr-2">
+                              {isProjectorDepartment ? (
+                                <span>📍 Турар: {connection.turar_room}</span>
+                              ) : (
+                                <span>📍 Проектировщики: {connection.projector_room}</span>
+                              )}
+                            </span>
                           {onRemoveConnection && (
                             <Button
                               size="sm"
