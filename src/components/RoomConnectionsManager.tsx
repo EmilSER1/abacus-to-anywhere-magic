@@ -78,11 +78,20 @@ export default function RoomConnectionsManager() {
         const turarDepts = linkedDepartmentPairs
           .filter(pair => pair.projector_department_id === departmentId);
         
+        console.log('🔍 Поиск кабинетов Турар для проектировщика:', {
+          departmentId,
+          departmentName,
+          linkedPairs: turarDepts.length,
+          turarDepts: turarDepts.map(d => d.turar_department)
+        });
+        
         for (const dept of turarDepts) {
           const { data: rooms, error } = await supabase
             .from('turar_medical')
             .select('*')
             .eq('Отделение/Блок', dept.turar_department);
+          
+          console.log(`📋 Загружено кабинетов для ${dept.turar_department}:`, rooms?.length || 0);
           
           if (error) {
             console.error('Ошибка загрузки кабинетов Турар:', error);
@@ -102,7 +111,9 @@ export default function RoomConnectionsManager() {
                 });
               }
             });
-            targetRooms.push(...Array.from(uniqueRooms.values()));
+            const deduplicatedRooms = Array.from(uniqueRooms.values());
+            console.log(`✨ После дедупликации для ${dept.turar_department}:`, deduplicatedRooms.length);
+            targetRooms.push(...deduplicatedRooms);
           }
         }
       } else {
@@ -110,11 +121,20 @@ export default function RoomConnectionsManager() {
         const projectorDepts = linkedDepartmentPairs
           .filter(pair => pair.turar_department_id === departmentId);
         
+        console.log('🔍 Поиск кабинетов проектировщиков для Турар:', {
+          departmentId,
+          departmentName,
+          linkedPairs: projectorDepts.length,
+          projectorDepts: projectorDepts.map(d => d.projector_department)
+        });
+        
         for (const dept of projectorDepts) {
           const { data: rooms, error } = await supabase
             .from('projector_floors')
             .select('*')
             .eq('ОТДЕЛЕНИЕ', dept.projector_department);
+          
+          console.log(`📋 Загружено кабинетов для ${dept.projector_department}:`, rooms?.length || 0);
           
           if (error) {
             console.error('Ошибка загрузки кабинетов проектировщиков:', error);
@@ -134,7 +154,9 @@ export default function RoomConnectionsManager() {
                 });
               }
             });
-            targetRooms.push(...Array.from(uniqueRooms.values()));
+            const deduplicatedRooms = Array.from(uniqueRooms.values());
+            console.log(`✨ После дедупликации для ${dept.projector_department}:`, deduplicatedRooms.length);
+            targetRooms.push(...deduplicatedRooms);
           }
         }
       }
@@ -148,6 +170,9 @@ export default function RoomConnectionsManager() {
       return;
     }
 
+    console.log('🎯 ИТОГО найдено кабинетов для связывания:', targetRooms.length);
+    console.log('📝 Список кабинетов:', targetRooms.map(r => r.name));
+    
     setAvailableTargetRooms(targetRooms);
     setSelectedRooms(new Set());
     setShowConnectionDialog(true);
