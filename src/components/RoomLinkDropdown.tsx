@@ -253,16 +253,20 @@ export default function RoomLinkDropdown({
             Выберите кабинеты из отделения: <span className="font-medium">{connectedTurarDepartment}</span>
           </p>
           {connectedTurarRooms.size > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded p-2 mt-2">
-              <div className="text-xs font-medium text-green-800 mb-1">
-                <LinkIcon className="h-3 w-3 inline mr-1" />
-                Уже связанные кабинеты:
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
+              <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2 flex items-center">
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Уже связанные кабинеты ({connectedTurarRooms.size}):
               </div>
-              <div className="flex flex-wrap gap-1">
+              <div className="space-y-1">
                 {Array.from(connectedTurarRooms).map(room => (
-                  <Badge key={room} variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                    {room}
-                  </Badge>
+                  <div key={room} className="flex items-center gap-2 bg-white dark:bg-green-900/30 p-2 rounded border border-green-200 dark:border-green-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-800 dark:text-green-200 font-medium">{room}</span>
+                    <Badge variant="secondary" className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 text-xs ml-auto">
+                      Связан
+                    </Badge>
+                  </div>
                 ))}
               </div>
             </div>

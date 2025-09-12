@@ -794,15 +794,22 @@ export default function FloorsPage() {
                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
                                                    <span className="font-medium">{room.name}</span>
                                                    <Badge variant="outline" className="text-xs font-mono">{room.code}</Badge>
-                                                     {(() => {
-                                                        const connections = getRoomConnections(room, department.name);
-                                                      return connections.length > 0 ? (
-                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
-                                                          <Link className="h-3 w-3 mr-1" />
-                                                          ✓ {connections[0].turar_room} ({connections.length})
-                                                        </Badge>
-                                                      ) : null;
-                                                    })()}
+                                                      {(() => {
+                                                         const connections = getRoomConnections(room, department.name);
+                                                       return connections.length > 0 ? (
+                                                         <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
+                                                           <Link className="h-3 w-3 mr-1" />
+                                                           ✓ Связан ({connections.length})
+                                                         </Badge>
+                                                       ) : (
+                                                         // Показываем индикатор "не связан" если есть доступное отделение Турар
+                                                         getDepartmentTurarLink(department.name) ? (
+                                                           <Badge variant="outline" className="text-xs text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-600">
+                                                             🔗 Не связан
+                                                           </Badge>
+                                                         ) : null
+                                                       );
+                                                     })()}
                                                  </div>
                                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                    <span>{(room.area || 0).toFixed(1)} м²</span>
@@ -840,27 +847,43 @@ export default function FloorsPage() {
                                                  // Показываем кнопку связывания если нет связей и есть связанное отделение Турар
                                                  (() => {
                                                    const connectedTurarDept = getDepartmentTurarLink(department.name);
-                                                   return connectedTurarDept ? (
-                                                     <div className="px-3 py-2 border-t border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
-                                                       <div className="flex items-center justify-between">
-                                                         <div className="text-sm text-blue-800 dark:text-blue-200">
-                                                           Связать с кабинетом из: {connectedTurarDept}
-                                                         </div>
-                                                          <RoomLinkDropdown
-                                                            roomId={room.code} // Используем код кабинета как ID
-                                                            roomName={room.name}
-                                                            departmentId={department.name}
-                                                            departmentName={department.name}
-                                                            connectedTurarDepartment={connectedTurarDept}
-                                                            isProjectorDepartment={true}
-                                                            onSuccess={() => {
-                                                              // Данные обновятся автоматически через React Query
-                                                              console.log('✅ Связи созданы успешно');
-                                                            }}
-                                                          />
-                                                       </div>
-                                                     </div>
-                                                   ) : null;
+                                                    // Проверяем есть ли уже связи для этого кабинета
+                                                    const hasExistingConnections = roomConnections?.some(
+                                                      conn => conn.projector_room === room.name && 
+                                                              conn.projector_department === department.name
+                                                    );
+
+                                                    return connectedTurarDept ? (
+                                                      <div className={`px-3 py-2 border-t ${
+                                                        hasExistingConnections 
+                                                          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' 
+                                                          : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
+                                                      }`}>
+                                                        <div className="flex items-center justify-between">
+                                                          <div className={`text-sm ${
+                                                            hasExistingConnections 
+                                                              ? 'text-green-800 dark:text-green-200' 
+                                                              : 'text-blue-800 dark:text-blue-200'
+                                                          }`}>
+                                                            {hasExistingConnections 
+                                                              ? `✅ Добавить еще связи с: ${connectedTurarDept}` 
+                                                              : `🔗 Связать с кабинетом из: ${connectedTurarDept}`
+                                                            }
+                                                          </div>
+                                                           <RoomLinkDropdown
+                                                             roomId={room.code}
+                                                             roomName={room.name}
+                                                             departmentId={department.name}
+                                                             departmentName={department.name}
+                                                             connectedTurarDepartment={connectedTurarDept}
+                                                             isProjectorDepartment={true}
+                                                             onSuccess={() => {
+                                                               console.log('✅ Связи созданы успешно');
+                                                             }}
+                                                           />
+                                                        </div>
+                                                      </div>
+                                                    ) : null;
                                                  })()
                                                );
                                              })()}
