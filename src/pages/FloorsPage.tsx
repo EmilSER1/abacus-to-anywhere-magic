@@ -18,6 +18,8 @@ import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import RoomLinkDropdown from '@/components/RoomLinkDropdown';
+import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -187,6 +189,18 @@ export default function FloorsPage() {
 
   // Состояния для связывания отделений
   const [departmentTurarSelections, setDepartmentTurarSelections] = useState<Record<string, string>>({});
+  
+  // Функция для получения связанного отделения Турар
+  const getDepartmentTurarLink = (departmentName: string): string | null => {
+    if (!allData) return null;
+    
+    const linkedRecord = allData.find(item => 
+      item["ОТДЕЛЕНИЕ"]?.trim() === departmentName?.trim() && 
+      item.connected_turar_department
+    );
+    
+    return linkedRecord?.connected_turar_department || null;
+  };
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
@@ -362,17 +376,6 @@ export default function FloorsPage() {
     return Array.from(departments).sort();
   }, [turarData]);
 
-  // Получение текущей связи отделения с Турар
-  const getDepartmentTurarLink = (departmentName: string) => {
-    if (!allData) return null;
-    
-    const linkedRecord = allData.find(item => 
-      item["ОТДЕЛЕНИЕ"] === departmentName && 
-      item.connected_turar_department
-    );
-    
-    return linkedRecord?.connected_turar_department || null;
-  };
 
   // Сохранение связи отделения с Турар
   const handleSaveDepartmentLink = (departmentName: string) => {
@@ -810,32 +813,53 @@ export default function FloorsPage() {
                                                 </div>
                                              </AccordionTrigger>
                                              
-                                             {/* Связи с Турар - вынесены из аккордеона */}
-                                             {(() => {
-                                                const connections = getRoomConnections(room, department.name);
-                                              return connections.length > 0 ? (
-                                                <div className="px-3 py-2 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
-                                                  <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                                                    <Link className="h-4 w-4" />
-                                                    Связано с кабинетами Турар:
-                                                  </div>
-                                                  <div className="space-y-2">
-                                                    {connections.map((conn, connIndex) => (
-                                                      <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
-                                                        <div className="font-medium">
-                                                          <div className="text-sm">{conn.turar_department}</div>
-                                                          <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
-                                                        </div>
-                                                        <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
-                                                          <Link className="h-3 w-3 mr-1" />
-                                                          Активная связь
-                                                        </Badge>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              ) : null;
-                                            })()}
+                                              {(() => {
+                                                 const connections = getRoomConnections(room, department.name);
+                                               return connections.length > 0 ? (
+                                                 <div className="px-3 py-2 border-t border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                                   <div className="flex items-center gap-2 text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                     <Link className="h-4 w-4" />
+                                                     Связано с кабинетами Турар:
+                                                   </div>
+                                                   <div className="space-y-2">
+                                                     {connections.map((conn, connIndex) => (
+                                                       <div key={connIndex} className="flex items-center justify-between bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-2 rounded-md border border-green-200 dark:border-green-700">
+                                                         <div className="font-medium">
+                                                           <div className="text-sm">{conn.turar_department}</div>
+                                                           <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
+                                                         </div>
+                                                         <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white">
+                                                           <Link className="h-3 w-3 mr-1" />
+                                                           Активная связь
+                                                         </Badge>
+                                                       </div>
+                                                     ))}
+                                                   </div>
+                                                 </div>
+                                               ) : (
+                                                 // Показываем кнопку связывания если нет связей и есть связанное отделение Турар
+                                                 (() => {
+                                                   const connectedTurarDept = getDepartmentTurarLink(department.name);
+                                                   return connectedTurarDept ? (
+                                                     <div className="px-3 py-2 border-t border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                                                       <div className="flex items-center justify-between">
+                                                         <div className="text-sm text-blue-800 dark:text-blue-200">
+                                                           Связать с кабинетом из: {connectedTurarDept}
+                                                         </div>
+                                                         <RoomLinkDropdown
+                                                           roomId={`${department.name}-${room.name}`}
+                                                           roomName={room.name}
+                                                           departmentId={`dept-${department.name}`}
+                                                           departmentName={department.name}
+                                                           connectedTurarDepartment={connectedTurarDept}
+                                                           isProjectorDepartment={true}
+                                                         />
+                                                       </div>
+                                                     </div>
+                                                   ) : null;
+                                                 })()
+                                               );
+                                             })()}
                                              
                                               <AccordionContent className="px-3 pb-3">
                                               {room.equipment.length > 0 ? (
