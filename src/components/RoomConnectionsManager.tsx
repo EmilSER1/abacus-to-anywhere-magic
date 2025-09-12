@@ -422,6 +422,7 @@ export default function RoomConnectionsManager() {
                         linkingRoom={linkingRoom}
                         onAddToQueue={addToConnectionQueue}
                         isRoomInQueue={isRoomInQueue}
+                        isProjectorDepartment={false}
                         selectedRooms={new Set()}
                         multiSelectMode={false}
                       />
