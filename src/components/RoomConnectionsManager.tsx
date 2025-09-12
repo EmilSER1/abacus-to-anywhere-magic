@@ -224,6 +224,12 @@ export default function RoomConnectionsManager() {
     });
   };
 
+  const isRoomInQueue = (roomId: string) => {
+    return connectionQueue.some(conn => 
+      conn.sourceRoomId === roomId || conn.targetRoomId === roomId
+    );
+  };
+
   const toggleDepartment = (deptKey: string) => {
     const newExpanded = new Set(expandedDepartments);
     if (newExpanded.has(deptKey)) {
@@ -380,6 +386,7 @@ export default function RoomConnectionsManager() {
                         onLinkRoom={(roomId, roomName) => handleLinkRoom(roomId, roomName, group.turar_department_id, group.turar_department, false)}
                         linkingRoom={linkingRoom}
                         onAddToQueue={addToConnectionQueue}
+                        isRoomInQueue={isRoomInQueue}
                         selectedRooms={new Set()}
                         multiSelectMode={false}
                       />
@@ -396,6 +403,7 @@ export default function RoomConnectionsManager() {
                             onLinkRoom={(roomId, roomName) => handleLinkRoom(roomId, roomName, projDept.projector_department_id, projDept.projector_department, true)}
                             linkingRoom={linkingRoom}
                             onAddToQueue={addToConnectionQueue}
+                            isRoomInQueue={isRoomInQueue}
                             isProjectorDepartment={true}
                             selectedRooms={new Set()}
                             multiSelectMode={false}

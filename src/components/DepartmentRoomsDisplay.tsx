@@ -18,6 +18,7 @@ interface DepartmentRoomsDisplayProps {
   onLinkRoom?: (roomId: string, roomName: string) => void;
   onRemoveConnection?: (connectionId: string) => void;
   onAddToQueue?: (targetRoomId: string, targetRoomName: string, targetDepartmentId: string, targetDepartmentName: string) => void;
+  isRoomInQueue?: (roomId: string) => boolean;
   linkingRoom?: {
     departmentId: string;
     roomId: string;
@@ -146,6 +147,7 @@ export default function DepartmentRoomsDisplay({
   onLinkRoom,
   onRemoveConnection,
   onAddToQueue,
+  isRoomInQueue,
   linkingRoom,
   connections = [],
   isProjectorDepartment = false,
@@ -282,19 +284,28 @@ export default function DepartmentRoomsDisplay({
             return [...unconnectedRooms, ...connectedRooms];
           })().map((room) => {
             const connectedRooms = getConnectedRooms(room.id, room.room_name)
-            
             const isConnected = connectedRooms.length > 0;
+            const isInQueue = isRoomInQueue ? isRoomInQueue(room.id) : false;
             
             return (
               <AccordionItem 
                 key={room.id} 
                 value={room.id} 
-                className={`border rounded-lg ${isConnected ? 'bg-green-50/50 border-green-200' : ''}`}
+                className={`border rounded-lg ${
+                  isInQueue 
+                    ? 'bg-yellow-50/80 border-yellow-300' 
+                    : isConnected 
+                      ? 'bg-green-50/50 border-green-200' 
+                      : ''
+                }`}
               >
                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180">
                   <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="font-medium text-sm truncate">{room.room_name}</span>
+                      <span className={`font-medium text-sm truncate ${isInQueue ? 'text-yellow-700' : ''}`}>
+                        {room.room_name}
+                        {isInQueue && <span className="ml-1 text-xs">📋</span>}
+                      </span>
                       {connectedRooms.length > 0 && (
                         <div className="flex flex-wrap gap-1 shrink-0">
                           {(() => {
