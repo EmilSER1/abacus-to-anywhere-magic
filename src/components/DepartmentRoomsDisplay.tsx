@@ -367,20 +367,39 @@ export default function DepartmentRoomsDisplay({
                     
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       {/* Галочка для добавления в очередь при активном режиме связывания */}
-                      {linkingRoom && linkingRoom.departmentId !== departmentId && onAddToQueue && canEdit && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1 h-7 text-xs px-2"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onAddToQueue(room.id, room.room_name, departmentId, departmentName)
-                          }}
-                        >
-                          <Link2 className="h-3 w-3" />
-                          В очередь
-                        </Button>
-                      )}
+                      {(() => {
+                        const shouldShowQueueButton = linkingRoom && linkingRoom.departmentId !== departmentId && onAddToQueue && canEdit;
+                        
+                        console.log(`🔍 КНОПКА "В ОЧЕРЕДЬ" для ${room.room_name}:`, {
+                          linkingRoom: linkingRoom ? {
+                            departmentId: linkingRoom.departmentId,
+                            roomName: linkingRoom.roomName,
+                            departmentName: linkingRoom.departmentName
+                          } : null,
+                          currentDepartmentId: departmentId,
+                          currentDepartmentName: departmentName,
+                          isProjectorDepartment,
+                          hasOnAddToQueue: !!onAddToQueue,
+                          canEdit,
+                          isDifferentDepartment: linkingRoom ? linkingRoom.departmentId !== departmentId : false,
+                          shouldShow: shouldShowQueueButton
+                        });
+                        
+                        return shouldShowQueueButton ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 h-7 text-xs px-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAddToQueue(room.id, room.room_name, departmentId, departmentName)
+                            }}
+                          >
+                            <Link2 className="h-3 w-3" />
+                            В очередь
+                          </Button>
+                        ) : null;
+                      })()}
                       
                       {/* Кнопка связывания для начала процесса */}
                       {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && (
