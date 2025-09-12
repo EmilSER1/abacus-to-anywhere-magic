@@ -41,7 +41,6 @@ function ConnectedRoomBadge({ roomId, isProjectorRoom }: {
   const [roomName, setRoomName] = useState<string>('...');
 
   useEffect(() => {
-    console.log('🔍 ConnectedRoomBadge fetching for:', { roomId, isProjectorRoom });
     const fetchRoomName = async () => {
       try {
         if (isProjectorRoom) {
@@ -180,12 +179,9 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string) => {
-    console.log('🔍 Getting connected rooms for:', { roomId, connections, isProjectorDepartment });
-    const filtered = isProjectorDepartment 
+    return isProjectorDepartment 
       ? connections.filter(conn => conn.projector_room_id === roomId)
       : connections.filter(conn => conn.turar_room_id === roomId);
-    console.log('📋 Filtered connections:', filtered);
-    return filtered;
   }
 
   if (actualIsLoading) {
@@ -238,20 +234,13 @@ export default function DepartmentRoomsDisplay({
                     <span className="font-medium text-sm">{room.room_name}</span>
                     {connectedRooms.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {(() => {
-                          console.log('🎯 Rendering badges for room:', room.room_name, 'connections:', connectedRooms);
-                          return connectedRooms.map((connection) => {
-                            const targetRoomId = isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id;
-                            console.log('🏷️ Creating badge for connection:', connection.id, 'targetRoomId:', targetRoomId);
-                            return (
-                              <ConnectedRoomBadge
-                                key={connection.id}
-                                roomId={targetRoomId}
-                                isProjectorRoom={!isProjectorDepartment}
-                              />
-                            );
-                          });
-                        })()}
+                        {connectedRooms.map((connection) => (
+                          <ConnectedRoomBadge
+                            key={connection.id}
+                            roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
+                            isProjectorRoom={!isProjectorDepartment}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
