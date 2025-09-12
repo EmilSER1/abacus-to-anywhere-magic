@@ -33,6 +33,50 @@ interface DepartmentRoomsDisplayProps {
   multiSelectMode?: boolean;
 }
 
+// Компонент для отображения названия связанного кабинета в виде бейджа
+function ConnectedRoomBadge({ roomId, isProjectorRoom }: {
+  roomId: string;
+  isProjectorRoom: boolean;
+}) {
+  const [roomName, setRoomName] = useState<string>('...');
+
+  useEffect(() => {
+    const fetchRoomName = async () => {
+      try {
+        if (isProjectorRoom) {
+          const { data } = await supabase
+            .from("projector_floors")
+            .select('"НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"')
+            .eq("id", roomId)
+            .limit(1)
+            .single();
+          setRoomName(data?.["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || `ID: ${roomId}`);
+        } else {
+          const { data } = await supabase
+            .from("turar_medical")
+            .select('"Помещение/Кабинет"')
+            .eq("id", roomId)
+            .limit(1)
+            .single();
+          setRoomName(data?.["Помещение/Кабинет"] || `ID: ${roomId}`);
+        }
+      } catch (error) {
+        console.error('Ошибка получения названия кабинета:', error);
+        setRoomName('Ошибка');
+      }
+    };
+
+    fetchRoomName();
+  }, [roomId, isProjectorRoom]);
+
+  return (
+    <Badge variant="outline" className="text-xs h-5 bg-green-50 text-green-700 border-green-200">
+      <Link2 className="h-2 w-2 mr-1" />
+      {roomName}
+    </Badge>
+  );
+}
+
 // Компонент для отображения связанного кабинета с названием
 function ConnectedRoomDisplay({ connectionId, roomId, isProjectorRoom, onRemove }: {
   connectionId: string;
@@ -191,10 +235,15 @@ export default function DepartmentRoomsDisplay({
                   <div className="flex items-center gap-2 flex-1">
                     <span className="font-medium text-sm">{room.room_name}</span>
                     {connectedRooms.length > 0 && (
-                      <Badge variant="outline" className="text-xs h-5">
-                        <Link2 className="h-2 w-2 mr-1" />
-                        {connectedRooms.length}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {connectedRooms.map((connection) => (
+                          <ConnectedRoomBadge
+                            key={connection.id}
+                            roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
+                            isProjectorRoom={!isProjectorDepartment}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                   
