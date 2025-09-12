@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Link2, ChevronDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Link2, ChevronDown, Check } from 'lucide-react';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCreateRoomConnectionById } from '@/hooks/useRoomConnectionsById';
 
@@ -25,6 +27,8 @@ export default function RoomLinkDropdown({
   onSuccess
 }: RoomLinkDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
+  const [isCreatingConnections, setIsCreatingConnections] = useState(false);
   const { data: turarData } = useTurarMedicalData();
   const createConnection = useCreateRoomConnectionById();
 
@@ -42,27 +46,45 @@ export default function RoomLinkDropdown({
     return Array.from(rooms).sort();
   }, [turarData, connectedTurarDepartment]);
 
-  const handleRoomLink = async (turarRoomName: string) => {
-    if (!connectedTurarDepartment) return;
+  // Обработчик выбора/отмены выбора кабинета
+  const handleRoomToggle = (turarRoomName: string) => {
+    const newSelectedRooms = new Set(selectedRooms);
+    if (newSelectedRooms.has(turarRoomName)) {
+      newSelectedRooms.delete(turarRoomName);
+    } else {
+      newSelectedRooms.add(turarRoomName);
+    }
+    setSelectedRooms(newSelectedRooms);
+  };
 
-    // Получаем ID комнат Турар
-    const turarRoom = turarData?.find(item => 
-      item["Отделение/Блок"] === connectedTurarDepartment && 
-      item["Помещение/Кабинет"] === turarRoomName
-    );
+  // Создание связей для всех выбранных кабинетов
+  const handleCreateConnections = async () => {
+    if (!connectedTurarDepartment || selectedRooms.size === 0) return;
 
+    setIsCreatingConnections(true);
+    
     try {
-      await createConnection.mutateAsync({
-        projector_room_id: roomId,
-        turar_room_id: turarRoom?.id,
-        projector_department_id: departmentId,
-        turar_department_id: undefined // Пока не используем ID отделений
-      });
+      for (const turarRoomName of selectedRooms) {
+        const turarRoom = turarData?.find(item => 
+          item["Отделение/Блок"] === connectedTurarDepartment && 
+          item["Помещение/Кабинет"] === turarRoomName
+        );
 
+        await createConnection.mutateAsync({
+          projector_room_id: roomId,
+          turar_room_id: turarRoom?.id,
+          projector_department_id: departmentId,
+          turar_department_id: undefined
+        });
+      }
+
+      setSelectedRooms(new Set()); // Очищаем выбор
       setIsOpen(false);
       onSuccess?.();
     } catch (error) {
-      console.error('Error creating room connection:', error);
+      console.error('Error creating room connections:', error);
+    } finally {
+      setIsCreatingConnections(false);
     }
   };
 
@@ -107,6 +129,11 @@ export default function RoomLinkDropdown({
         >
           <Link2 className="h-3 w-3" />
           Связать
+          {selectedRooms.size > 0 && (
+            <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+              {selectedRooms.size}
+            </Badge>
+          )}
           <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
@@ -118,19 +145,51 @@ export default function RoomLinkDropdown({
         <div className="px-2 py-1 text-xs font-medium text-muted-foreground border-b">
           Кабинеты из: {connectedTurarDepartment}
         </div>
-        {availableRooms.map((room) => (
-          <DropdownMenuItem
-            key={room}
-            className="text-xs cursor-pointer hover:bg-muted/50"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRoomLink(room);
-            }}
-          >
-            <Link2 className="h-3 w-3 mr-2" />
-            {room}
-          </DropdownMenuItem>
-        ))}
+        
+        <div className="p-2 space-y-1">
+          {availableRooms.map((room) => {
+            const isSelected = selectedRooms.has(room);
+            return (
+              <div
+                key={room}
+                className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
+                  isSelected 
+                    ? 'bg-primary/20 border border-primary/50' 
+                    : 'hover:bg-muted/50'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRoomToggle(room);
+                }}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onChange={() => {}} // Контролируется через onClick
+                  className="pointer-events-none"
+                />
+                <Link2 className="h-3 w-3" />
+                <span className="text-xs flex-1">{room}</span>
+                {isSelected && <Check className="h-3 w-3 text-primary" />}
+              </div>
+            );
+          })}
+        </div>
+        
+        {selectedRooms.size > 0 && (
+          <div className="border-t p-2">
+            <Button
+              size="sm"
+              className="w-full text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateConnections();
+              }}
+              disabled={isCreatingConnections}
+            >
+              {isCreatingConnections ? 'Создание связей...' : `Создать связи (${selectedRooms.size})`}
+            </Button>
+          </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
