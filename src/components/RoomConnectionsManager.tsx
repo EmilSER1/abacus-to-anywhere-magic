@@ -134,15 +134,35 @@ export default function RoomConnectionsManager() {
       return;
     }
     
+    // Получаем правильные названия отделений из связей отделений (department_mappings)
+    // чтобы избежать несоответствий между таблицами departments и department_mappings
+    const getCorrectDepartmentName = (departmentId: string, isProjector: boolean): string => {
+      const mapping = linkedDepartmentPairs.find(pair => 
+        isProjector 
+          ? pair.projector_department_id === departmentId
+          : pair.turar_department_id === departmentId
+      );
+      
+      if (mapping) {
+        return isProjector ? mapping.projector_department : mapping.turar_department;
+      }
+      
+      // Fallback к оригинальному названию, если не найдено в связях
+      return isProjector ? targetDepartmentName : linkingRoom.departmentName;
+    };
+    
+    const sourceDepartmentCorrectName = getCorrectDepartmentName(linkingRoom.departmentId, linkingRoom.isProjectorDepartment);
+    const targetDepartmentCorrectName = getCorrectDepartmentName(targetDepartmentId, !linkingRoom.isProjectorDepartment);
+    
     const newConnection = {
       sourceRoomId: linkingRoom.roomId,
       sourceRoomName: linkingRoom.roomName,
       sourceDepartmentId: linkingRoom.departmentId,
-      sourceDepartmentName: linkingRoom.departmentName,
+      sourceDepartmentName: sourceDepartmentCorrectName,
       targetRoomId,
       targetRoomName,
       targetDepartmentId,
-      targetDepartmentName,
+      targetDepartmentName: targetDepartmentCorrectName,
       isProjectorToTurar: linkingRoom.isProjectorDepartment
     };
     
