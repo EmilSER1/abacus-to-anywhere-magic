@@ -179,11 +179,12 @@ export default function DepartmentRoomsDisplay({
   }
 
   const getConnectedRooms = (roomId: string) => {
-    if (isProjectorDepartment) {
-      return connections.filter(conn => conn.projector_room_id === roomId)
-    } else {
-      return connections.filter(conn => conn.turar_room_id === roomId)
-    }
+    console.log('🔍 Getting connected rooms for:', { roomId, connections, isProjectorDepartment });
+    const filtered = isProjectorDepartment 
+      ? connections.filter(conn => conn.projector_room_id === roomId)
+      : connections.filter(conn => conn.turar_room_id === roomId);
+    console.log('📋 Filtered connections:', filtered);
+    return filtered;
   }
 
   if (actualIsLoading) {
