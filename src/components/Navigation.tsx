@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3, Settings, LogOut } from 'lucide-react'
+import { Building2, Home, Users, Database, ArrowLeft, Search, BarChart3, Settings, LogOut, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -35,7 +35,7 @@ export function Navigation() {
     },
     {
       name: 'Проектировщики',
-      href: '/floors',
+      href: '/connections',
       icon: Building2,
     },
     {
@@ -54,8 +54,13 @@ export function Navigation() {
       icon: BarChart3,
     },
     {
+      name: 'Этажи',
+      href: '/floors',
+      icon: MapPin,
+    },
+    {
       name: 'Таблица соединения',
-      href: '/connections',
+      href: '/connections-old',
       icon: Database,
     },
     {
