@@ -31,7 +31,7 @@ const roleColors: Record<UserRole, string> = {
 };
 
 export default function UsersPage() {
-  const { users, loading, updateUserRole } = useUsers();
+  const { users, loading, isSuperAdmin, updateUserRole } = useUsers();
   const { canViewUsers } = useUserRole();
   const { toast } = useToast();
   const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set());
@@ -118,8 +118,13 @@ export default function UsersPage() {
                             {user.full_name || "Без имени"}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {user.email}
+                            {isSuperAdmin ? user.email : `ID: ${user.id.slice(0, 8)}...`}
                           </div>
+                          {!isSuperAdmin && (
+                            <div className="text-xs text-orange-600">
+                              📧 Только суперадмин видит email
+                            </div>
+                          )}
                         </div>
                       </div>
                       <Badge className={roleColors[user.role]}>

@@ -353,6 +353,33 @@ export type Database = {
           },
         ]
       }
+      role_change_audit: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          id: string
+          new_role: Database["public"]["Enums"]["user_role"] | null
+          old_role: Database["public"]["Enums"]["user_role"] | null
+          target_user: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role?: Database["public"]["Enums"]["user_role"] | null
+          old_role?: Database["public"]["Enums"]["user_role"] | null
+          target_user?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          new_role?: Database["public"]["Enums"]["user_role"] | null
+          old_role?: Database["public"]["Enums"]["user_role"] | null
+          target_user?: string | null
+        }
+        Relationships: []
+      }
       room_connections: {
         Row: {
           created_at: string
@@ -578,6 +605,13 @@ export type Database = {
       sync_projector_room_connections: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_user_role_secure: {
+        Args: {
+          new_role: Database["public"]["Enums"]["user_role"]
+          target_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
