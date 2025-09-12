@@ -255,37 +255,39 @@ export default function DepartmentRoomsDisplay({
                 <div 
                   className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer"
                   onClick={() => toggleRoom(room.id)}
-                >
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className="font-medium text-sm">{room.room_name}</span>
-                    {connectedRooms.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {(() => {
-                          // Группируем по названию кабинета для избежания дублей
-                          const uniqueRooms = Array.from(
-                            new Map(connectedRooms.map(conn => [
-                              isProjectorDepartment ? conn.turar_room : conn.projector_room,
-                              conn
-                            ])).values()
-                          );
-                          
-                          
-                          return uniqueRooms.map((connection, index) => {
-                            const targetRoomId = isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id;
-                            const targetRoomName = isProjectorDepartment ? connection.turar_room : connection.projector_room;
-                            
-                            return (
-                              <ConnectedRoomBadge
-                                key={`${targetRoomName}-${targetRoomId}`}
-                                roomId={targetRoomId}
-                                isProjectorRoom={!isProjectorDepartment}
-                              />
-                            );
-                          });
-                        })()}
-                      </div>
-                    )}
-                  </div>
+                 >
+                   <div className="flex items-center gap-2 flex-1 min-w-0">
+                     <span className="font-medium text-sm truncate">{room.room_name}</span>
+                     {connectedRooms.length > 0 && (
+                       <div className="flex flex-wrap gap-1 shrink-0">
+                         {(() => {
+                           // Группируем по названию кабинета для избежания дублей
+                           const uniqueRooms = Array.from(
+                             new Map(connectedRooms.map(conn => [
+                               isProjectorDepartment ? conn.turar_room : conn.projector_room,
+                               conn
+                             ])).values()
+                           );
+                           
+                           return uniqueRooms.map((connection, index) => {
+                             const targetRoomId = isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id;
+                             const targetRoomName = isProjectorDepartment ? connection.turar_room : connection.projector_room;
+                             
+                             return (
+                               <Badge 
+                                 key={`${targetRoomName}-${targetRoomId}`} 
+                                 variant="outline" 
+                                 className="text-xs h-5 bg-green-50 text-green-700 border-green-200 shrink-0"
+                               >
+                                 <Link2 className="h-2 w-2 mr-1" />
+                                 {targetRoomName.replace('кабинет врача ', '')}
+                               </Badge>
+                             );
+                           });
+                         })()}
+                       </div>
+                     )}
+                   </div>
                   
                   <div className="flex items-center gap-2">
                     {/* Множественный выбор при активном режиме связывания */}
