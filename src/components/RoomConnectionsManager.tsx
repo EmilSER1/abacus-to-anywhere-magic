@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Link2, Building2, X } from 'lucide-react'
+import { Link2, Building2, Trash2 } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useDepartmentMappingsWithDetails } from '@/hooks/useDepartmentMappingsById'
 import { useRoomConnectionsById, useCreateRoomConnectionById, useDeleteRoomConnectionById } from '@/hooks/useRoomConnectionsById'
@@ -299,7 +299,7 @@ export default function RoomConnectionsManager() {
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => removeFromConnectionQueue(index)}
                   >
-                    <X className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
