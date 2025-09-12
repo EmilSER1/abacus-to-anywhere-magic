@@ -24,7 +24,7 @@ export const useCleanupUnknownRooms = () => {
 
       console.log('✅ Deleted ALL room connections:', deletedConnections?.length || 0);
 
-      // 2. Clean ALL projector_floors connections
+      // 2. Clean ALL projector_floors connections (remove filters to clean everything)
       const { data: updatedProjectorFloors, error: projectorError } = await supabase
         .from('projector_floors')
         .update({
@@ -32,7 +32,7 @@ export const useCleanupUnknownRooms = () => {
           connected_turar_department: null,
           connected_turar_room_id: null
         })
-        .not('connected_turar_room', 'is', null)
+        .neq('id', '00000000-0000-0000-0000-000000000000') // Update all rows
         .select();
 
       if (projectorError) {
@@ -42,7 +42,7 @@ export const useCleanupUnknownRooms = () => {
 
       console.log('✅ Cleaned ALL projector floors:', updatedProjectorFloors?.length || 0);
 
-      // 3. Clean ALL turar_medical connections
+      // 3. Clean ALL turar_medical connections (remove filters to clean everything)
       const { data: updatedTurarMedical, error: turarError } = await supabase
         .from('turar_medical')
         .update({
@@ -50,7 +50,7 @@ export const useCleanupUnknownRooms = () => {
           connected_projector_department: null,
           connected_projector_room_id: null
         })
-        .not('connected_projector_room', 'is', null)
+        .neq('id', '00000000-0000-0000-0000-000000000000') // Update all rows
         .select();
 
       if (turarError) {
