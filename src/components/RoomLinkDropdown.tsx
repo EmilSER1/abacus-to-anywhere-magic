@@ -172,6 +172,7 @@ export default function RoomLinkDropdown({
       
       // Обновляем кэш
       queryClient.invalidateQueries({ queryKey: ["room-connections"] });
+      queryClient.invalidateQueries({ queryKey: ["room-connections-by-id"] });
       queryClient.invalidateQueries({ queryKey: ["floors-data"] });
       queryClient.invalidateQueries({ queryKey: ["projector-equipment"] });
       
@@ -183,7 +184,7 @@ export default function RoomLinkDropdown({
       
       setSelectedRooms(new Set()); // Очищаем выбор
       setIsOpen(false);
-      onSuccess?.();
+      // Не перезагружаем страницу, только обновляем кэш
     } catch (error) {
       console.error('❌ Error creating room connections:', error);
       toast({

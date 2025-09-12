@@ -854,8 +854,8 @@ export default function FloorsPage() {
                                                             connectedTurarDepartment={connectedTurarDept}
                                                             isProjectorDepartment={true}
                                                             onSuccess={() => {
-                                                              // Обновляем данные после успешного создания связи
-                                                              window.location.reload();
+                                                              // Данные обновятся автоматически через React Query
+                                                              console.log('✅ Связи созданы успешно');
                                                             }}
                                                           />
                                                        </div>
