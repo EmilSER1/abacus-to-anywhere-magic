@@ -846,14 +846,18 @@ export default function FloorsPage() {
                                                          <div className="text-sm text-blue-800 dark:text-blue-200">
                                                            Связать с кабинетом из: {connectedTurarDept}
                                                          </div>
-                                                         <RoomLinkDropdown
-                                                           roomId={`${department.name}-${room.name}`}
-                                                           roomName={room.name}
-                                                           departmentId={`dept-${department.name}`}
-                                                           departmentName={department.name}
-                                                           connectedTurarDepartment={connectedTurarDept}
-                                                           isProjectorDepartment={true}
-                                                         />
+                                                          <RoomLinkDropdown
+                                                            roomId={room.code} // Используем код кабинета как ID
+                                                            roomName={room.name}
+                                                            departmentId={department.name}
+                                                            departmentName={department.name}
+                                                            connectedTurarDepartment={connectedTurarDept}
+                                                            isProjectorDepartment={true}
+                                                            onSuccess={() => {
+                                                              // Обновляем данные после успешного создания связи
+                                                              window.location.reload();
+                                                            }}
+                                                          />
                                                        </div>
                                                      </div>
                                                    ) : null;

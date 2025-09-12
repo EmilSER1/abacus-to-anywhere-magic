@@ -85,7 +85,21 @@ export default function RoomLinkDropdown({
 
   // Создание связей для всех выбранных кабинетов
   const handleCreateConnections = async () => {
-    if (!connectedTurarDepartment || selectedRooms.size === 0) return;
+    console.log('🚀 handleCreateConnections called:', {
+      connectedTurarDepartment,
+      selectedRoomsSize: selectedRooms.size,
+      roomId,
+      roomName,
+      departmentName
+    });
+
+    if (!connectedTurarDepartment || selectedRooms.size === 0) {
+      console.log('❌ Early return - missing data:', {
+        connectedTurarDepartment,
+        selectedRoomsSize: selectedRooms.size
+      });
+      return;
+    }
 
     console.log('🔄 Starting connection creation:', {
       connectedTurarDepartment,
@@ -111,14 +125,28 @@ export default function RoomLinkDropdown({
         });
 
         if (turarRoom?.id) {
-          // Создаем связь напрямую в Supabase без промежуточного хука
+          // Находим реальный ID кабинета проектировщиков в базе данных
+          const { data: projectorRoomData, error: projectorRoomError } = await supabase
+            .from("projector_floors")
+            .select("id")
+            .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", roomName)
+            .eq("ОТДЕЛЕНИЕ", departmentName)
+            .limit(1)
+            .single();
+
+          if (projectorRoomError) {
+            console.error('❌ Projector room not found in DB:', projectorRoomError);
+            throw new Error(`Кабинет проектировщиков не найден в базе: ${roomName}`);
+          }
+
+          // Создаем связь напрямую в Supabase
           const connectionData = {
             turar_department: connectedTurarDepartment,
             turar_room: turarRoomName,
             projector_department: departmentName,
             projector_room: roomName,
             turar_room_id: turarRoom.id,
-            projector_room_id: roomId
+            projector_room_id: projectorRoomData.id // Используем реальный ID из базы
           };
           
           console.log('📤 Sending connection data:', connectionData);
