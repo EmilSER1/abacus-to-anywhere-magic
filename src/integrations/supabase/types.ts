@@ -266,6 +266,11 @@ export type Database = {
           connected_turar_room_id: string | null
           created_at: string
           department_id: string | null
+          equipment_documents: string | null
+          equipment_specification: string | null
+          equipment_status:
+            | Database["public"]["Enums"]["equipment_status_type"]
+            | null
           id: string
           room_id: string | null
           updated_at: string
@@ -289,6 +294,11 @@ export type Database = {
           connected_turar_room_id?: string | null
           created_at?: string
           department_id?: string | null
+          equipment_documents?: string | null
+          equipment_specification?: string | null
+          equipment_status?:
+            | Database["public"]["Enums"]["equipment_status_type"]
+            | null
           id?: string
           room_id?: string | null
           updated_at?: string
@@ -312,6 +322,11 @@ export type Database = {
           connected_turar_room_id?: string | null
           created_at?: string
           department_id?: string | null
+          equipment_documents?: string | null
+          equipment_specification?: string | null
+          equipment_status?:
+            | Database["public"]["Enums"]["equipment_status_type"]
+            | null
           id?: string
           room_id?: string | null
           updated_at?: string
@@ -615,6 +630,7 @@ export type Database = {
       }
     }
     Enums: {
+      equipment_status_type: "Согласовано" | "Не согласовано" | "Не найдено"
       user_role: "admin" | "staff" | "user" | "none"
     }
     CompositeTypes: {
@@ -743,6 +759,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      equipment_status_type: ["Согласовано", "Не согласовано", "Не найдено"],
       user_role: ["admin", "staff", "user", "none"],
     },
   },

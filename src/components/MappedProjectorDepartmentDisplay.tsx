@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ChevronDown, ChevronRight, Link2, Building2, Wrench, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronRight, Link2, Building2, Wrench, MapPin, Edit, Plus, X } from 'lucide-react';
 import { useGroupedMappedProjectorRooms } from '@/hooks/useMappedDepartments';
+import { useProjectorRoomEquipment, useUpdateProjectorEquipment, useAddProjectorEquipment } from '@/hooks/useProjectorEquipment';
+import EditEquipmentDialog from './EditEquipmentDialog';
+import TurarDepartmentSelector from './TurarDepartmentSelector';
+import TurarRoomSelector from './TurarRoomSelector';
 
 interface MappedProjectorDepartmentDisplayProps {
   departmentMappingId: string;
@@ -26,6 +30,12 @@ interface MappedProjectorDepartmentDisplayProps {
   setExpandedRooms: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
+const statusConfig = {
+  'Согласовано': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Согласовано' },
+  'Не согласовано': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Не согласовано' },
+  'Не найдено': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Не найдено' }
+} as const;
+
 const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDisplayProps> = ({
   departmentMappingId,
   departmentName,
@@ -37,6 +47,15 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
   setExpandedRooms
 }) => {
   const groupedRooms = useGroupedMappedProjectorRooms(departmentMappingId);
+  const [editingEquipment, setEditingEquipment] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddingEquipment, setIsAddingEquipment] = useState(false);
+  const [addingToRoom, setAddingToRoom] = useState<{ department: string; room: string } | null>(null);
+  const [selectedTurarDept, setSelectedTurarDept] = useState('');
+  const [selectedTurarRooms, setSelectedTurarRooms] = useState<string[]>([]);
+  
+  const updateEquipmentMutation = useUpdateProjectorEquipment();
+  const addEquipmentMutation = useAddProjectorEquipment();
 
   console.log(`🏗️ MappedProjectorDepartmentDisplay для mapping ${departmentMappingId}, отделение: ${departmentName}`);
   console.log(`📊 Загружено комнат:`, Object.keys(groupedRooms).length);
@@ -57,6 +76,59 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
     setExpandedRooms(newExpanded);
   };
 
+  const handleEditEquipment = (equipment: any) => {
+    setEditingEquipment(equipment);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEquipment = (updatedEquipment: any) => {
+    if (isAddingEquipment && addingToRoom) {
+      const newEquipment = {
+        ...updatedEquipment,
+        "ОТДЕЛЕНИЕ": addingToRoom.department,
+        "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": addingToRoom.room,
+        "КОД ПОМЕЩЕНИЯ": "",
+        "ЭТАЖ": 1,
+        "БЛОК": "",
+      };
+      addEquipmentMutation.mutate(newEquipment);
+    } else {
+      updateEquipmentMutation.mutate(updatedEquipment);
+    }
+    setIsEditDialogOpen(false);
+    setEditingEquipment(null);
+    setIsAddingEquipment(false);
+    setAddingToRoom(null);
+  };
+
+  const handleAddEquipment = (department: string, room: string) => {
+    setAddingToRoom({ department, room });
+    setEditingEquipment({
+      id: '',
+      "Наименование оборудования": '',
+      "Код оборудования": '',
+      "Кол-во": '',
+      "Ед. изм.": '',
+      "Примечания": '',
+      equipment_status: 'Не найдено',
+      equipment_specification: '',
+      equipment_documents: ''
+    });
+    setIsAddingEquipment(true);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCreateMultipleConnections = () => {
+    selectedTurarRooms.forEach(turarRoom => {
+      // Создаем связи со всеми комнатами проектировщиков в отделении
+      Object.keys(groupedRooms).forEach(projectorRoom => {
+        onCreateConnection(selectedTurarDept, turarRoom, departmentName, projectorRoom);
+      });
+    });
+    setSelectedTurarDept('');
+    setSelectedTurarRooms([]);
+  };
+
   if (Object.keys(groupedRooms).length === 0) {
     return (
       <Card className="bg-blue-50/50 border-blue-200">
@@ -72,7 +144,37 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Связки с отделениями Турар */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-blue-800 text-base">Связать с отделениями Турар</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <TurarDepartmentSelector
+            value={selectedTurarDept}
+            onValueChange={setSelectedTurarDept}
+            label="Отделение Турар"
+          />
+          <TurarRoomSelector
+            selectedDepartment={selectedTurarDept}
+            selectedRooms={selectedTurarRooms}
+            onRoomsChange={setSelectedTurarRooms}
+            multiple={true}
+            label="Кабинеты Турар (множественный выбор)"
+          />
+          {selectedTurarDept && selectedTurarRooms.length > 0 && (
+            <Button 
+              onClick={handleCreateMultipleConnections}
+              className="w-full"
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Создать связи ({selectedTurarRooms.length} кабинетов → {Object.keys(groupedRooms).length} проектировщик)
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       {linkingRoom && linkingRoom.projectorDept === departmentName && (
         <Card className="bg-yellow-50 border-yellow-200 mb-3">
           <CardContent className="pt-4">
@@ -164,29 +266,24 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
                   </div>
                 </div>
 
-                {/* Оборудование */}
+                {/* Оборудование с возможностью редактирования */}
                 <div className="mb-4">
-                  <h4 className="font-medium mb-2 text-blue-800">Оборудование:</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {roomData.equipment.map((equipment, idx) => (
-                      <div key={idx} className="bg-white/70 p-3 rounded border border-blue-100">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium text-sm">{equipment.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Код: {equipment.code} | Количество: {equipment.quantity} {equipment.unit}
-                              {equipment.notes && ` | ${equipment.notes}`}
-                            </div>
-                          </div>
-                          {equipment.is_linked && (
-                            <Badge variant="default" className="bg-green-100 text-green-700 text-xs">
-                              Связан
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-blue-800">Оборудование:</h4>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddEquipment(departmentName, roomName)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Добавить
+                    </Button>
                   </div>
+                  <EquipmentDisplay 
+                    department={departmentName} 
+                    room={roomName}
+                    onEditEquipment={handleEditEquipment}
+                  />
                 </div>
 
                 {/* Существующие связи */}
@@ -223,6 +320,77 @@ const MappedProjectorDepartmentDisplay: React.FC<MappedProjectorDepartmentDispla
           );
         })}
       </Accordion>
+
+      <EditEquipmentDialog
+        equipment={editingEquipment}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingEquipment(null);
+          setIsAddingEquipment(false);
+          setAddingToRoom(null);
+        }}
+        onSave={handleSaveEquipment}
+        isNew={isAddingEquipment}
+      />
+    </div>
+  );
+};
+
+// Компонент для отображения оборудования с возможностью редактирования
+const EquipmentDisplay: React.FC<{
+  department: string;
+  room: string;
+  onEditEquipment: (equipment: any) => void;
+}> = ({ department, room, onEditEquipment }) => {
+  const { data: equipment, isLoading } = useProjectorRoomEquipment(department, room);
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Загрузка...</div>;
+  }
+
+  if (!equipment || equipment.length === 0) {
+    return <div className="text-sm text-muted-foreground">Оборудование не найдено</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-2">
+      {equipment.map((item, idx) => (
+        <div key={idx} className="bg-white/70 p-3 rounded border border-blue-100 hover:border-blue-200 transition-colors">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="font-medium text-sm">{item["Наименование оборудования"] || 'Без названия'}</div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>Код: {item["Код оборудования"] || 'Не указан'} | Количество: {item["Кол-во"] || 'Не указано'} {item["Ед. изм."] || ''}</div>
+                {item.equipment_specification && (
+                  <div>Спецификация: {item.equipment_specification}</div>
+                )}
+                {item.equipment_documents && (
+                  <div>Документы: {item.equipment_documents}</div>
+                )}
+                {item["Примечания"] && (
+                  <div>Примечания: {item["Примечания"]}</div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 ml-2">
+              {item.equipment_status && (
+                <Badge className={statusConfig[item.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                  {statusConfig[item.equipment_status as keyof typeof statusConfig]?.label || item.equipment_status}
+                </Badge>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onEditEquipment(item)}
+                className="p-1 h-auto"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
