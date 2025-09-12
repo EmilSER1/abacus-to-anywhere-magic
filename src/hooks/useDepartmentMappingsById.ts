@@ -145,24 +145,80 @@ export const useDeleteDepartmentMappingById = () => {
 
   return useMutation({
     mutationFn: async (mappingId: string) => {
-      console.log('🗑️ УДАЛЕНИЕ СВЯЗИ ОТДЕЛЕНИЙ через Edge Function:', { mappingId });
+      console.log('🗑️ ОЧИСТКА СВЯЗАННЫХ ДАННЫХ перед удалением:', { mappingId });
       
-      const { data, error } = await supabase.functions.invoke('delete-department-mapping', {
-        body: { mappingId }
-      });
+      try {
+        // 1. Удаляем mapped_turar_rooms небольшими порциями (максимум 1000 за раз)
+        console.log('🧹 Удаляем mapped_turar_rooms...');
+        let deleted = 0;
+        let batchSize = 1000;
+        
+        while (true) {
+          const { data: toDelete, error: selectError } = await supabase
+            .from('mapped_turar_rooms')
+            .select('id')
+            .eq('department_mapping_id', mappingId)
+            .limit(batchSize);
+          
+          if (selectError) {
+            console.error('❌ Ошибка получения записей для удаления:', selectError);
+            break;
+          }
+          
+          if (!toDelete || toDelete.length === 0) {
+            console.log(`✅ Удалено всего mapped_turar_rooms: ${deleted}`);
+            break;
+          }
+          
+          const idsToDelete = toDelete.map(item => item.id);
+          const { error: deleteError } = await supabase
+            .from('mapped_turar_rooms')
+            .delete()
+            .in('id', idsToDelete);
+          
+          if (deleteError) {
+            console.error('❌ Ошибка удаления batch mapped_turar_rooms:', deleteError);
+            break;
+          }
+          
+          deleted += toDelete.length;
+          console.log(`📊 Удалено ${deleted} mapped_turar_rooms записей...`);
+          
+          // Если удалили меньше чем batch size, значит все удалили
+          if (toDelete.length < batchSize) {
+            break;
+          }
+        }
+        
+        // 2. Удаляем mapped_projector_rooms
+        console.log('🧹 Удаляем mapped_projector_rooms...');
+        const { error: projectorError } = await supabase
+          .from('mapped_projector_rooms')
+          .delete()
+          .eq('department_mapping_id', mappingId);
+        
+        if (projectorError) {
+          console.error('❌ Ошибка удаления mapped_projector_rooms:', projectorError);
+        }
+        
+        // 3. Теперь удаляем саму связь отделений
+        console.log('🗑️ Удаляем связь отделений...');
+        const { error } = await supabase
+          .from('department_mappings')
+          .delete()
+          .eq('id', mappingId);
 
-      if (error) {
-        console.error('❌ ОШИБКА Edge Function:', error);
+        if (error) {
+          console.error('❌ ОШИБКА УДАЛЕНИЯ СВЯЗИ:', error);
+          throw error;
+        }
+
+        console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА:', mappingId);
+        return mappingId;
+      } catch (error) {
+        console.error('❌ КРИТИЧЕСКАЯ ОШИБКА при удалении:', error);
         throw error;
       }
-
-      if (!data?.success) {
-        console.error('❌ ОШИБКА в ответе Edge Function:', data);
-        throw new Error(data?.error || 'Failed to delete department mapping');
-      }
-
-      console.log('✅ СВЯЗЬ УСПЕШНО УДАЛЕНА через Edge Function:', data);
-      return mappingId;
     },
     onSuccess: (mappingId) => {
       console.log('🔄 ОБНОВЛЯЕМ ЗАПРОСЫ после удаления:', mappingId);
