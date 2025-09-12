@@ -41,6 +41,7 @@ function ConnectedRoomBadge({ roomId, isProjectorRoom }: {
   const [roomName, setRoomName] = useState<string>('...');
 
   useEffect(() => {
+    console.log('🔍 ConnectedRoomBadge fetching for:', { roomId, isProjectorRoom });
     const fetchRoomName = async () => {
       try {
         if (isProjectorRoom) {
@@ -237,13 +238,20 @@ export default function DepartmentRoomsDisplay({
                     <span className="font-medium text-sm">{room.room_name}</span>
                     {connectedRooms.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {connectedRooms.map((connection) => (
-                          <ConnectedRoomBadge
-                            key={connection.id}
-                            roomId={isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id}
-                            isProjectorRoom={!isProjectorDepartment}
-                          />
-                        ))}
+                        {(() => {
+                          console.log('🎯 Rendering badges for room:', room.room_name, 'connections:', connectedRooms);
+                          return connectedRooms.map((connection) => {
+                            const targetRoomId = isProjectorDepartment ? connection.turar_room_id : connection.projector_room_id;
+                            console.log('🏷️ Creating badge for connection:', connection.id, 'targetRoomId:', targetRoomId);
+                            return (
+                              <ConnectedRoomBadge
+                                key={connection.id}
+                                roomId={targetRoomId}
+                                isProjectorRoom={!isProjectorDepartment}
+                              />
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>
