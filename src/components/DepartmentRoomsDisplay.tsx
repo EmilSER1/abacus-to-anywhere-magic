@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, X } from 'lucide-react'
 import { useRoomsByDepartmentId } from '@/hooks/useRoomsById'
@@ -30,6 +29,8 @@ interface DepartmentRoomsDisplayProps {
   compact?: boolean;
   canEdit?: boolean;
   showConnectButtons?: boolean;
+  selectedRooms?: Set<string>;
+  multiSelectMode?: boolean;
 }
 
 // Компонент для отображения связанного кабинета с названием
@@ -104,7 +105,9 @@ export default function DepartmentRoomsDisplay({
   selectedRoomId,
   compact = false,
   canEdit: propCanEdit,
-  showConnectButtons = true
+  showConnectButtons = true,
+  selectedRooms = new Set(),
+  multiSelectMode = false
 }: DepartmentRoomsDisplayProps) {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
@@ -196,8 +199,21 @@ export default function DepartmentRoomsDisplay({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Кнопка связывания */}
-                    {onLinkRoom && canEdit && showConnectButtons && (
+                    {/* Множественный выбор при активном режиме связывания */}
+                    {multiSelectMode && linkingRoom && linkingRoom.departmentId !== departmentId && canEdit && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedRooms.has(room.id)}
+                          onChange={() => onLinkRoom && onLinkRoom(room.id, room.room_name)}
+                          className="w-3 h-3"
+                        />
+                        <span className="text-xs">{selectedRooms.has(room.id) ? 'Выбран' : 'Выбрать'}</span>
+                      </label>
+                    )}
+                    
+                    {/* Кнопка связывания для начала процесса */}
+                    {onLinkRoom && canEdit && showConnectButtons && !multiSelectMode && (
                       <Button
                         size="sm"
                         variant={selectedRoomId === room.id ? "default" : "outline"}
