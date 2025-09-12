@@ -9,8 +9,10 @@ import { useRoomConnectionsById, RoomConnectionById } from '@/hooks/useRoomConne
 import { useTurarRoomsByDepartmentId, useProjectorRoomsByDepartmentId } from '@/hooks/useActualRoomsById'
 import { useTurarRoomEquipment, useProjectorRoomEquipment } from '@/hooks/useRoomEquipment'
 import RoomEquipmentDisplay from '@/components/RoomEquipmentDisplay'
+import RoomLinkDropdown from '@/components/RoomLinkDropdown'
 import { supabase } from '@/integrations/supabase/client'
 import { useUserRole } from '@/hooks/useUserRole'
+import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink'
 
 interface DepartmentRoomsDisplayProps {
   departmentId: string;
@@ -161,6 +163,11 @@ export default function DepartmentRoomsDisplay({
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set())
   const { data: rooms, isLoading } = useRoomsByDepartmentId(departmentId)
   const { canEdit: hookCanEdit } = useUserRole()
+  
+  // Получаем связанное отделение Турар для проектировщиков
+  const { data: connectedTurarDepartment } = useProjectorDepartmentTurarLink(
+    isProjectorDepartment ? departmentName : ""
+  )
   
   // Используем проп canEdit если он передан, иначе результат хука
   const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
@@ -424,8 +431,20 @@ export default function DepartmentRoomsDisplay({
                         ) : null;
                       })()}
                       
-                      {/* Кнопка связывания для начала процесса */}
-                      {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && (
+                      {/* Выпадающее меню для связывания кабинетов */}
+                      {!linkingRoom && canEdit && showConnectButtons && isProjectorDepartment && (
+                        <RoomLinkDropdown
+                          roomId={room.id}
+                          roomName={room.room_name}
+                          departmentId={departmentId}
+                          departmentName={departmentName}
+                          connectedTurarDepartment={connectedTurarDepartment}
+                          isProjectorDepartment={isProjectorDepartment}
+                        />
+                      )}
+                      
+                      {/* Обычная кнопка связывания для Турар отделений */}
+                      {!linkingRoom && onLinkRoom && canEdit && showConnectButtons && !isProjectorDepartment && (
                         <Button
                           size="sm"
                           variant="outline"
