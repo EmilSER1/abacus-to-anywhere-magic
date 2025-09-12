@@ -397,55 +397,92 @@ export const DataSyncPanel: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <Button
-            variant="outline"
-            onClick={() => handleSync('sync-projector-data')}
-            disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Тест проектировщики
-          </Button>
+        <div className="space-y-4">
+          <div className="text-sm font-medium text-muted-foreground">Операции синхронизации:</div>
+          
+          {/* Test Data Section */}
+          <div className="space-y-3">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Тестовые данные
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSync('sync-projector-data')}
+                disabled={syncStatus.status === 'loading'}
+                className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700"
+              >
+                <Upload className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="font-medium">Проектировщики</div>
+                  <div className="text-xs opacity-75">Тестовый набор</div>
+                </div>
+              </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => handleSync('sync-turar-data')}
-            disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Тест турар
-          </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSync('sync-turar-data')}
+                disabled={syncStatus.status === 'loading'}
+                className="flex items-center gap-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 text-purple-700"
+              >
+                <Upload className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="font-medium">Турар</div>
+                  <div className="text-xs opacity-75">Тестовый набор</div>
+                </div>
+              </Button>
 
-          <Button
-            onClick={() => handleSync('sync-all')}
-            disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncStatus.status === 'loading' ? 'animate-spin' : ''}`} />
-            Все тестовые
-          </Button>
+              <Button
+                size="sm"
+                onClick={() => handleSync('sync-all')}
+                disabled={syncStatus.status === 'loading'}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncStatus.status === 'loading' ? 'animate-spin' : ''}`} />
+                <div className="text-left">
+                  <div className="font-medium">Все тестовые</div>
+                  <div className="text-xs opacity-90">Полная синхронизация</div>
+                </div>
+              </Button>
+            </div>
+          </div>
 
-          <Button
-            variant="secondary"
-            onClick={() => handleRealDataSync()}
-            disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Малый набор
-          </Button>
+          {/* Production Data Section */}
+          <div className="space-y-3">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Продуктивные данные
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleRealDataSync()}
+                disabled={syncStatus.status === 'loading'}
+                className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-200"
+              >
+                <Download className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="font-medium">Малый набор</div>
+                  <div className="text-xs opacity-75">Ограниченные данные</div>
+                </div>
+              </Button>
 
-          <Button
-            variant="default"
-            onClick={() => loadLargeDataset()}
-            disabled={syncStatus.status === 'loading'}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-          >
-            <Database className="h-4 w-4" />
-            Полный набор
-          </Button>
+              <Button
+                size="sm"
+                onClick={() => loadLargeDataset()}
+                disabled={syncStatus.status === 'loading'}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg"
+              >
+                <Database className="h-4 w-4" />
+                <div className="text-left">
+                  <div className="font-medium">Полный набор</div>
+                  <div className="text-xs opacity-90">Все данные из JSON</div>
+                </div>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Information */}
