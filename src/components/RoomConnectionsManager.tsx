@@ -5,13 +5,26 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Plus, Link2, Building2 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { Plus, Link2, Building2, Save, X, Trash2 } from 'lucide-react'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useDepartmentMappingsWithDetails } from '@/hooks/useDepartmentMappingsById'
 import { useRoomConnectionsById, useCreateRoomConnectionById, useDeleteRoomConnectionById } from '@/hooks/useRoomConnectionsById'
 import DepartmentRoomsDisplay from '@/components/DepartmentRoomsDisplay'
 import { useToast } from '@/hooks/use-toast'
 import { useUserRole } from '@/hooks/useUserRole'
+
+interface PendingConnection {
+  id: string;
+  turar_department_id: string;
+  turar_room_id: string;
+  projector_department_id: string;
+  projector_room_id: string;
+  turar_department: string;
+  turar_room: string;
+  projector_department: string;
+  projector_room: string;
+}
 
 export default function RoomConnectionsManager() {
   const [linkingRoom, setLinkingRoom] = useState<{
@@ -27,6 +40,9 @@ export default function RoomConnectionsManager() {
   const [selectedTargetRoomId, setSelectedTargetRoomId] = useState('')
   const [availableTargetDepts, setAvailableTargetDepts] = useState<Array<{id: string; name: string}>>([])
   const [step, setStep] = useState<'department' | 'room'>('department')
+  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveProgress, setSaveProgress] = useState(0)
 
   const { data: departments } = useDepartments()
   const { data: departmentMappings } = useDepartmentMappingsWithDetails()
@@ -83,52 +99,94 @@ export default function RoomConnectionsManager() {
     });
   };
 
-  const createConnection = async () => {
-    if (!linkingRoom || !selectedTargetRoomId) {
-      console.log('Missing data for connection:', { linkingRoom, selectedTargetRoomId, selectedTargetDeptId });
+  const addPendingConnection = () => {
+    if (!linkingRoom || !selectedTargetRoomId || !selectedTargetDeptId) {
       return;
     }
 
-    console.log('Creating connection with data:', {
-      linkingRoom,
-      selectedTargetDeptId,
-      selectedTargetRoomId,
-      isProjectorDepartment: linkingRoom.isProjectorDepartment
-    });
+    const targetDeptName = availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || '';
+    const targetRoomName = connections?.find(c => 
+      linkingRoom.isProjectorDepartment 
+        ? c.turar_room_id === selectedTargetRoomId 
+        : c.projector_room_id === selectedTargetRoomId
+    ) || {};
 
-    const connectionData = linkingRoom.isProjectorDepartment ? {
+    const newConnection: PendingConnection = linkingRoom.isProjectorDepartment ? {
+      id: crypto.randomUUID(),
       turar_department_id: selectedTargetDeptId,
       turar_room_id: selectedTargetRoomId,
       projector_department_id: linkingRoom.departmentId,
-      projector_room_id: linkingRoom.roomId
+      projector_room_id: linkingRoom.roomId,
+      turar_department: targetDeptName,
+      turar_room: selectedTargetRoomId, // Временно используем ID
+      projector_department: linkingRoom.departmentName,
+      projector_room: linkingRoom.roomName
     } : {
+      id: crypto.randomUUID(),
       turar_department_id: linkingRoom.departmentId,
       turar_room_id: linkingRoom.roomId,
       projector_department_id: selectedTargetDeptId,
-      projector_room_id: selectedTargetRoomId
+      projector_room_id: selectedTargetRoomId,
+      turar_department: linkingRoom.departmentName,
+      turar_room: linkingRoom.roomName,
+      projector_department: targetDeptName,
+      projector_room: selectedTargetRoomId // Временно используем ID
     };
 
-    console.log('Connection data:', connectionData);
+    setPendingConnections(prev => [...prev, newConnection]);
+    
+    // Сбрасываем только выбор кабинета, но оставляем режим связывания
+    setSelectedTargetRoomId('');
+    setStep('room');
+    
+    toast({
+      title: "Связь добавлена",
+      description: "Связь добавлена в очередь на сохранение"
+    });
+  };
 
+  const removePendingConnection = (connectionId: string) => {
+    setPendingConnections(prev => prev.filter(c => c.id !== connectionId));
+  };
+
+  const saveAllConnections = async () => {
+    if (pendingConnections.length === 0) return;
+    
+    setIsSaving(true);
+    setSaveProgress(0);
+    
+    const total = pendingConnections.length;
+    let saved = 0;
+    
     try {
-      await createConnectionMutation.mutateAsync(connectionData);
+      for (const connection of pendingConnections) {
+        const { id, ...connectionData } = connection;
+        await createConnectionMutation.mutateAsync(connectionData);
+        
+        saved++;
+        setSaveProgress((saved / total) * 100);
+      }
       
+      setPendingConnections([]);
       setLinkingRoom(null);
       setShowConnectionDialog(false);
       setSelectedTargetDeptId('');
       setSelectedTargetRoomId('');
       
       toast({
-        title: "Связь создана",
-        description: "Кабинеты успешно связаны"
+        title: "Связи сохранены",
+        description: `Успешно сохранено ${total} связей`
       });
     } catch (error) {
-      console.error('Ошибка создания связи:', error);
+      console.error('Ошибка сохранения связей:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать связь кабинетов",
+        description: "Не удалось сохранить некоторые связи",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
+      setSaveProgress(0);
     }
   };
 
@@ -141,6 +199,12 @@ export default function RoomConnectionsManager() {
   }
 
   const cancelLinking = () => {
+    if (pendingConnections.length > 0) {
+      const confirmCancel = confirm('У вас есть несохраненные связи. Вы уверены, что хотите отменить?');
+      if (!confirmCancel) return;
+      setPendingConnections([]);
+    }
+    
     setLinkingRoom(null)
     setShowConnectionDialog(false)
     setSelectedTargetDeptId('')
@@ -163,6 +227,26 @@ export default function RoomConnectionsManager() {
         </div>
         
         <div className="flex gap-2">
+          {pendingConnections.length > 0 && (
+            <>
+              <Button 
+                onClick={saveAllConnections} 
+                disabled={isSaving}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Сохранить все ({pendingConnections.length})
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setPendingConnections([])}
+                disabled={isSaving}
+              >
+                <Trash2 className="h-4 w-4" />
+                Очистить
+              </Button>
+            </>
+          )}
           {linkingRoom && (
             <Button variant="outline" onClick={cancelLinking}>
               Отменить связывание
@@ -183,6 +267,62 @@ export default function RoomConnectionsManager() {
                   Выбран: {linkingRoom.departmentName} - {linkingRoom.roomName}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Прогресс сохранения */}
+      {isSaving && (
+        <Card className="border-green-500 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Save className="h-5 w-5 text-green-600" />
+                <div>
+                  <div className="font-medium">Сохранение связей...</div>
+                  <div className="text-sm text-muted-foreground">
+                    Обрабатывается {Math.round(saveProgress)}%
+                  </div>
+                </div>
+              </div>
+              <Progress value={saveProgress} className="w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Очередь несохраненных связей */}
+      {pendingConnections.length > 0 && !isSaving && (
+        <Card className="border-orange-500 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700">
+              <Plus className="h-5 w-5" />
+              Очередь на сохранение ({pendingConnections.length})
+            </CardTitle>
+            <CardDescription>
+              Связи будут сохранены после нажатия кнопки "Сохранить все"
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingConnections.map((connection) => (
+                <div key={connection.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                  <div className="text-sm">
+                    <span className="font-medium">{connection.turar_department}</span> - {connection.turar_room}
+                    {" ↔ "}
+                    <span className="font-medium">{connection.projector_department}</span> - {connection.projector_room}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePendingConnection(connection.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -391,47 +531,9 @@ export default function RoomConnectionsManager() {
                     departmentName={availableTargetDepts.find(d => d.id === selectedTargetDeptId)?.name || ''}
                     onLinkRoom={(roomId) => {
                       setSelectedTargetRoomId(roomId);
-                      // Используем правильное значение selectedTargetDeptId в closure
-                      const currentTargetDeptId = selectedTargetDeptId;
-                      // Автоматически создаем связь при выборе кабинета
-                      setTimeout(async () => {
-                        if (!linkingRoom || !currentTargetDeptId) {
-                          console.log('Missing required data for auto-connection');
-                          return;
-                        }
-
-                        const connectionData = linkingRoom.isProjectorDepartment ? {
-                          turar_department_id: currentTargetDeptId,
-                          turar_room_id: roomId,
-                          projector_department_id: linkingRoom.departmentId,
-                          projector_room_id: linkingRoom.roomId
-                        } : {
-                          turar_department_id: linkingRoom.departmentId,
-                          turar_room_id: linkingRoom.roomId,
-                          projector_department_id: currentTargetDeptId,
-                          projector_room_id: roomId
-                        };
-
-                        try {
-                          await createConnectionMutation.mutateAsync(connectionData);
-                          
-                          setLinkingRoom(null);
-                          setShowConnectionDialog(false);
-                          setSelectedTargetDeptId('');
-                          setSelectedTargetRoomId('');
-                          
-                          toast({
-                            title: "Связь создана",
-                            description: "Кабинеты успешно связаны"
-                          });
-                        } catch (error) {
-                          console.error('Ошибка автоматического создания связи:', error);
-                          toast({
-                            title: "Ошибка",
-                            description: "Не удалось создать связь кабинетов",
-                            variant: "destructive"
-                          });
-                        }
+                      // Автоматически добавляем в очередь при выборе кабинета
+                      setTimeout(() => {
+                        addPendingConnection();
                       }, 100);
                     }}
                     linkingRoom={linkingRoom}
@@ -446,6 +548,14 @@ export default function RoomConnectionsManager() {
                     </Button>
                     <Button variant="outline" onClick={cancelLinking}>
                       Отмена
+                    </Button>
+                    <Button 
+                      onClick={addPendingConnection}
+                      disabled={!selectedTargetRoomId}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Добавить связь
                     </Button>
                   </div>
                 </div>
