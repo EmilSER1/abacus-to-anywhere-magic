@@ -86,24 +86,26 @@ export default function RoomConnectionsManager() {
         });
         
         for (const dept of turarDepts) {
+          console.log(`🔍 Загружаем кабинеты Турар для отделения: ${dept.turar_department}`);
+          
           const { data: rooms, error } = await supabase
             .from('turar_medical')
             .select('*')
             .eq('Отделение/Блок', dept.turar_department);
           
-          console.log(`📋 Загружено кабинетов для ${dept.turar_department}:`, rooms?.length || 0);
+          console.log(`📋 Загружено записей из БД для ${dept.turar_department}:`, rooms?.length || 0);
           
           if (error) {
             console.error('Ошибка загрузки кабинетов Турар:', error);
             continue;
           }
           
-          if (rooms) {
+          if (rooms && rooms.length > 0) {
             // Дедупликация по названию кабинета
             const uniqueRooms = new Map();
             rooms.forEach((room: any) => {
               const roomName = room['Помещение/Кабинет'];
-              if (!uniqueRooms.has(roomName)) {
+              if (roomName && roomName.trim() && !uniqueRooms.has(roomName)) {
                 uniqueRooms.set(roomName, {
                   id: room.id,
                   name: roomName,
@@ -112,8 +114,11 @@ export default function RoomConnectionsManager() {
               }
             });
             const deduplicatedRooms = Array.from(uniqueRooms.values());
-            console.log(`✨ После дедупликации для ${dept.turar_department}:`, deduplicatedRooms.length);
+            console.log(`✨ Уникальных кабинетов после дедупликации для ${dept.turar_department}:`, deduplicatedRooms.length);
+            console.log('🏠 Список кабинетов:', deduplicatedRooms.map(r => r.name));
             targetRooms.push(...deduplicatedRooms);
+          } else {
+            console.log(`⚠️ Нет данных для отделения ${dept.turar_department}`);
           }
         }
       } else {
@@ -129,24 +134,26 @@ export default function RoomConnectionsManager() {
         });
         
         for (const dept of projectorDepts) {
+          console.log(`🔍 Загружаем кабинеты проектировщиков для отделения: ${dept.projector_department}`);
+          
           const { data: rooms, error } = await supabase
             .from('projector_floors')
             .select('*')
             .eq('ОТДЕЛЕНИЕ', dept.projector_department);
           
-          console.log(`📋 Загружено кабинетов для ${dept.projector_department}:`, rooms?.length || 0);
+          console.log(`📋 Загружено записей из БД для ${dept.projector_department}:`, rooms?.length || 0);
           
           if (error) {
             console.error('Ошибка загрузки кабинетов проектировщиков:', error);
             continue;
           }
           
-          if (rooms) {
+          if (rooms && rooms.length > 0) {
             // Дедупликация по названию кабинета
             const uniqueRooms = new Map();
             rooms.forEach((room: any) => {
               const roomName = room['НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ'];
-              if (!uniqueRooms.has(roomName)) {
+              if (roomName && roomName.trim() && !uniqueRooms.has(roomName)) {
                 uniqueRooms.set(roomName, {
                   id: room.id,
                   name: roomName,
@@ -155,8 +162,11 @@ export default function RoomConnectionsManager() {
               }
             });
             const deduplicatedRooms = Array.from(uniqueRooms.values());
-            console.log(`✨ После дедупликации для ${dept.projector_department}:`, deduplicatedRooms.length);
+            console.log(`✨ Уникальных кабинетов после дедупликации для ${dept.projector_department}:`, deduplicatedRooms.length);
+            console.log('🏠 Список кабинетов:', deduplicatedRooms.map(r => r.name));
             targetRooms.push(...deduplicatedRooms);
+          } else {
+            console.log(`⚠️ Нет данных для отделения ${dept.projector_department}`);
           }
         }
       }
