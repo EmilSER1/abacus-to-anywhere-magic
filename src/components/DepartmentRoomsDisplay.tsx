@@ -165,6 +165,24 @@ export default function DepartmentRoomsDisplay({
   // Используем проп canEdit если он передан, иначе результат хука
   const canEdit = propCanEdit !== undefined ? propCanEdit : hookCanEdit()
   
+  // ДИАГНОСТИКА СОСТОЯНИЯ
+  console.log(`📋 СОСТОЯНИЕ ${departmentName}:`, {
+    linkingRoom: linkingRoom ? {
+      roomId: linkingRoom.roomId,
+      roomName: linkingRoom.roomName,
+      departmentId: linkingRoom.departmentId,
+      departmentName: linkingRoom.departmentName,
+      isProjectorDepartment: linkingRoom.isProjectorDepartment
+    } : null,
+    currentDepartmentId: departmentId,
+    currentDepartmentName: departmentName,
+    isProjectorDepartment,
+    canEdit,
+    hasOnAddToQueue: !!onAddToQueue,
+    hasOnLinkRoom: !!onLinkRoom,
+    shouldShowConnectionButtons: linkingRoom && linkingRoom.departmentId !== departmentId
+  });
+  
   // ПОДРОБНАЯ ДИАГНОСТИКА
   console.log('🚨 ПОДРОБНАЯ ДИАГНОСТИКА:', {
     departmentName,
