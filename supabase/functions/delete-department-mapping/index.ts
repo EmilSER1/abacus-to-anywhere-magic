@@ -19,12 +19,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    console.log('🔧 Инициализация Supabase клиента...');
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Отсутствуют переменные окружения');
+      throw new Error('Missing Supabase environment variables');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { mappingId } = await req.json()
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('📥 Получен запрос:', requestBody);
+    } catch (parseError) {
+      console.error('❌ Ошибка парсинга JSON:', parseError);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { mappingId } = requestBody;
     
     if (!mappingId) {
       throw new Error('mapping ID is required')
@@ -46,82 +62,7 @@ Deno.serve(async (req) => {
 
     console.log('📋 Найдена связь:', mapping)
 
-    // 2. Очищаем связанные данные в projector_floors
-    console.log('🧹 Очищаем данные в projector_floors...')
-    const { error: projectorUpdateError } = await supabase
-      .from('projector_floors')
-      .update({
-        connected_turar_department: null,
-        connected_turar_room: null,
-        connected_turar_room_id: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('department_id', mapping.projector_department_id)
-
-    if (projectorUpdateError) {
-      console.error('❌ Ошибка очистки projector_floors:', projectorUpdateError)
-    } else {
-      console.log('✅ projector_floors очищена')
-    }
-
-    // 3. Очищаем связанные данные в turar_medical
-    console.log('🧹 Очищаем данные в turar_medical...')
-    const { error: turarUpdateError } = await supabase
-      .from('turar_medical')
-      .update({
-        connected_projector_department: null,
-        connected_projector_room: null,
-        connected_projector_room_id: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('department_id', mapping.turar_department_id)
-
-    if (turarUpdateError) {
-      console.error('❌ Ошибка очистки turar_medical:', turarUpdateError)
-    } else {
-      console.log('✅ turar_medical очищена')
-    }
-
-    // 4. Удаляем связи кабинетов
-    console.log('🧹 Удаляем связи кабинетов...')
-    const { error: roomConnectionsError } = await supabase
-      .from('room_connections')
-      .delete()
-      .or(`projector_department_id.eq.${mapping.projector_department_id},turar_department_id.eq.${mapping.turar_department_id}`)
-
-    if (roomConnectionsError) {
-      console.error('❌ Ошибка удаления room_connections:', roomConnectionsError)
-    } else {
-      console.log('✅ room_connections очищены')
-    }
-
-    // 5. Удаляем mapped_projector_rooms
-    console.log('🧹 Удаляем mapped_projector_rooms...')
-    const { error: mappedProjectorError } = await supabase
-      .from('mapped_projector_rooms')
-      .delete()
-      .eq('department_mapping_id', mappingId)
-
-    if (mappedProjectorError) {
-      console.error('❌ Ошибка удаления mapped_projector_rooms:', mappedProjectorError)
-    } else {
-      console.log('✅ mapped_projector_rooms очищены')
-    }
-
-    // 6. Удаляем mapped_turar_rooms
-    console.log('🧹 Удаляем mapped_turar_rooms...')
-    const { error: mappedTurarError } = await supabase
-      .from('mapped_turar_rooms')
-      .delete()
-      .eq('department_mapping_id', mappingId)
-
-    if (mappedTurarError) {
-      console.error('❌ Ошибка удаления mapped_turar_rooms:', mappedTurarError)
-    } else {
-      console.log('✅ mapped_turar_rooms очищены')
-    }
-
-    // 7. Наконец, удаляем саму связь отделений
+    // 2. Сначала удаляем саму связь отделений (это должно разорвать зависимости)
     console.log('🗑️ Удаляем связь отделений...')
     const { error: deleteError } = await supabase
       .from('department_mappings')
