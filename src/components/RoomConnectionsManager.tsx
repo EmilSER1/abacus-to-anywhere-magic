@@ -375,14 +375,36 @@ export default function RoomConnectionsManager() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Левая сторона - Отделение Турар */}
                   <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-lg border border-blue-200">
-                    <h3 className="text-lg font-semibold text-blue-700 mb-4 flex items-center gap-2">
-                      <Building2 className="h-5 w-5" />
-                      Отделение Турар
+                    <h3 className="text-lg font-semibold text-blue-700 mb-4 flex items-center gap-2 justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5" />
+                        Отделение Турар
+                      </div>
+                      {/* Добавляем кнопку быстрого связывания для Турар */}
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 bg-blue-50 hover:bg-blue-100 border-blue-300"
+                          onClick={() => {
+                            handleLinkRoom('', 'Выберите кабинет', group.turar_department_id, group.turar_department, false)
+                          }}
+                        >
+                          <Link2 className="h-4 w-4" />
+                          Связать кабинеты
+                        </Button>
+                      )}
                     </h3>
                     <div className="mb-4">
                       <Badge variant="outline" className="text-blue-600 border-blue-300 bg-blue-50">
                         {group.turar_department}
                       </Badge>
+                      {/* Индикатор активного связывания для Турар */}
+                      {linkingRoom && !linkingRoom.isProjectorDepartment && linkingRoom.departmentId === group.turar_department_id && (
+                        <Badge variant="default" className="ml-2 text-xs">
+                          🎯 Выберите отделение Проектировщиков справа
+                        </Badge>
+                      )}
                     </div>
                     <DepartmentRoomsDisplay
                       departmentId={group.turar_department_id}
@@ -399,22 +421,58 @@ export default function RoomConnectionsManager() {
                   
                   {/* Правая сторона - Связанные отделения Проектировщиков */}
                   <div className="bg-green-50 dark:bg-green-900/10 p-6 rounded-lg border border-green-200">
-                    <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center gap-2">
-                      <Building2 className="h-5 w-5" />
-                      Связанные отделения Проектировщиков
+                    <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center gap-2 justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5" />
+                        Связанные отделения Проектировщиков
+                      </div>
+                      {/* Общий индикатор для связывания */}
+                      {linkingRoom && linkingRoom.isProjectorDepartment && (
+                        <Badge variant="default" className="text-xs">
+                          🎯 Выберите отделение Турар
+                        </Badge>
+                      )}
                     </h3>
                     <div className="mb-4 flex flex-wrap gap-2">
                       {group.projector_departments.map((projDept) => (
-                        <Badge key={projDept.id} variant="outline" className="text-green-600 border-green-300 bg-green-50">
-                          {projDept.name}
-                        </Badge>
+                        <div key={projDept.id} className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                            {projDept.name}
+                          </Badge>
+                          {/* Индикатор активного связывания для конкретного отделения */}
+                          {linkingRoom && linkingRoom.isProjectorDepartment && linkingRoom.departmentId === projDept.id && (
+                            <Badge variant="default" className="text-xs">
+                              🎯 Выберите кабинет Турар слева
+                            </Badge>
+                          )}
+                        </div>
                       ))}
                     </div>
                     <Accordion type="single" collapsible className="w-full">
                       {group.projector_departments.map((projectorDept) => (
                         <AccordionItem key={projectorDept.id} value={projectorDept.id}>
                           <AccordionTrigger>
-                            <span className="font-medium">{projectorDept.name}</span>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-medium">{projectorDept.name}</span>
+                              {/* Добавляем кнопку быстрого связывания прямо в заголовок */}
+                              <div className="flex items-center gap-2 pr-4">
+                                {canEdit && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2 bg-green-50 hover:bg-green-100 border-green-300"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      // Начинаем связывание с этого отделения
+                                      handleLinkRoom('', 'Выберите кабинет', projectorDept.id, projectorDept.name, true)
+                                    }}
+                                  >
+                                    <Link2 className="h-4 w-4" />
+                                    Связать кабинеты
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
                           </AccordionTrigger>
                           <AccordionContent>
                             <DepartmentRoomsDisplay
