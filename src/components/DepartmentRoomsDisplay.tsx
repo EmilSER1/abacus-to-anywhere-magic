@@ -257,11 +257,38 @@ export default function DepartmentRoomsDisplay({
       </CardHeader>
       <CardContent className="pt-0">
         <Accordion type="multiple" className="space-y-1">
-          {actualRooms.map((room) => {
+          {(() => {
+            // Сортируем кабинеты: несвязанные вверху, связанные внизу
+            const connectedRoomIds = new Set();
+            connections.forEach(conn => {
+              if (isProjectorDepartment) {
+                if (conn.projector_department === departmentName) {
+                  const room = actualRooms.find(r => r.room_name === conn.projector_room);
+                  if (room) connectedRoomIds.add(room.id);
+                }
+              } else {
+                if (conn.turar_department === departmentName) {
+                  const room = actualRooms.find(r => r.room_name === conn.turar_room);
+                  if (room) connectedRoomIds.add(room.id);
+                }
+              }
+            });
+
+            const unconnectedRooms = actualRooms.filter(room => !connectedRoomIds.has(room.id));
+            const connectedRooms = actualRooms.filter(room => connectedRoomIds.has(room.id));
+            
+            return [...unconnectedRooms, ...connectedRooms];
+          })().map((room) => {
             const connectedRooms = getConnectedRooms(room.id, room.room_name)
             
+            const isConnected = connectedRooms.length > 0;
+            
             return (
-              <AccordionItem key={room.id} value={room.id} className="border rounded-lg">
+              <AccordionItem 
+                key={room.id} 
+                value={room.id} 
+                className={`border rounded-lg ${isConnected ? 'bg-green-50/50 border-green-200' : ''}`}
+              >
                 <AccordionTrigger className="px-3 py-2 hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180">
                   <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
