@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -43,10 +43,11 @@ export default function RoomConnectionsManager() {
   const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [saveProgress, setSaveProgress] = useState(0)
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
 
   const { data: departments } = useDepartments()
   const { data: departmentMappings } = useDepartmentMappingsWithDetails()
-  const { data: connections } = useRoomConnectionsById()
+  const { data: connections, refetch: refetchConnections } = useRoomConnectionsById()
   const createConnectionMutation = useCreateRoomConnectionById()
   const deleteConnectionMutation = useDeleteRoomConnectionById()
   const { toast } = useToast()
@@ -56,6 +57,18 @@ export default function RoomConnectionsManager() {
   const linkedDepartmentPairs = departmentMappings?.filter(mapping => 
     mapping.turar_department_id && mapping.projector_department_id
   ) || []
+
+  // Автоматическое обновление данных каждые 10 секунд
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isSaving) {
+        refetchConnections();
+        setLastUpdate(new Date());
+      }
+    }, 10000); // 10 секунд
+
+    return () => clearInterval(interval);
+  }, [isSaving, refetchConnections]);
 
   const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
     // Устанавливаем выбранный кабинет
@@ -173,9 +186,13 @@ export default function RoomConnectionsManager() {
       setSelectedTargetDeptId('');
       setSelectedTargetRoomId('');
       
+      // Принудительно обновляем данные о связях
+      await refetchConnections();
+      setLastUpdate(new Date());
+      
       toast({
         title: "Связи сохранены",
-        description: `Успешно сохранено ${total} связей`
+        description: `Успешно сохранено ${total} связей. Данные обновлены.`
       });
     } catch (error) {
       console.error('Ошибка сохранения связей:', error);
@@ -193,8 +210,20 @@ export default function RoomConnectionsManager() {
   const handleRemoveConnection = async (connectionId: string) => {
     try {
       await deleteConnectionMutation.mutateAsync(connectionId)
+      // Принудительно обновляем данные после удаления
+      await refetchConnections();
+      setLastUpdate(new Date());
+      toast({
+        title: "Связь удалена",
+        description: "Связь между кабинетами успешно удалена"
+      });
     } catch (error) {
       console.error('Ошибка удаления связи:', error)
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить связь",
+        variant: "destructive"
+      });
     }
   }
 
@@ -221,9 +250,14 @@ export default function RoomConnectionsManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Связывание кабинетов</h2>
-          <p className="text-muted-foreground">
-            Нажмите "Связать" на любом кабинете для начала процесса связывания
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-muted-foreground">
+              Нажмите "Связать кабинеты" на любом кабинете для начала процесса связывания
+            </p>
+            <div className="text-xs text-muted-foreground">
+              Обновлено: {lastUpdate.toLocaleTimeString()}
+            </div>
+          </div>
         </div>
         
         <div className="flex gap-2">
