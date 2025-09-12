@@ -15,6 +15,7 @@ import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
+import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -180,6 +181,7 @@ export default function FloorsPage() {
   const deleteConnectionMutation = useDeleteRoomConnection();
   const linkDepartmentMutation = useLinkDepartmentToTurar();
   const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
+  const cleanupUnknownRoomsMutation = useCleanupUnknownRooms();
   const { data: turarData } = useTurarMedicalData();
   const { toast } = useToast();
 
@@ -594,10 +596,21 @@ export default function FloorsPage() {
               <span><strong>{(totalStats.totalArea || 0).toFixed(1)}</strong> м² общая площадь</span>
             </div>
           </div>
-          <Button onClick={exportData} className="mt-4 gap-2">
-            <Download className="h-4 w-4" />
-            Экспорт Проектировщики в Excel
-          </Button>
+          <div className="mt-4 flex gap-2">
+            <Button onClick={exportData} className="gap-2">
+              <Download className="h-4 w-4" />
+              Экспорт Проектировщики в Excel
+            </Button>
+            <Button 
+              onClick={() => cleanupUnknownRoomsMutation.mutate()}
+              variant="destructive"
+              disabled={cleanupUnknownRoomsMutation.isPending}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              {cleanupUnknownRoomsMutation.isPending ? 'Очистка...' : 'Удалить неизвестные кабинеты'}
+            </Button>
+          </div>
         </div>
 
         {/* Floors with Accordion */}
