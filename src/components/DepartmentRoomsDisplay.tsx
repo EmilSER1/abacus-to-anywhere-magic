@@ -195,9 +195,38 @@ export default function DepartmentRoomsDisplay({
 
   const getConnectedRooms = (roomId: string, roomName: string) => {
     // Получаем все связи для данного кабинета
+    console.log(`🔍 ПОИСК СВЯЗЕЙ для кабинета "${roomName}" (ID: ${roomId}):`, {
+      isProjectorDepartment,
+      totalConnections: connections.length,
+      departmentName,
+      connections: connections.slice(0, 3).map(c => ({
+        id: c.id,
+        turar_room: c.turar_room,
+        projector_room: c.projector_room,
+        turar_department: c.turar_department,
+        projector_department: c.projector_department
+      }))
+    });
+    
     const filtered = isProjectorDepartment 
-      ? connections.filter(conn => conn.projector_room === roomName)
-      : connections.filter(conn => conn.turar_room === roomName);
+      ? connections.filter(conn => {
+          const match = conn.projector_room === roomName;
+          if (!match) {
+            console.log(`❌ Не совпадает: "${conn.projector_room}" !== "${roomName}"`);
+          } else {
+            console.log(`✅ Совпадает: "${conn.projector_room}" === "${roomName}"`);
+          }
+          return match;
+        })
+      : connections.filter(conn => {
+          const match = conn.turar_room === roomName;
+          if (!match) {
+            console.log(`❌ Не совпадает: "${conn.turar_room}" !== "${roomName}"`);
+          } else {
+            console.log(`✅ Совпадает: "${conn.turar_room}" === "${roomName}"`);
+          }
+          return match;
+        });
     
     // Убираем дубли по названию кабинета - показываем только уникальные названия
     const uniqueConnections = filtered.reduce((acc, conn) => {
@@ -214,7 +243,7 @@ export default function DepartmentRoomsDisplay({
       return acc;
     }, [] as typeof filtered);
     
-    console.log(`🔍 УНИКАЛЬНЫЕ СВЯЗИ для ${roomName}:`, {
+    console.log(`🔍 РЕЗУЛЬТАТ для ${roomName}:`, {
       всехСвязей: filtered.length,
       уникальныхСвязей: uniqueConnections.length,
       уникальныеКабинеты: uniqueConnections.map(c => 
