@@ -114,9 +114,11 @@ const processFloorData = (data: FloorData[]): Floor[] => {
       }
     }
 
+    // Проверяем наличие оборудования в любой из колонок
     if (item["Наименование оборудования"] || item["Наименование"]) {
       room.equipment.push({
         code: item["Код оборудования"],
+        // Используем "Наименование оборудования" приоритетно, если нет - то "Наименование"
         name: item["Наименование оборудования"] || item["Наименование"],
         unit: item["Ед. изм."],
         quantity: item["Кол-во"],
@@ -904,118 +906,124 @@ export default function FloorsPage() {
                                                );
                                              })()}
                                              
-                                              <AccordionContent className="px-3 pb-3">
-                                              <div className="mb-3 flex justify-end">
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => handleAddEquipment(department.name, room.name)}
-                                                  className="gap-2"
-                                                >
-                                                  <Plus className="h-3 w-3" />
-                                                  Добавить оборудование
-                                                </Button>
-                                               </div>
+                                               <AccordionContent className="px-3 pb-3">
+                                               <div className="mb-3 flex justify-between items-center">
+                                                 <div className="text-xs text-muted-foreground">
+                                                   💡 Используйте горизонтальную прокрутку для просмотра всех колонок таблицы
+                                                 </div>
+                                                 <Button
+                                                   size="sm"
+                                                   onClick={() => handleAddEquipment(department.name, room.name)}
+                                                   className="gap-2"
+                                                 >
+                                                   <Plus className="h-3 w-3" />
+                                                   Добавить оборудование
+                                                 </Button>
+                                                </div>
                                                {room.equipment.length > 0 ? (
-                                                 <div className="rounded-lg border border-border/40 overflow-hidden">
-                                                   <table className="w-full text-xs border-collapse">
-                                                     <thead className="bg-muted/30">
-                                                       <tr>
-                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Код оборудования</th>
-                                                         <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0">Наименование</th>
-                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Количество</th>
-                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Ед. изм.</th>
-                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Статус</th>
-                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Поставщик</th>}
-                                                         {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Цена</th>}
-                                                         <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0">Примечания</th>
-                                                         <th className="text-center p-3 font-semibold">Действия</th>
-                                                       </tr>
-                                                     </thead>
-                                                    <tbody>
-                                                      {room.equipment.map((eq, eqIndex) => {
-                                                        const urlSearchTerm = searchParams.get('search');
-                                                        const urlDepartment = searchParams.get('department');
-                                                        const urlRoom = searchParams.get('room');
-                                                        
-                                                        const isHighlighted = urlSearchTerm && 
-                                                          urlDepartment === department.name && 
-                                                          urlRoom === room.name && 
-                                                          eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
-                                                          !highlightTimeout;
-
-                                                        const equipmentId = isHighlighted ? 
-                                                          `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
-                                                          undefined;
-
-                                                        return (
-                                                          <tr 
-                                                            key={eqIndex}
-                                                            id={equipmentId}
-                                                            className={`border-t border-border/40 transition-all duration-500 hover:bg-muted/50 ${
-                                                              isHighlighted 
-                                                                ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
-                                                                : ''
-                                                            }`}
-                                                          >
-                                                            <td className="p-3 font-mono text-xs border-r border-border/40 last:border-r-0">
-                                                              {eq.code || '-'}
-                                                            </td>
-                                                             <td className={`p-3 break-words transition-all duration-300 border-r border-border/40 last:border-r-0 ${
-                                                               isHighlighted 
-                                                                 ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
-                                                                 : ''
-                                                             }`}>
-                                                              {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
-                                                              {eq.name || '-'}
-                                                            </td>
-                                                            <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                              {eq.quantity || '-'}
-                                                            </td>
-                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                               {eq.unit || '-'}
-                                                             </td>
-                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                               {eq.equipment_status && (
-                                                                 <Badge className={statusConfig[eq.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
-                                                                   {statusConfig[eq.equipment_status as keyof typeof statusConfig]?.label || eq.equipment_status}
-                                                                 </Badge>
-                                                               )}
-                                                             </td>
-                                                             {isAdmin && (
-                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                                 {eq.equipment_supplier || '-'}
-                                                               </td>
-                                                             )}
-                                                             {isAdmin && (
-                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                                 {eq.equipment_price ? `${eq.equipment_price.toLocaleString()} руб.` : '-'}
-                                                               </td>
-                                                             )}
-                                                             <td className="p-3 text-center border-r border-border/40 last:border-r-0">
-                                                               {eq.notes && (
-                                                                 <Badge 
-                                                                   variant={isHighlighted ? "default" : "secondary"} 
-                                                                   className="text-xs h-5"
-                                                                 >
-                                                                   {eq.notes}
-                                                                 </Badge>
-                                                               )}
-                                                             </td>
-                                                             <td className="p-3 text-center">
-                                                               <Button
-                                                                 size="sm"
-                                                                 variant="ghost"
-                                                                 onClick={() => handleEditEquipment(eq, department.name, room.name)}
-                                                                 className="p-1 h-auto"
-                                                               >
-                                                                 <Edit className="h-3 w-3" />
-                                                               </Button>
-                                                             </td>
+                                                  <div className="rounded-lg border border-border/40 overflow-hidden">
+                                                    {/* Контейнер с горизонтальной прокруткой */}
+                                                    <div className="overflow-x-auto">
+                                                      <table className="w-full text-xs border-collapse min-w-[800px]">
+                                                        <thead className="bg-muted/30">
+                                                          <tr>
+                                                            <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[120px]">Код оборудования</th>
+                                                            <th className="text-left p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[200px]">Наименование оборудования</th>
+                                                            <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[80px]">Количество</th>
+                                                            <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[80px]">Ед. изм.</th>
+                                                            <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[120px]">Статус</th>
+                                                            {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[150px]">Поставщик</th>}
+                                                            {isAdmin && <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[100px]">Цена (тенге)</th>}
+                                                            <th className="text-center p-3 font-semibold border-r border-border/40 last:border-r-0 min-w-[150px]">Примечания</th>
+                                                            <th className="text-center p-3 font-semibold min-w-[80px]">Действия</th>
                                                           </tr>
-                                                        );
-                                                      })}
-                                                     </tbody>
-                                                   </table>
+                                                        </thead>
+                                                       <tbody>
+                                                         {room.equipment.map((eq, eqIndex) => {
+                                                           const urlSearchTerm = searchParams.get('search');
+                                                           const urlDepartment = searchParams.get('department');
+                                                           const urlRoom = searchParams.get('room');
+                                                           
+                                                           const isHighlighted = urlSearchTerm && 
+                                                             urlDepartment === department.name && 
+                                                             urlRoom === room.name && 
+                                                             eq.name?.toLowerCase().includes(urlSearchTerm.toLowerCase()) &&
+                                                             !highlightTimeout;
+
+                                                           const equipmentId = isHighlighted ? 
+                                                             `${urlDepartment}-${urlRoom}-${urlSearchTerm}`.replace(/\s+/g, '-').toLowerCase() : 
+                                                             undefined;
+
+                                                           return (
+                                                             <tr 
+                                                               key={eqIndex}
+                                                               id={equipmentId}
+                                                               className={`border-t border-border/40 transition-all duration-500 hover:bg-muted/50 ${
+                                                                 isHighlighted 
+                                                                   ? 'bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg animate-pulse' 
+                                                                   : ''
+                                                               }`}
+                                                             >
+                                                               <td className="p-3 font-mono text-xs border-r border-border/40 last:border-r-0">
+                                                                 {eq.code || '-'}
+                                                               </td>
+                                                                <td className={`p-3 break-words transition-all duration-300 border-r border-border/40 last:border-r-0 ${
+                                                                  isHighlighted 
+                                                                    ? 'text-yellow-800 dark:text-yellow-200 font-bold text-sm bg-yellow-200 dark:bg-yellow-800/50 rounded' 
+                                                                    : ''
+                                                                }`}>
+                                                                 {isHighlighted && <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></span>}
+                                                                 {eq.name || '-'}
+                                                               </td>
+                                                               <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                 {eq.quantity || '-'}
+                                                               </td>
+                                                                <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                  {eq.unit || '-'}
+                                                                </td>
+                                                                <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                  {eq.equipment_status && (
+                                                                    <Badge className={statusConfig[eq.equipment_status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                                                                      {statusConfig[eq.equipment_status as keyof typeof statusConfig]?.label || eq.equipment_status}
+                                                                    </Badge>
+                                                                  )}
+                                                                </td>
+                                                                {isAdmin && (
+                                                                  <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                    {eq.equipment_supplier || '-'}
+                                                                  </td>
+                                                                )}
+                                                                {isAdmin && (
+                                                                  <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                    {eq.equipment_price ? `${eq.equipment_price.toLocaleString()} тенге` : '-'}
+                                                                  </td>
+                                                                )}
+                                                                <td className="p-3 text-center border-r border-border/40 last:border-r-0">
+                                                                  {eq.notes && (
+                                                                    <Badge 
+                                                                      variant={isHighlighted ? "default" : "secondary"} 
+                                                                      className="text-xs h-5"
+                                                                    >
+                                                                      {eq.notes}
+                                                                    </Badge>
+                                                                  )}
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                  <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() => handleEditEquipment(eq, department.name, room.name)}
+                                                                    className="p-1 h-auto"
+                                                                  >
+                                                                    <Edit className="h-3 w-3" />
+                                                                  </Button>
+                                                                </td>
+                                                             </tr>
+                                                           );
+                                                         })}
+                                                       </tbody>
+                                                      </table>
+                                                    </div>
                                                   </div>
                                                  ) : (
                                                    <div className="text-center py-6 text-muted-foreground text-xs space-y-3">
