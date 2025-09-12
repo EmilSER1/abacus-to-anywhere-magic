@@ -13,6 +13,9 @@ import EditEquipmentDialog from '@/components/EditEquipmentDialog';
 import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
+import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
@@ -175,7 +178,13 @@ export default function FloorsPage() {
   const addEquipmentMutation = useAddProjectorEquipment();
   const createConnectionMutation = useCreateRoomConnection();
   const deleteConnectionMutation = useDeleteRoomConnection();
+  const linkDepartmentMutation = useLinkDepartmentToTurar();
+  const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
+  const { data: turarData } = useTurarMedicalData();
   const { toast } = useToast();
+
+  // Состояния для связывания отделений
+  const [departmentTurarSelections, setDepartmentTurarSelections] = useState<Record<string, string>>({});
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
@@ -330,6 +339,52 @@ export default function FloorsPage() {
       title: "Связи созданы",
       description: `Создано связей: ${selectedTurarRooms.length} кабинетов Турар`,
     });
+  };
+
+  // Получение уникальных отделений Турар
+  const turarDepartments = React.useMemo(() => {
+    if (!turarData) return [];
+    
+    const departments = new Set<string>();
+    turarData.forEach(item => {
+      if (item["Отделение/Блок"]) {
+        departments.add(item["Отделение/Блок"]);
+      }
+    });
+    
+    return Array.from(departments).sort();
+  }, [turarData]);
+
+  // Получение текущей связи отделения с Турар
+  const getDepartmentTurarLink = (departmentName: string) => {
+    if (!allData) return null;
+    
+    const linkedRecord = allData.find(item => 
+      item["ОТДЕЛЕНИЕ"] === departmentName && 
+      item.connected_turar_department
+    );
+    
+    return linkedRecord?.connected_turar_department || null;
+  };
+
+  // Сохранение связи отделения с Турар
+  const handleSaveDepartmentLink = (departmentName: string) => {
+    const selectedTurar = departmentTurarSelections[departmentName];
+    if (selectedTurar) {
+      linkDepartmentMutation.mutate({
+        departmentName,
+        turarDepartment: selectedTurar
+      });
+    }
+  };
+
+  // Удаление связи отделения с Турар
+  const handleRemoveDepartmentLink = (departmentName: string) => {
+    unlinkDepartmentMutation.mutate(departmentName);
+    setDepartmentTurarSelections(prev => ({
+      ...prev,
+      [departmentName]: ''
+    }));
   };
 
   const handleDeleteConnection = (turarDept: string, turarRoom: string, projectorDept: string, projectorRoom: string) => {
@@ -597,40 +652,98 @@ export default function FloorsPage() {
                           >
                             <AccordionItem value={`dept-${deptIndex}`} className="border-none">
                                <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:no-underline hover:bg-muted/50">
-                                 <div className="flex items-center justify-between w-full mr-4">
-                                   <div className="flex items-center gap-3">
-                                     <Badge variant="outline" className="font-mono">
-                                       Блок {department.block}
-                                     </Badge>
-                                      <span className="font-medium">{department.name}</span>
-                                      <span className="text-sm text-muted-foreground">
-                                        {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
-                                      </span>
-                                      {/* Индикатор связей на уровне отделения */}
-                                      {roomConnections && (() => {
-                                         const connectedRooms = department.rooms.filter(room => 
-                                           roomConnections.some(conn => 
-                                             conn.projector_department === department.name && 
-                                             (conn.projector_room === room.name || conn.projector_room === room.code)
-                                           )
-                                         );
-                                        return connectedRooms.length > 0 ? (
-                                          <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
-                                            <Link className="h-3 w-3 mr-1" />
-                                            {connectedRooms.length} связанных комнат
-                                          </Badge>
-                                        ) : null;
-                                      })()}
+                                  <div className="flex items-center justify-between w-full mr-4">
+                                    <div className="flex items-center gap-3">
+                                      <Badge variant="outline" className="font-mono">
+                                        Блок {department.block}
+                                      </Badge>
+                                       <span className="font-medium">{department.name}</span>
+                                       <span className="text-sm text-muted-foreground">
+                                         {department.rooms.length} помещений • {(department.totalArea || 0).toFixed(1)} м²
+                                       </span>
+                                       {/* Индикатор связи с Турар */}
+                                       {(() => {
+                                         const turarLink = getDepartmentTurarLink(department.name);
+                                         return turarLink ? (
+                                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                                             <Link2 className="h-3 w-3 mr-1" />
+                                             Турар: {turarLink}
+                                           </Badge>
+                                         ) : null;
+                                       })()}
+                                       {/* Индикатор связей на уровне отделения */}
+                                       {roomConnections && (() => {
+                                          const connectedRooms = department.rooms.filter(room => 
+                                            roomConnections.some(conn => 
+                                              conn.projector_department === department.name && 
+                                              (conn.projector_room === room.name || conn.projector_room === room.code)
+                                            )
+                                          );
+                                         return connectedRooms.length > 0 ? (
+                                           <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
+                                             <Link className="h-3 w-3 mr-1" />
+                                             {connectedRooms.length} связанных комнат
+                                           </Badge>
+                                         ) : null;
+                                       })()}
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                       <Badge variant="secondary" className="text-xs">
+                                         {department.equipmentCount} ед. оборуд.
+                                       </Badge>
+                                     </div>
+                                  </div>
+                                </AccordionTrigger>
+                               <AccordionContent className="px-4 pb-4">
+                                  {/* Блок связывания с отделениями Турар */}
+                                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Link2 className="h-4 w-4 text-blue-600" />
+                                      <span className="font-medium text-blue-800">Связать с отделением Турар</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <Badge variant="secondary" className="text-xs">
-                                        {department.equipmentCount} ед. оборуд.
-                                      </Badge>
+                                      <Select
+                                        value={departmentTurarSelections[department.name] || getDepartmentTurarLink(department.name) || ''}
+                                        onValueChange={(value) => setDepartmentTurarSelections(prev => ({
+                                          ...prev,
+                                          [department.name]: value
+                                        }))}
+                                      >
+                                        <SelectTrigger className="flex-1">
+                                          <SelectValue placeholder="Выберите отделение Турар" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {turarDepartments.map((dept) => (
+                                            <SelectItem key={dept} value={dept}>
+                                              {dept}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveDepartmentLink(department.name)}
+                                        disabled={
+                                          !departmentTurarSelections[department.name] || 
+                                          linkDepartmentMutation.isPending
+                                        }
+                                      >
+                                        Сохранить
+                                      </Button>
+                                      {getDepartmentTurarLink(department.name) && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => handleRemoveDepartmentLink(department.name)}
+                                          disabled={unlinkDepartmentMutation.isPending}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      )}
                                     </div>
-                                 </div>
-                               </AccordionTrigger>
-                              <AccordionContent className="px-4 pb-4">
-                                 <div className="space-y-3">
+                                  </div>
+
+                                  <div className="space-y-3">
                                    <div className="text-xs font-medium text-muted-foreground mb-2">
                                      КАБИНЕТЫ В ОТДЕЛЕНИИ:
                                    </div>
