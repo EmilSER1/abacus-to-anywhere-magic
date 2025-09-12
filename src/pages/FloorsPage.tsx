@@ -1148,7 +1148,7 @@ export default function FloorsPage() {
   );
 }
 
-// Компонент для отображения оборудования с возможностью редактирования
+export default FloorsPage;
 const EquipmentSection: React.FC<{
   department: string;
   room: string;
@@ -1258,3 +1258,5 @@ const EquipmentSection: React.FC<{
     </div>
   );
 };
+
+export default FloorsPage;
