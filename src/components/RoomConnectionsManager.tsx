@@ -64,13 +64,31 @@ export default function RoomConnectionsManager() {
 
   const handleLinkRoom = (roomId: string, roomName: string, departmentId: string, departmentName: string, isProjectorDepartment: boolean) => {
     if (linkingRoom) {
-      // Если уже есть выбранный кабинет, сбрасываем
-      setLinkingRoom(null);
-      toast({
-        title: "Связывание отменено",
-        description: "Выберите новый кабинет для связывания"
-      });
-      return;
+      // Если уже есть выбранный кабинет, предлагаем либо сбросить, либо продолжить с новым
+      if (linkingRoom.roomId === roomId) {
+        // Если кликнули на тот же кабинет - сбрасываем
+        setLinkingRoom(null);
+        toast({
+          title: "Связывание отменено",
+          description: "Выберите кабинет для связывания"
+        });
+        return;
+      } else {
+        // Если кликнули на другой кабинет - меняем исходный кабинет
+        setLinkingRoom({
+          roomId,
+          roomName,
+          departmentId,
+          departmentName,
+          isProjectorDepartment
+        });
+        
+        toast({
+          title: "Сменен исходный кабинет",
+          description: `Теперь выбран ${departmentName} - ${roomName}. Отметьте кабинеты для связывания.`
+        });
+        return;
+      }
     }
     
     setLinkingRoom({
@@ -119,12 +137,11 @@ export default function RoomConnectionsManager() {
     
     setConnectionQueue(prev => [...prev, newConnection]);
     
-    // Сбрасываем выбор после добавления в очередь, чтобы можно было выбрать новый исходный кабинет
-    setLinkingRoom(null);
+    // НЕ сбрасываем linkingRoom, чтобы можно было продолжить добавление связей с тем же исходным кабинетом
     
     toast({
       title: "Связь добавлена в очередь",
-      description: `${linkingRoom.roomName} ↔ ${targetRoomName}. Теперь можете выбрать новый исходный кабинет.`
+      description: `${linkingRoom.roomName} ↔ ${targetRoomName}. Продолжайте выбирать кабинеты для связывания или создайте связи.`
     });
   };
 
