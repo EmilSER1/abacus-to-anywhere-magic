@@ -567,6 +567,14 @@ export type Database = {
           department_name: string
         }[]
       }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_verified_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       sync_projector_room_connections: {
         Args: Record<PropertyKey, never>
         Returns: undefined
