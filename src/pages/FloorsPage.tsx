@@ -609,15 +609,6 @@ export default function FloorsPage() {
               <Download className="h-4 w-4" />
               Экспорт Проектировщики в Excel
             </Button>
-            <Button 
-              onClick={() => cleanupUnknownRoomsMutation.mutate()}
-              variant="destructive"
-              disabled={cleanupUnknownRoomsMutation.isPending}
-              className="gap-2"
-            >
-              <X className="h-4 w-4" />
-              {cleanupUnknownRoomsMutation.isPending ? 'Очистка...' : 'Удалить ВСЕ связи'}
-            </Button>
           </div>
         </div>
 
@@ -797,10 +788,14 @@ export default function FloorsPage() {
                                                       {(() => {
                                                          const connections = getRoomConnections(room, department.name);
                                                        return connections.length > 0 ? (
-                                                         <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
-                                                           <Link className="h-3 w-3 mr-1" />
-                                                           ✓ Связан ({connections.length})
-                                                         </Badge>
+                                                         <div className="flex flex-wrap gap-1">
+                                                           {connections.map((conn, idx) => (
+                                                             <Badge key={idx} variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white text-xs font-semibold">
+                                                               <Link className="h-3 w-3 mr-1" />
+                                                               {conn.turar_room}
+                                                             </Badge>
+                                                           ))}
+                                                         </div>
                                                        ) : (
                                                          // Показываем индикатор "не связан" если есть доступное отделение Турар
                                                          getDepartmentTurarLink(department.name) ? (

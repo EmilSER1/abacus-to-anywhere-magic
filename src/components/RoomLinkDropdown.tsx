@@ -90,13 +90,19 @@ export default function RoomLinkDropdown({
       selectedRoomsSize: selectedRooms.size,
       roomId,
       roomName,
-      departmentName
+      departmentName,
+      selectedRooms: Array.from(selectedRooms)
     });
 
     if (!connectedTurarDepartment || selectedRooms.size === 0) {
       console.log('❌ Early return - missing data:', {
         connectedTurarDepartment,
         selectedRoomsSize: selectedRooms.size
+      });
+      toast({
+        title: "Ошибка",
+        description: "Выберите кабинеты для связывания",
+        variant: "destructive",
       });
       return;
     }
@@ -178,8 +184,8 @@ export default function RoomLinkDropdown({
       
       // Показываем уведомление об успехе
       toast({
-        title: "Связи созданы",
-        description: `Создано ${selectedRooms.size} связей для кабинета ${roomName}`,
+        title: "✅ Связи созданы успешно!",
+        description: `Создано ${selectedRooms.size} связей для кабинета "${roomName}" с отделением "${connectedTurarDepartment}"`,
       });
       
       setSelectedRooms(new Set()); // Очищаем выбор
@@ -188,8 +194,8 @@ export default function RoomLinkDropdown({
     } catch (error) {
       console.error('❌ Error creating room connections:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось создать связи. Попробуйте еще раз.",
+        title: "❌ Ошибка создания связей",
+        description: `Не удалось создать связи: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
         variant: "destructive",
       });
     } finally {
