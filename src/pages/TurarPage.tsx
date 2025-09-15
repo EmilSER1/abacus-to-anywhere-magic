@@ -296,18 +296,39 @@ const TurarPage: React.FC = () => {
             >
               {filteredDepartments.map((department, deptIndex) => (
                 <AccordionItem key={deptIndex} value={`dept-${deptIndex}`}>
-                  <Card className="bg-card/50 backdrop-blur border-border/50">
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="h-6 w-6 text-primary" />
-                        <div className="text-left">
-                          <div className="text-xl font-semibold">{department.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {department.rooms.length} помещений
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
+                   <Card className="bg-card/50 backdrop-blur border-border/50">
+                     <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                       <div className="flex items-center gap-3 flex-1">
+                         <Building2 className="h-6 w-6 text-primary" />
+                         <div className="text-left flex-1">
+                           <div className="text-xl font-semibold">{department.name}</div>
+                           <div className="text-sm text-muted-foreground">
+                             {department.rooms.length} помещений
+                           </div>
+                         </div>
+                         {(() => {
+                           // Проверяем есть ли связи с проектировщиками на уровне отделения
+                           const connectedDepartments = roomConnections
+                             ?.filter(conn => conn.turar_department === department.name)
+                             ?.map(conn => conn.projector_department)
+                             ?.filter((dept, index, arr) => arr.indexOf(dept) === index) || [];
+                           
+                           if (connectedDepartments.length > 0) {
+                             return (
+                               <div className="flex flex-wrap gap-1">
+                                 {connectedDepartments.map((projectorDept, index) => (
+                                   <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                     <Link className="h-3 w-3 mr-1" />
+                                     {projectorDept}
+                                   </Badge>
+                                 ))}
+                               </div>
+                             );
+                           }
+                           return null;
+                         })()}
+                       </div>
+                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
                       <Accordion 
                         type="multiple" 
