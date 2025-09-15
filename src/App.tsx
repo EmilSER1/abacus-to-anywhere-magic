@@ -7,14 +7,14 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FloorsPage from "./pages/FloorsPage";
 import TurarPage from "./pages/TurarPage";
-// import ConnectionsPage from "./pages/ConnectionsPage"; // Disabled
+import ConnectionsPage from "./pages/ConnectionsPage";
 import SearchPage from "./pages/SearchPage";
 import ConsolidationPage from "./pages/ConsolidationPage";
 import AdminPage from "./pages/AdminPage";
 import AuthPage from "./pages/AuthPage";
 import UsersPage from "./pages/UsersPage";
 import AuthWrapper from "./components/AuthWrapper";
-// import DepartmentIdTestPage from "./pages/DepartmentIdTestPage"; // Disabled
+import DepartmentIdTestPage from "./pages/DepartmentIdTestPage";
 
 const queryClient = new QueryClient();
 
@@ -30,12 +30,12 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/floors" element={<FloorsPage />} />
               <Route path="/turar" element={<TurarPage />} />
-              {/* <Route path="/connections" element={<ConnectionsPage />} /> */}
+              <Route path="/connections" element={<ConnectionsPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/consolidation" element={<ConsolidationPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/users" element={<UsersPage />} />
-              {/* <Route path="/dept-test" element={<DepartmentIdTestPage />} /> */}
+              <Route path="/dept-test" element={<DepartmentIdTestPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

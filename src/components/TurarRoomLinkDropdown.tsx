@@ -33,19 +33,19 @@ export default function TurarRoomLinkDropdown({
   const createConnection = useCreateRoomConnection();
   const deleteConnection = useDeleteRoomConnection();
 
-  // Получаем ВСЕ уникальные отделения проектировщиков
+  // Получаем отделения проектировщиков связанные с текущим отделением Турар
   const linkedProjectorDepartments = React.useMemo(() => {
     if (!projectorData) return [];
     
     const departments = new Set<string>();
     projectorData.forEach(item => {
-      if (item["ОТДЕЛЕНИЕ"]) {
+      if (item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]) {
         departments.add(item["ОТДЕЛЕНИЕ"].trim());
       }
     });
     
     return Array.from(departments).sort();
-  }, [projectorData]);
+  }, [projectorData, turarDepartment]);
 
   // Получаем комнаты выбранного отделения проектировщиков
   const projectorRooms = React.useMemo(() => {
