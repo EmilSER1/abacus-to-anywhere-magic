@@ -47,9 +47,21 @@ export default function MultiSelectProjectorRooms({
     console.log(`🔗 MultiSelectProjectorRooms: Ищем связанные отделения для "${turarDepartment}"`);
     
     // Сначала проверяем department_mappings (новый способ)
-    const mappingsForDepartment = departmentMappings?.filter(mapping => 
-      mapping.turar_department.trim() === turarDepartment.trim()
-    ) || [];
+    const mappingsForDepartment = departmentMappings?.filter(mapping => {
+      const turarNormalized = mapping.turar_department.trim();
+      const inputNormalized = turarDepartment.trim();
+      const isMatch = turarNormalized === inputNormalized;
+      
+      console.log('🔍 Mapping comparison:', {
+        mappingTurar: `"${turarNormalized}"`,
+        inputTurar: `"${inputNormalized}"`,
+        isMatch,
+        mappingLength: turarNormalized.length,
+        inputLength: inputNormalized.length
+      });
+      
+      return isMatch;
+    }) || [];
     
     console.log('📋 Mappings found:', mappingsForDepartment);
     
