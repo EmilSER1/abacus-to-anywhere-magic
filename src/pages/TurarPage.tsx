@@ -114,6 +114,25 @@ const TurarPage: React.FC = () => {
     }
   }, [turarData, searchParams]);
 
+  // Функция для получения связанных отделений проектировщиков для отделения Турар
+  const getDepartmentProjectorLinks = (turarDepartmentName: string): string[] => {
+    if (!projectorData && !roomConnections) return [];
+    
+    // Получаем связи из таблицы room_connections (новый способ)
+    const connectionsFromTable = roomConnections
+      ?.filter(conn => conn.turar_department === turarDepartmentName)
+      ?.map(conn => conn.projector_department) || [];
+    
+    // Получаем связи из projector_floors (старый способ)
+    const connectionsFromProjector = projectorData
+      ?.filter(item => item.connected_turar_department === turarDepartmentName)
+      ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
+    
+    // Объединяем и убираем дубликаты
+    const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
+    return [...new Set(allConnections)];
+  };
+
   const processTurarData = (data: any[]): TurarDepartment[] => {
     const departmentMap = new Map<string, Map<string, any[]>>();
 
@@ -317,29 +336,19 @@ const TurarPage: React.FC = () => {
                            </div>
                          </div>
                          {/* Показываем связанные отделения проектировщиков */}
-                         {(roomConnections || projectorData) && (() => {
-                           // Получаем связи из таблицы room_connections
-                           const connectionsFromTable = roomConnections
-                             ?.filter(conn => conn.turar_department === department.name)
-                             ?.map(conn => conn.projector_department) || [];
-                           
-                           // Получаем связи из projector_floors (старый способ)
-                           const connectionsFromProjector = projectorData
-                             ?.filter(item => item.connected_turar_department === department.name)
-                             ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
-                           
-                           // Объединяем и убираем дубликаты
-                           const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
-                           const connectedDepartments = [...new Set(allConnections)];
-                           
-                           console.log(`📊 Department "${department.name}" has ${connectedDepartments.length} connected projector departments:`, connectedDepartments);
+                         {(() => {
+                           const connectedDepartments = getDepartmentProjectorLinks(department.name);
                            
                            return connectedDepartments.length > 0 ? (
                              <div className="flex flex-wrap gap-1">
-                               {connectedDepartments.map((projectorDept, index) => (
-                                 <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                               {connectedDepartments.map((projectorDept, idx) => (
+                                 <Badge 
+                                   key={idx} 
+                                   variant="secondary" 
+                                   className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
+                                 >
                                    <Link className="h-3 w-3 mr-1" />
-                                   Проектировщики: {projectorDept}
+                                   {projectorDept}
                                  </Badge>
                                ))}
                              </div>
