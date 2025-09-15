@@ -30,6 +30,13 @@ export default function MultiSelectProjectorRooms({
 }: MultiSelectProjectorRoomsProps) {
   const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
 
+  console.log('🚀 MultiSelectProjectorRooms RENDER:', {
+    turarDepartment,
+    turarRoom,
+    connectedRoomsCount: connectedRooms.length,
+    isLoading
+  });
+
   const { data: projectorData } = useProjectorData();
   const { data: departmentMappings } = useDepartmentMappings();
 
@@ -146,16 +153,43 @@ export default function MultiSelectProjectorRooms({
     return connectedRooms.some(conn => conn.projector_room === roomName);
   };
 
-  console.log('🏠 MultiSelectProjectorRooms Debug:', {
+  console.log('🏠 MultiSelectProjectorRooms Final State:', {
     turarDepartment,
     turarRoom,
     linkedDepartments: linkedProjectorDepartments,
     availableRooms: availableRooms.length,
-    connectedRooms: connectedRooms.length
+    connectedRooms: connectedRooms.length,
+    hasProjectorData: !!projectorData,
+    projectorDataLength: projectorData?.length || 0,
+    hasDepartmentMappings: !!departmentMappings,
+    departmentMappingsLength: departmentMappings?.length || 0
   });
+
+  // Простая проверка - если данных совсем нет, покажем сообщение
+  if (!projectorData && !departmentMappings) {
+    return (
+      <div className="p-4 border border-dashed rounded">
+        <div className="text-sm text-muted-foreground">Загрузка данных...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
+      {/* Отладочная информация */}
+      <div className="p-3 border rounded bg-blue-50 dark:bg-blue-900/20">
+        <div className="text-sm font-medium mb-2">Отладка MultiSelectProjectorRooms:</div>
+        <div className="text-xs space-y-1">
+          <div>Турар отделение: "{turarDepartment}"</div>
+          <div>Турар кабинет: "{turarRoom}"</div>
+          <div>Связанные отделения: {linkedProjectorDepartments.length} - {JSON.stringify(linkedProjectorDepartments)}</div>
+          <div>Доступные кабинеты: {availableRooms.length}</div>
+          <div>Текущие связи: {connectedRooms.length}</div>
+          <div>Данные проектировщиков: {projectorData?.length || 0}</div>
+          <div>Связи отделений: {departmentMappings?.length || 0}</div>
+        </div>
+      </div>
+      
       {/* Показываем текущие связи */}
       {connectedRooms.length > 0 && (
         <div className="space-y-2">
