@@ -50,6 +50,8 @@ const TurarPage: React.FC = () => {
       setDepartments(processedData);
       
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
+      console.log('🔗 Room connections data:', roomConnections);
+      console.log('📊 Turar departments:', processedData.map(d => ({ name: d.name, roomCount: d.rooms.length })));
       
       // Handle search params from URL
       const urlSearchTerm = searchParams.get('search');
@@ -309,9 +311,14 @@ const TurarPage: React.FC = () => {
                          {/* Показываем связанные отделения проектировщиков */}
                          {roomConnections && (() => {
                            const connectedDepartments = roomConnections
-                             ?.filter(conn => conn.turar_department === department.name)
+                             ?.filter(conn => {
+                               console.log(`🔍 Checking connection for dept "${department.name}": conn.turar_department="${conn.turar_department}"`);
+                               return conn.turar_department === department.name;
+                             })
                              ?.map(conn => conn.projector_department)
                              ?.filter((dept, index, arr) => arr.indexOf(dept) === index) || [];
+                           
+                           console.log(`📊 Department "${department.name}" has ${connectedDepartments.length} connected projector departments:`, connectedDepartments);
                            
                            return connectedDepartments.length > 0 ? (
                              <div className="flex flex-wrap gap-1">
