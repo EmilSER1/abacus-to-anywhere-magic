@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProjectorData } from '@/hooks/useProjectorData';
+import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { Link, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -30,22 +31,38 @@ export default function TurarRoomLinkDropdown({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: projectorData } = useProjectorData();
+  const { data: departmentMappings } = useDepartmentMappings();
   const createConnection = useCreateRoomConnection();
   const deleteConnection = useDeleteRoomConnection();
 
   // Получаем отделения проектировщиков связанные с текущим отделением Турар
   const linkedProjectorDepartments = React.useMemo(() => {
-    if (!projectorData) return [];
-    
     const departments = new Set<string>();
-    projectorData.forEach(item => {
-      if (item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]) {
-        departments.add(item["ОТДЕЛЕНИЕ"].trim());
+    
+    // Сначала проверяем department_mappings (новый способ)
+    departmentMappings?.forEach(mapping => {
+      if (mapping.turar_department.trim() === turarDepartment.trim()) {
+        departments.add(mapping.projector_department.trim());
       }
     });
     
+    // Затем проверяем projector_floors (старый способ для обратной совместимости)
+    if (projectorData) {
+      projectorData.forEach(item => {
+        if (item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]) {
+          departments.add(item["ОТДЕЛЕНИЕ"].trim());
+        }
+      });
+    }
+    
+    console.log(`🔗 TurarRoomLinkDropdown для "${turarDepartment}":`, {
+      mappingsFound: departmentMappings?.filter(m => m.turar_department.trim() === turarDepartment.trim()).length || 0,
+      projectorLinksFound: projectorData?.filter(item => item.connected_turar_department === turarDepartment).length || 0,
+      linkedDepartments: Array.from(departments)
+    });
+    
     return Array.from(departments).sort();
-  }, [projectorData, turarDepartment]);
+  }, [projectorData, departmentMappings, turarDepartment]);
 
   // Получаем комнаты выбранного отделения проектировщиков
   const projectorRooms = React.useMemo(() => {

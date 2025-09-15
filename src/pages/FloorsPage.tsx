@@ -13,7 +13,7 @@ import EditEquipmentDialog from '@/components/EditEquipmentDialog';
 import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
-import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping } from '@/hooks/useDepartmentMappings';
 // import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
@@ -175,10 +175,11 @@ export default function FloorsPage() {
   const createConnectionMutation = useCreateRoomConnection();
   const deleteConnectionMutation = useDeleteRoomConnection();
   // const deleteRoomConnectionMutation = useDeleteRoomConnection(); // useDeleteRoomConnectionById();
-  const linkDepartmentMutation = useLinkDepartmentToTurar();
-  const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
+  const createDepartmentMappingMutation = useCreateDepartmentMapping();
+  const deleteDepartmentMappingMutation = useDeleteDepartmentMapping();
   const cleanupUnknownRoomsMutation = useCleanupUnknownRooms();
   const { data: turarData } = useTurarMedicalData();
+  const { data: departmentMappings } = useDepartmentMappings();
   const { toast } = useToast();
 
   // Состояния для связывания отделений
@@ -186,6 +187,16 @@ export default function FloorsPage() {
   
   // Функция для получения связанного отделения Турар
   const getDepartmentTurarLink = (departmentName: string): string | null => {
+    // Сначала проверяем department_mappings (новый способ)
+    const mappingLink = departmentMappings?.find(mapping => 
+      mapping.projector_department.trim() === departmentName.trim()
+    )?.turar_department;
+    
+    if (mappingLink) {
+      return mappingLink;
+    }
+    
+    // Если не найдено в mappings, проверяем projector_floors (старый способ)
     if (!allData) return null;
     
     const linkedRecord = allData.find(item => 
@@ -430,16 +441,21 @@ export default function FloorsPage() {
   const handleSaveDepartmentLink = (departmentName: string) => {
     const selectedTurar = departmentTurarSelections[departmentName];
     if (selectedTurar) {
-      linkDepartmentMutation.mutate({
-        departmentName,
-        turarDepartment: selectedTurar
+      createDepartmentMappingMutation.mutate({
+        projector_department: departmentName,
+        turar_department: selectedTurar
       });
     }
   };
 
   // Удаление связи отделения с Турар
   const handleRemoveDepartmentLink = (departmentName: string) => {
-    unlinkDepartmentMutation.mutate(departmentName);
+    const mappingToDelete = departmentMappings?.find(
+      mapping => mapping.projector_department === departmentName
+    );
+    if (mappingToDelete) {
+      deleteDepartmentMappingMutation.mutate(mappingToDelete.id);
+    }
     setDepartmentTurarSelections(prev => ({
       ...prev,
       [departmentName]: ''
@@ -798,8 +814,8 @@ export default function FloorsPage() {
                                         size="sm"
                                         onClick={() => handleSaveDepartmentLink(department.name)}
                                         disabled={
-                                          !departmentTurarSelections[department.name] || 
-                                          linkDepartmentMutation.isPending
+                                           !departmentTurarSelections[department.name] || 
+                                           createDepartmentMappingMutation.isPending
                                         }
                                       >
                                         Сохранить
@@ -809,7 +825,7 @@ export default function FloorsPage() {
                                           size="sm"
                                           variant="destructive"
                                           onClick={() => handleRemoveDepartmentLink(department.name)}
-                                          disabled={unlinkDepartmentMutation.isPending}
+                                          disabled={deleteDepartmentMappingMutation.isPending}
                                         >
                                           <X className="h-3 w-3 mr-1" />
                                           Удалить связь
