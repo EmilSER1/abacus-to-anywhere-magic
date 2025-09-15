@@ -12,10 +12,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
 import { useProjectorData } from '@/hooks/useProjectorData';
-import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useProjectorDepartments } from '@/hooks/useProjectorDepartments';
 import { supabase } from '@/integrations/supabase/client';
+import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
 import { toast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
 import * as XLSX from 'xlsx';
@@ -43,9 +43,10 @@ const TurarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
   const { data: roomConnections } = useRoomConnections();
-  const { data: projectorData, isLoading: projectorLoading, error: projectorError, refetch: refetchProjectorData } = useProjectorData();
+  const { data: projectorData, isLoading: projectorLoading, error: projectorError } = useProjectorData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [projectorDepartments, setProjectorDepartments] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
@@ -57,9 +58,6 @@ const TurarPage: React.FC = () => {
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   useEffect(() => {
-    // Принудительно обновляем данные проектировщиков при загрузке
-    refetchProjectorData();
-    
     if (turarData) {
       // Process data to group by departments and rooms
       const processedData = processTurarData(turarData);
@@ -185,65 +183,32 @@ const TurarPage: React.FC = () => {
     return roomConnection || directConnection;
   };
 
-  // Получение ВСЕХ уникальных отделений проектировщиков
-  const projectorDepartments = React.useMemo(() => {
-    console.log('🏗️ ProjectorData state:', {
-      loading: projectorLoading,
-      error: projectorError,
-      hasData: !!projectorData,
-      dataLength: projectorData?.length || 0
-    });
-    
-    if (projectorLoading) {
-      console.log('🏗️ Projector data is still loading...');
-      return [];
-    }
-    
-    if (projectorError) {
-      console.error('🏗️ Projector data error:', projectorError);
-      return [];
-    }
-    
-    if (!projectorData || projectorData.length === 0) {
-      console.log('🏗️ No projector data available');
-      return [];
-    }
-    
-    console.log('🏗️ Processing projector data, total records:', projectorData.length);
-    console.log('🏗️ Sample projector records:', projectorData.slice(0, 3));
-    
-    const departments = new Set<string>();
-    let processedCount = 0;
-    let emptyCount = 0;
-    
-    projectorData.forEach((item, index) => {
-      const dept = item["ОТДЕЛЕНИЕ"];
-      if (dept && typeof dept === 'string' && dept.trim().length > 0) {
-        const cleanDept = dept.trim();
-        departments.add(cleanDept);
-        processedCount++;
-        if (index < 10) {
-          console.log(`🏗️ Record ${index}: ОТДЕЛЕНИЕ = "${cleanDept}"`);
+  // Загружаем отделения проектировщиков при монтировании компонента
+  React.useEffect(() => {
+    const fetchProjectorDepartments = async () => {
+      try {
+        console.log('🏗️ Fetching projector departments from database...');
+        const { data, error } = await supabase.rpc('get_unique_projector_departments');
+        
+        if (error) {
+          console.error('❌ Error fetching projector departments:', error);
+          return;
         }
-      } else {
-        emptyCount++;
-        if (index < 10) {
-          console.log(`🏗️ Record ${index}: Missing or empty ОТДЕЛЕНИЕ`, { dept, item });
-        }
+        
+        const departments = data?.map((item: any) => item.department_name) || [];
+        console.log('✅ Successfully fetched projector departments:', {
+          count: departments.length,
+          departments: departments
+        });
+        
+        setProjectorDepartments(departments);
+      } catch (error) {
+        console.error('❌ Exception fetching projector departments:', error);
       }
-    });
-    
-    const sorted = Array.from(departments).sort();
-    console.log('🏗️ Projector departments processing:', {
-      totalRecords: projectorData.length,
-      recordsWithDepartments: processedCount,
-      emptyDepartments: emptyCount,
-      uniqueDepartments: sorted.length,
-      departments: sorted
-    });
-    
-    return sorted;
-  }, [projectorData, projectorLoading, projectorError]);
+    };
+
+    fetchProjectorDepartments();
+  }, []);
 
   // Обработчики связывания отделений
   const handleAddDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
