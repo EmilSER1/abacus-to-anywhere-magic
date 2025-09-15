@@ -15,6 +15,7 @@ import { useProjectorData } from '@/hooks/useProjectorData';
 import { useProjectorDepartments } from '@/hooks/useProjectorDepartments';
 import { supabase } from '@/integrations/supabase/client';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
+import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
 import { toast } from '@/hooks/use-toast';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
@@ -44,6 +45,7 @@ const TurarPage: React.FC = () => {
   const { data: turarData, isLoading, error } = useTurarMedicalData();
   const { data: roomConnections } = useRoomConnections();
   const { data: projectorData, isLoading: projectorLoading, error: projectorError } = useProjectorData();
+  const { data: departmentMappings } = useDepartmentMappings();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [projectorDepartments, setProjectorDepartments] = useState<string[]>([]);
@@ -140,24 +142,30 @@ const TurarPage: React.FC = () => {
 
   // Функция для получения связанных отделений проектировщиков для отделения Турар
   const getDepartmentProjectorLinks = (turarDepartmentName: string): string[] => {
-    if (!projectorData && !roomConnections) return [];
+    if (!departmentMappings && !projectorData && !roomConnections) return [];
     
-    // Получаем связи из таблицы room_connections (новый способ)
+    // Получаем связи из таблицы department_mappings (основной способ)
+    const connectionsFromMappings = departmentMappings
+      ?.filter(mapping => mapping.turar_department === turarDepartmentName)
+      ?.map(mapping => mapping.projector_department) || [];
+    
+    // Получаем связи из таблицы room_connections (дополнительный способ)
     const connectionsFromTable = roomConnections
       ?.filter(conn => conn.turar_department === turarDepartmentName)
       ?.map(conn => conn.projector_department) || [];
     
-    // Получаем связи из projector_floors (старый способ)
+    // Получаем связи из projector_floors (старый способ для обратной совместимости)
     const connectionsFromProjector = projectorData
       ?.filter(item => item.connected_turar_department === turarDepartmentName)
       ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
     
     // Объединяем и убираем дубликаты
-    const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
+    const allConnections = [...connectionsFromMappings, ...connectionsFromTable, ...connectionsFromProjector];
     const uniqueConnections = [...new Set(allConnections)];
     
     // Логирование для отладки
     console.log(`🔗 Getting department links for "${turarDepartmentName}":`, {
+      fromMappings: connectionsFromMappings,
       fromTable: connectionsFromTable,
       fromProjector: connectionsFromProjector,
       final: uniqueConnections

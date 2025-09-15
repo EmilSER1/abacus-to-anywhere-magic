@@ -24,9 +24,12 @@ export default function MultiSelectProjectorDepartments({
 }: MultiSelectProjectorDepartmentsProps) {
 
   const handleCheckboxChange = (department: string, checked: boolean) => {
+    console.log('✅ Checkbox clicked:', { department, checked });
     if (checked) {
+      console.log('➕ Adding department:', department);
       onAdd(department);
     } else {
+      console.log('➖ Removing department:', department);
       onRemove(department);
     }
   };
