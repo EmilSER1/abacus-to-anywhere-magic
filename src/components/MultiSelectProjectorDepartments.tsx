@@ -29,6 +29,15 @@ export default function MultiSelectProjectorDepartments({
     dept => !selectedDepartments.includes(dept)
   );
 
+  console.log('📋 MultiSelect Debug:', {
+    totalProjectorDepartments: projectorDepartments.length,
+    selectedDepartmentsCount: selectedDepartments.length,
+    availableDepartmentsCount: availableDepartments.length,
+    allProjectorDepartments: projectorDepartments,
+    currentSelectedDepartments: selectedDepartments,
+    currentAvailableDepartments: availableDepartments
+  });
+
   const handleAdd = () => {
     if (selectedForAdd) {
       onAdd(selectedForAdd);

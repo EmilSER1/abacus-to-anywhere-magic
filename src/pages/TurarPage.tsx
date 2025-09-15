@@ -169,17 +169,31 @@ const TurarPage: React.FC = () => {
 
   // Получение ВСЕХ уникальных отделений проектировщиков
   const projectorDepartments = React.useMemo(() => {
-    if (!projectorData) return [];
+    if (!projectorData) {
+      console.log('🏗️ No projector data available');
+      return [];
+    }
+    
+    console.log('🏗️ Processing projector data, total records:', projectorData.length);
     
     const departments = new Set<string>();
+    let processedCount = 0;
+    
     projectorData.forEach(item => {
       if (item["ОТДЕЛЕНИЕ"] && item["ОТДЕЛЕНИЕ"].trim()) {
         departments.add(item["ОТДЕЛЕНИЕ"].trim());
+        processedCount++;
       }
     });
     
     const sorted = Array.from(departments).sort();
-    console.log('🏗️ All projector departments available:', sorted);
+    console.log('🏗️ Projector departments processing:', {
+      totalRecords: projectorData.length,
+      recordsWithDepartments: processedCount,
+      uniqueDepartments: sorted.length,
+      departments: sorted
+    });
+    
     return sorted;
   }, [projectorData]);
 
