@@ -14,8 +14,7 @@ import { useRoomConnections } from '@/hooks/useRoomConnections';
 import { useProjectorData } from '@/hooks/useProjectorData';
 import { useProjectorDepartments } from '@/hooks/useProjectorDepartments';
 import { supabase } from '@/integrations/supabase/client';
-import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
-import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
+import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping } from '@/hooks/useDepartmentMappings';
 import { toast } from '@/hooks/use-toast';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
@@ -55,8 +54,8 @@ const TurarPage: React.FC = () => {
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
   const [departmentProjectorSelections, setDepartmentProjectorSelections] = useState<Record<string, string>>({});
   
-  const linkDepartmentMutation = useLinkDepartmentToTurar();
-  const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
+  const createDepartmentMappingMutation = useCreateDepartmentMapping();
+  const deleteDepartmentMappingMutation = useDeleteDepartmentMapping();
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   useEffect(() => {
@@ -144,19 +143,22 @@ const TurarPage: React.FC = () => {
   const getDepartmentProjectorLinks = (turarDepartmentName: string): string[] => {
     if (!departmentMappings && !projectorData && !roomConnections) return [];
     
+    // Нормализуем название отделения (убираем лишние пробелы)
+    const normalizedTurarName = turarDepartmentName.trim();
+    
     // Получаем связи из таблицы department_mappings (основной способ)
     const connectionsFromMappings = departmentMappings
-      ?.filter(mapping => mapping.turar_department === turarDepartmentName)
+      ?.filter(mapping => mapping.turar_department.trim() === normalizedTurarName)
       ?.map(mapping => mapping.projector_department) || [];
     
     // Получаем связи из таблицы room_connections (дополнительный способ)
     const connectionsFromTable = roomConnections
-      ?.filter(conn => conn.turar_department === turarDepartmentName)
+      ?.filter(conn => conn.turar_department.trim() === normalizedTurarName)
       ?.map(conn => conn.projector_department) || [];
     
     // Получаем связи из projector_floors (старый способ для обратной совместимости)
     const connectionsFromProjector = projectorData
-      ?.filter(item => item.connected_turar_department === turarDepartmentName)
+      ?.filter(item => item.connected_turar_department?.trim() === normalizedTurarName)
       ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
     
     // Объединяем и убираем дубликаты
@@ -165,6 +167,9 @@ const TurarPage: React.FC = () => {
     
     // Логирование для отладки
     console.log(`🔗 Getting department links for "${turarDepartmentName}":`, {
+      normalized: normalizedTurarName,
+      allMappings: departmentMappings?.length || 0,
+      matchingMappings: departmentMappings?.filter(m => m.turar_department.trim() === normalizedTurarName) || [],
       fromMappings: connectionsFromMappings,
       fromTable: connectionsFromTable,
       fromProjector: connectionsFromProjector,
@@ -219,22 +224,27 @@ const TurarPage: React.FC = () => {
   // Обработчики связывания отделений
   const handleAddDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
     console.log('🔗 Creating department link:', { turarDepartmentName, projectorDepartment });
-    linkDepartmentMutation.mutate({
-      departmentName: projectorDepartment,
-      turarDepartment: turarDepartmentName
+    createDepartmentMappingMutation.mutate({
+      turar_department: turarDepartmentName,
+      projector_department: projectorDepartment
     });
   };
 
-  const handleRemoveSingleDepartmentLink = (projectorDepartment: string) => {
-    console.log('🗑️ Removing department link:', { projectorDepartment });
-    unlinkDepartmentMutation.mutate(projectorDepartment);
+  const handleRemoveSingleDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
+    console.log('🗑️ Removing department link:', { turarDepartmentName, projectorDepartment });
+    const mappingToDelete = departmentMappings?.find(
+      mapping => mapping.turar_department === turarDepartmentName && mapping.projector_department === projectorDepartment
+    );
+    if (mappingToDelete) {
+      deleteDepartmentMappingMutation.mutate(mappingToDelete.id);
+    }
   };
 
   const handleRemoveAllDepartmentLinks = (turarDepartmentName: string) => {
     const connectedProjectorDepartments = getDepartmentProjectorLinks(turarDepartmentName);
     console.log('🗑️ Removing all department links:', { turarDepartmentName, connectedProjectorDepartments });
     connectedProjectorDepartments.forEach(projectorDept => {
-      unlinkDepartmentMutation.mutate(projectorDept);
+      handleRemoveSingleDepartmentLink(turarDepartmentName, projectorDept);
     });
   };
 
@@ -504,10 +514,15 @@ const TurarPage: React.FC = () => {
                            </div>
                          </div>
                          {/* Показываем связанные отделения проектировщиков */}
-                         {(() => {
-                           const connectedDepartments = getDepartmentProjectorLinks(department.name);
-                           
-                           return connectedDepartments.length > 0 ? (
+                          {(() => {
+                            const connectedDepartments = getDepartmentProjectorLinks(department.name);
+                            console.log(`🎯 МАРКЕРЫ для отделения "${department.name}":`, {
+                              connectedDepartments,
+                              count: connectedDepartments.length,
+                              departmentMappings: departmentMappings?.filter(m => m.turar_department === department.name)
+                            });
+                            
+                            return connectedDepartments.length > 0 ? (
                              <div className="flex flex-wrap gap-1">
                                {connectedDepartments.map((projectorDept, idx) => (
                                  <Badge 
@@ -535,9 +550,9 @@ const TurarPage: React.FC = () => {
                             projectorDepartments={projectorDepartments}
                             selectedDepartments={getDepartmentProjectorLinks(department.name)}
                             onAdd={(projectorDept) => handleAddDepartmentLink(department.name, projectorDept)}
-                            onRemove={handleRemoveSingleDepartmentLink}
+                            onRemove={(projectorDept) => handleRemoveSingleDepartmentLink(department.name, projectorDept)}
                             onRemoveAll={() => handleRemoveAllDepartmentLinks(department.name)}
-                            isLoading={linkDepartmentMutation.isPending || unlinkDepartmentMutation.isPending}
+                            isLoading={createDepartmentMappingMutation.isPending || deleteDepartmentMappingMutation.isPending}
                           />
                         </div>
                       <Accordion 

@@ -68,15 +68,18 @@ export default function MultiSelectProjectorDepartments({
               >
                 <Check className="h-3 w-3 text-green-600" />
                 <span className="text-sm font-medium">{dept}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onRemove(dept)}
-                  disabled={isLoading}
-                  className="h-4 w-4 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 ml-1"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      console.log('🗑️ Remove button clicked for:', dept);
+                      onRemove(dept);
+                    }}
+                    disabled={isLoading}
+                    className="h-4 w-4 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 ml-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
               </div>
             ))}
           </div>
