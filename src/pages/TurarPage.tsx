@@ -64,8 +64,17 @@ const TurarPage: React.FC = () => {
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
       console.log('🔗 Room connections data:', roomConnections);
       console.log('🔗 Projector data loaded:', !!projectorData, 'Records count:', projectorData?.length);
-      console.log('🔗 Projector data sample with connections:', projectorData?.filter(item => item.connected_turar_department).slice(0, 5));
+      console.log('🔗 Projector data with turar connections:', projectorData?.filter(item => item.connected_turar_department).length);
       console.log('📊 Unique turar departments in projector data:', [...new Set(projectorData?.filter(item => item.connected_turar_department).map(item => item.connected_turar_department))]);
+      
+      // Тестируем функцию getDepartmentProjectorLinks
+      processedData.forEach(dept => {
+        const links = getDepartmentProjectorLinks(dept.name);
+        if (links.length > 0) {
+          console.log(`🔗 Department "${dept.name}" has ${links.length} projector links:`, links);
+        }
+      });
+      
       console.log('📊 All room connections:', roomConnections?.map(conn => ({ 
         turar_dept: conn.turar_department, 
         projector_dept: conn.projector_department,
@@ -214,11 +223,18 @@ const TurarPage: React.FC = () => {
   const handleBulkCreateConnections = async () => {
     setIsBulkCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('bulk-create-room-connections');
+      console.log('Starting bulk room connections creation...');
+      
+      const { data, error } = await supabase.functions.invoke('sync-room-connections', {
+        body: {}
+      });
       
       if (error) {
+        console.error('Edge function error:', error);
         throw error;
       }
+
+      console.log('Bulk creation result:', data);
 
       toast({
         title: "Связи созданы",
@@ -226,7 +242,9 @@ const TurarPage: React.FC = () => {
       });
 
       // Обновляем данные
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error creating bulk connections:', error);
       toast({
@@ -364,12 +382,12 @@ const TurarPage: React.FC = () => {
           <div className="flex gap-2">
             <Button 
               onClick={handleBulkCreateConnections} 
-              variant="outline" 
-              className="gap-2"
+              variant="default" 
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
               disabled={isBulkCreating}
             >
               <Link2 className="h-4 w-4" />
-              {isBulkCreating ? 'Создание связей...' : 'Создать связи комнат'}
+              {isBulkCreating ? 'Синхронизация...' : 'Синхронизировать с проектировщиками'}
             </Button>
             <Button onClick={exportData} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
