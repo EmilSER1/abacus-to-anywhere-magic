@@ -306,26 +306,38 @@ const TurarPage: React.FC = () => {
                              {department.rooms.length} помещений
                            </div>
                          </div>
-                         {(() => {
-                           // Проверяем есть ли связи с проектировщиками на уровне отделения
+                         {/* Показываем связанные отделения проектировщиков */}
+                         {roomConnections && (() => {
                            const connectedDepartments = roomConnections
                              ?.filter(conn => conn.turar_department === department.name)
                              ?.map(conn => conn.projector_department)
                              ?.filter((dept, index, arr) => arr.indexOf(dept) === index) || [];
                            
-                           if (connectedDepartments.length > 0) {
-                             return (
-                               <div className="flex flex-wrap gap-1">
-                                 {connectedDepartments.map((projectorDept, index) => (
-                                   <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                     <Link className="h-3 w-3 mr-1" />
-                                     {projectorDept}
-                                   </Badge>
-                                 ))}
-                               </div>
-                             );
-                           }
-                           return null;
+                           return connectedDepartments.length > 0 ? (
+                             <div className="flex flex-wrap gap-1">
+                               {connectedDepartments.map((projectorDept, index) => (
+                                 <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                   <Link className="h-3 w-3 mr-1" />
+                                   Проектировщики: {projectorDept}
+                                 </Badge>
+                               ))}
+                             </div>
+                           ) : null;
+                         })()}
+                         {/* Индикатор количества связанных комнат на уровне отделения */}
+                         {roomConnections && (() => {
+                           const connectedRooms = department.rooms.filter(room => 
+                             roomConnections.some(conn => 
+                               conn.turar_department === department.name && 
+                               (conn.turar_room === room.name || conn.turar_room === room.name)
+                             )
+                           );
+                           return connectedRooms.length > 0 ? (
+                             <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
+                               <Link className="h-3 w-3 mr-1" />
+                               {connectedRooms.length} связанных комнат
+                             </Badge>
+                           ) : null;
                          })()}
                        </div>
                      </AccordionTrigger>
