@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Plus, Link } from 'lucide-react';
+import { X, Plus, Link, Check } from 'lucide-react';
 
 interface MultiSelectProjectorDepartmentsProps {
   projectorDepartments: string[];
@@ -22,28 +22,21 @@ export default function MultiSelectProjectorDepartments({
   onRemoveAll,
   isLoading = false
 }: MultiSelectProjectorDepartmentsProps) {
-  const [selectedForAdd, setSelectedForAdd] = useState<string>('');
 
-  // Фильтруем доступные отделения (исключаем уже выбранные)
-  const availableDepartments = projectorDepartments.filter(
-    dept => !selectedDepartments.includes(dept)
-  );
+  const handleCheckboxChange = (department: string, checked: boolean) => {
+    if (checked) {
+      onAdd(department);
+    } else {
+      onRemove(department);
+    }
+  };
 
   console.log('📋 MultiSelect Debug:', {
     totalProjectorDepartments: projectorDepartments.length,
     selectedDepartmentsCount: selectedDepartments.length,
-    availableDepartmentsCount: availableDepartments.length,
     allProjectorDepartments: projectorDepartments,
-    currentSelectedDepartments: selectedDepartments,
-    currentAvailableDepartments: availableDepartments
+    currentSelectedDepartments: selectedDepartments
   });
-
-  const handleAdd = () => {
-    if (selectedForAdd) {
-      onAdd(selectedForAdd);
-      setSelectedForAdd('');
-    }
-  };
 
   return (
     <div className="space-y-3">
@@ -52,7 +45,7 @@ export default function MultiSelectProjectorDepartments({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-green-700 dark:text-green-400">
-              Связанные отделения проектировщиков:
+              Связанные отделения проектировщиков ({selectedDepartments.length}):
             </div>
             <Button
               size="sm"
@@ -70,7 +63,7 @@ export default function MultiSelectProjectorDepartments({
                 key={dept} 
                 className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800"
               >
-                <Link className="h-3 w-3 text-green-600" />
+                <Check className="h-3 w-3 text-green-600" />
                 <span className="text-sm font-medium">{dept}</span>
                 <Button
                   size="sm"
@@ -87,41 +80,44 @@ export default function MultiSelectProjectorDepartments({
         </div>
       )}
 
-      {/* Интерфейс добавления нового отделения */}
-      {availableDepartments.length > 0 && (
+      {/* Checkbox интерфейс для выбора отделений */}
+      {projectorDepartments.length > 0 && (
         <Card className="border-dashed">
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Select
-                value={selectedForAdd}
-                onValueChange={setSelectedForAdd}
-              >
-                <SelectTrigger className="flex-1 h-8">
-                  <SelectValue placeholder="Выберите отделение проектировщиков" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDepartments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
+            <div className="text-sm font-medium mb-3">
+              Выберите отделения проектировщиков:
+            </div>
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {projectorDepartments.map((dept) => {
+                const isSelected = selectedDepartments.includes(dept);
+                return (
+                  <div key={dept} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`dept-${dept}`}
+                      checked={isSelected}
+                      onCheckedChange={(checked) => handleCheckboxChange(dept, checked as boolean)}
+                      disabled={isLoading}
+                    />
+                    <label 
+                      htmlFor={`dept-${dept}`} 
+                      className={`text-sm flex-1 cursor-pointer ${
+                        isSelected ? 'font-medium text-green-700 dark:text-green-400' : ''
+                      }`}
+                    >
                       {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                size="sm"
-                onClick={handleAdd}
-                disabled={!selectedForAdd || isLoading}
-                className="h-8"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Связать
-              </Button>
+                    </label>
+                    {isSelected && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {availableDepartments.length === 0 && selectedDepartments.length === 0 && (
+      {projectorDepartments.length === 0 && (
         <div className="text-xs text-muted-foreground italic">
           Нет доступных отделений проектировщиков
         </div>
