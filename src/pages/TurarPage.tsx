@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
+import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -166,13 +167,13 @@ const TurarPage: React.FC = () => {
     return uniqueConnections;
   };
 
-  // Получение уникальных отделений проектировщиков
+  // Получение ВСЕХ уникальных отделений проектировщиков
   const projectorDepartments = React.useMemo(() => {
     if (!projectorData) return [];
     
     const departments = new Set<string>();
     projectorData.forEach(item => {
-      if (item["ОТДЕЛЕНИЕ"]) {
+      if (item["ОТДЕЛЕНИЕ"] && item["ОТДЕЛЕНИЕ"].trim()) {
         departments.add(item["ОТДЕЛЕНИЕ"].trim());
       }
     });
@@ -181,25 +182,19 @@ const TurarPage: React.FC = () => {
   }, [projectorData]);
 
   // Обработчики связывания отделений
-  const handleLinkDepartment = (turarDepartmentName: string) => {
-    const projectorDepartment = departmentProjectorSelections[turarDepartmentName];
-    if (projectorDepartment) {
-      linkDepartmentMutation.mutate({
-        departmentName: projectorDepartment, // В функции используется отделение проектировщиков для поиска
-        turarDepartment: turarDepartmentName
-      });
-      setDepartmentProjectorSelections(prev => ({
-        ...prev,
-        [turarDepartmentName]: ''
-      }));
-    }
+  const handleAddDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
+    linkDepartmentMutation.mutate({
+      departmentName: projectorDepartment,
+      turarDepartment: turarDepartmentName
+    });
   };
 
-  const handleRemoveDepartmentLink = (turarDepartmentName: string) => {
-    // Находим все отделения проектировщиков связанные с этим отделением Турар
+  const handleRemoveSingleDepartmentLink = (projectorDepartment: string) => {
+    unlinkDepartmentMutation.mutate(projectorDepartment);
+  };
+
+  const handleRemoveAllDepartmentLinks = (turarDepartmentName: string) => {
     const connectedProjectorDepartments = getDepartmentProjectorLinks(turarDepartmentName);
-    
-    // Удаляем связи для всех связанных отделений проектировщиков
     connectedProjectorDepartments.forEach(projectorDept => {
       unlinkDepartmentMutation.mutate(projectorDept);
     });
@@ -492,53 +487,21 @@ const TurarPage: React.FC = () => {
                         </div>
                       </AccordionTrigger>
                      <AccordionContent className="px-6 pb-6">
-                       {/* Интерфейс связывания с проектировщиками */}
-                       <div className="mb-6 p-4 bg-background/50 rounded-lg border border-border/50">
-                         <div className="flex items-center gap-2 mb-3">
-                           <Link className="h-4 w-4 text-blue-600" />
-                           <span className="font-medium text-blue-800">Связать с отделением проектировщиков</span>
-                         </div>
-                         <div className="flex items-center gap-2">
-                           <Select
-                             value={departmentProjectorSelections[department.name] || ''}
-                             onValueChange={(value) => setDepartmentProjectorSelections(prev => ({
-                               ...prev,
-                               [department.name]: value
-                             }))}
-                           >
-                             <SelectTrigger className="flex-1">
-                               <SelectValue placeholder="Выберите отделение проектировщиков" />
-                             </SelectTrigger>
-                             <SelectContent>
-                               {projectorDepartments.map((dept) => (
-                                 <SelectItem key={dept} value={dept}>
-                                   {dept}
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                           </Select>
-                           <Button
-                             size="sm"
-                             onClick={() => handleLinkDepartment(department.name)}
-                             disabled={
-                               !departmentProjectorSelections[department.name] || 
-                               linkDepartmentMutation.isPending
-                             }
-                           >
-                             Связать
-                           </Button>
-                           {getDepartmentProjectorLinks(department.name).length > 0 && (
-                             <Button
-                               size="sm"
-                               variant="destructive"
-                               onClick={() => handleRemoveDepartmentLink(department.name)}
-                               disabled={unlinkDepartmentMutation.isPending}
-                             >
-                               Удалить связи
-                             </Button>
-                           )}
-                         </div>
-                       </div>
+                        {/* Интерфейс связывания с проектировщиками */}
+                        <div className="mb-6 p-4 bg-background/50 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Link className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-blue-800">Связать с отделениями проектировщиков</span>
+                          </div>
+                          <MultiSelectProjectorDepartments
+                            projectorDepartments={projectorDepartments}
+                            selectedDepartments={getDepartmentProjectorLinks(department.name)}
+                            onAdd={(projectorDept) => handleAddDepartmentLink(department.name, projectorDept)}
+                            onRemove={handleRemoveSingleDepartmentLink}
+                            onRemoveAll={() => handleRemoveAllDepartmentLinks(department.name)}
+                            isLoading={linkDepartmentMutation.isPending || unlinkDepartmentMutation.isPending}
+                          />
+                        </div>
                       <Accordion 
                         type="multiple" 
                         className="space-y-2"
