@@ -7,13 +7,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
 import { EditRoomDialog } from '@/components/EditRoomDialog';
 
-import { Building2, Users, MapPin, Download, Search, Package, Link, Link2 } from 'lucide-react';
+import { Building2, Users, MapPin, Download, Search, Package, Link } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
 import { useProjectorData } from '@/hooks/useProjectorData';
-import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -46,10 +44,6 @@ const TurarPage: React.FC = () => {
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
-  const [departmentProjectorSelections, setDepartmentProjectorSelections] = useState<Record<string, string>>({});
-  
-  const linkDepartmentMutation = useLinkDepartmentToTurar();
-  const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
 
   useEffect(() => {
     if (turarData) {
@@ -59,9 +53,14 @@ const TurarPage: React.FC = () => {
       
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
       console.log('🔗 Room connections data:', roomConnections);
-      console.log('🔗 Projector data loaded:', !!projectorData, 'Records count:', projectorData?.length);
       console.log('🔗 Projector data sample with connections:', projectorData?.filter(item => item.connected_turar_department).slice(0, 5));
-      console.log('📊 Unique turar departments in projector data:', [...new Set(projectorData?.filter(item => item.connected_turar_department).map(item => item.connected_turar_department))]);
+      console.log('📊 Projector departments with turar connections:', projectorData?.filter(item => item.connected_turar_department)
+        .reduce((acc, item) => {
+          const dept = item.connected_turar_department!;
+          acc[dept] = (acc[dept] || new Set()).add(item["ОТДЕЛЕНИЕ"]);
+          return acc;
+        }, {} as Record<string, Set<string>>)
+      );
       console.log('📊 All room connections:', roomConnections?.map(conn => ({ 
         turar_dept: conn.turar_department, 
         projector_dept: conn.projector_department,
@@ -151,45 +150,6 @@ const TurarPage: React.FC = () => {
     }
     
     return uniqueConnections;
-  };
-
-  // Получение уникальных отделений проектировщиков
-  const projectorDepartments = React.useMemo(() => {
-    if (!projectorData) return [];
-    
-    const departments = new Set<string>();
-    projectorData.forEach(item => {
-      if (item["ОТДЕЛЕНИЕ"]) {
-        departments.add(item["ОТДЕЛЕНИЕ"].trim());
-      }
-    });
-    
-    return Array.from(departments).sort();
-  }, [projectorData]);
-
-  // Обработчики связывания отделений
-  const handleLinkDepartment = (turarDepartmentName: string) => {
-    const projectorDepartment = departmentProjectorSelections[turarDepartmentName];
-    if (projectorDepartment) {
-      linkDepartmentMutation.mutate({
-        departmentName: projectorDepartment, // В функции используется отделение проектировщиков для поиска
-        turarDepartment: turarDepartmentName
-      });
-      setDepartmentProjectorSelections(prev => ({
-        ...prev,
-        [turarDepartmentName]: ''
-      }));
-    }
-  };
-
-  const handleRemoveDepartmentLink = (turarDepartmentName: string) => {
-    // Находим все отделения проектировщиков связанные с этим отделением Турар
-    const connectedProjectorDepartments = getDepartmentProjectorLinks(turarDepartmentName);
-    
-    // Удаляем связи для всех связанных отделений проектировщиков
-    connectedProjectorDepartments.forEach(projectorDept => {
-      unlinkDepartmentMutation.mutate(projectorDept);
-    });
   };
 
   const processTurarData = (data: any[]): TurarDepartment[] => {
@@ -412,57 +372,25 @@ const TurarPage: React.FC = () => {
                                ))}
                              </div>
                            ) : null;
-                          })()}
-                        </div>
-                      </AccordionTrigger>
-                     <AccordionContent className="px-6 pb-6">
-                       {/* Интерфейс связывания с проектировщиками */}
-                       <div className="mb-6 p-4 bg-background/50 rounded-lg border border-border/50">
-                         <div className="flex items-center gap-2 mb-3">
-                           <Link className="h-4 w-4 text-blue-600" />
-                           <span className="font-medium text-blue-800">Связать с отделением проектировщиков</span>
-                         </div>
-                         <div className="flex items-center gap-2">
-                           <Select
-                             value={departmentProjectorSelections[department.name] || ''}
-                             onValueChange={(value) => setDepartmentProjectorSelections(prev => ({
-                               ...prev,
-                               [department.name]: value
-                             }))}
-                           >
-                             <SelectTrigger className="flex-1">
-                               <SelectValue placeholder="Выберите отделение проектировщиков" />
-                             </SelectTrigger>
-                             <SelectContent>
-                               {projectorDepartments.map((dept) => (
-                                 <SelectItem key={dept} value={dept}>
-                                   {dept}
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                           </Select>
-                           <Button
-                             size="sm"
-                             onClick={() => handleLinkDepartment(department.name)}
-                             disabled={
-                               !departmentProjectorSelections[department.name] || 
-                               linkDepartmentMutation.isPending
-                             }
-                           >
-                             Связать
-                           </Button>
-                           {getDepartmentProjectorLinks(department.name).length > 0 && (
-                             <Button
-                               size="sm"
-                               variant="destructive"
-                               onClick={() => handleRemoveDepartmentLink(department.name)}
-                               disabled={unlinkDepartmentMutation.isPending}
-                             >
-                               Удалить связи
-                             </Button>
-                           )}
-                         </div>
+                         })()}
+                         {/* Индикатор количества связанных комнат на уровне отделения */}
+                         {roomConnections && (() => {
+                           const connectedRooms = department.rooms.filter(room => 
+                             roomConnections.some(conn => 
+                               conn.turar_department === department.name && 
+                               (conn.turar_room === room.name || conn.turar_room === room.name)
+                             )
+                           );
+                           return connectedRooms.length > 0 ? (
+                             <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600 dark:text-white ml-2">
+                               <Link className="h-3 w-3 mr-1" />
+                               {connectedRooms.length} связанных комнат
+                             </Badge>
+                           ) : null;
+                         })()}
                        </div>
+                     </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
                       <Accordion 
                         type="multiple" 
                         className="space-y-2"
