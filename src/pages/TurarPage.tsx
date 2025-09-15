@@ -43,7 +43,7 @@ const TurarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
   const { data: roomConnections } = useRoomConnections();
-  const { data: projectorData, isLoading: projectorLoading, error: projectorError } = useProjectorData();
+  const { data: projectorData, isLoading: projectorLoading, error: projectorError, refetch: refetchProjectorData } = useProjectorData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -57,6 +57,9 @@ const TurarPage: React.FC = () => {
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   useEffect(() => {
+    // Принудительно обновляем данные проектировщиков при загрузке
+    refetchProjectorData();
+    
     if (turarData) {
       // Process data to group by departments and rooms
       const processedData = processTurarData(turarData);

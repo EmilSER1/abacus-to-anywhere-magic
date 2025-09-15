@@ -27,17 +27,26 @@ export const useProjectorData = () => {
   return useQuery({
     queryKey: ["projector-equipment"],
     queryFn: async () => {
+      console.log('🔄 Fetching projector data from database...');
       const { data, error } = await (supabase as any)
         .from("projector_floors")
         .select("*")
         .order("\"ЭТАЖ\", \"ОТДЕЛЕНИЕ\", \"НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ\", \"Наименование оборудования\"");
 
       if (error) {
+        console.error('❌ Error fetching projector data:', error);
         throw error;
       }
 
+      console.log('✅ Successfully fetched projector data:', {
+        totalRecords: data?.length || 0,
+        sampleRecord: data?.[0]
+      });
+
       return data as ProjectorEquipment[];
     },
+    staleTime: 0, // Don't cache
+    gcTime: 0, // Don't keep in memory
   });
 };
 
