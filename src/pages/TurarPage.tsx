@@ -15,8 +15,10 @@ import { useProjectorData } from '@/hooks/useProjectorData';
 import { useProjectorDepartments } from '@/hooks/useProjectorDepartments';
 import { supabase } from '@/integrations/supabase/client';
 import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentMapping } from '@/hooks/useDepartmentMappings';
+import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { toast } from '@/hooks/use-toast';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
+import MultiSelectProjectorRooms from '@/components/MultiSelectProjectorRooms';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
 import * as XLSX from 'xlsx';
 
@@ -56,6 +58,8 @@ const TurarPage: React.FC = () => {
   
   const createDepartmentMappingMutation = useCreateDepartmentMapping();
   const deleteDepartmentMappingMutation = useDeleteDepartmentMapping();
+  const createRoomConnectionMutation = useCreateRoomConnection();
+  const deleteRoomConnectionMutation = useDeleteRoomConnection();
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   useEffect(() => {
@@ -238,6 +242,12 @@ const TurarPage: React.FC = () => {
     if (mappingToDelete) {
       deleteDepartmentMappingMutation.mutate(mappingToDelete.id);
     }
+  };
+
+  // Обработчик удаления связи комнаты
+  const handleRemoveRoomConnection = (connectionId: string) => {
+    console.log('🗑️ Removing room connection:', connectionId);
+    deleteRoomConnectionMutation.mutate(connectionId);
   };
 
   const handleRemoveAllDepartmentLinks = (turarDepartmentName: string) => {
@@ -627,15 +637,21 @@ const TurarPage: React.FC = () => {
                                <AccordionContent className="px-4 pb-4">
                                  {/* Компонент связывания комнат */}
                                  <div className="mb-4 p-3 bg-background/30 rounded-lg border border-border/50">
-                                   <TurarRoomLinkDropdown
-                                     turarDepartment={department.name}
-                                     turarRoom={room.name}
-                                     connectedRooms={getRoomProjectorLinks(department.name, room.name)}
-                                     onSuccess={() => {
-                                       // Обновляем данные после успешного создания/удаления связи
-                                       console.log('✅ Room connection updated');
-                                     }}
-                                   />
+                                    <MultiSelectProjectorRooms
+                                      turarDepartment={department.name}
+                                      turarRoom={room.name}
+                                      connectedRooms={getRoomProjectorLinks(department.name, room.name)}
+                                      onAdd={(projectorDept, projectorRoom) => {
+                                        createRoomConnectionMutation.mutate({
+                                          turar_department: department.name,
+                                          turar_room: room.name,
+                                          projector_department: projectorDept,
+                                          projector_room: projectorRoom
+                                        });
+                                      }}
+                                      onRemove={handleRemoveRoomConnection}
+                                      isLoading={createRoomConnectionMutation.isPending || deleteRoomConnectionMutation.isPending}
+                                    />
                                  </div>
                                  
                                  <div className="space-y-2">
