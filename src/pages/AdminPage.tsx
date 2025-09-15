@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DataSyncPanel } from '@/components/DataSyncPanel';
+// import { DataSyncPanel } from '@/components/DataSyncPanel'; // Disabled
 import { CsvUploadPanel } from '@/components/CsvUploadPanel';
 import { ExportWithConnectionsPanel } from '@/components/ExportWithConnectionsPanel';
 import { ImportWithValidationPanel } from '@/components/ImportWithValidationPanel';
@@ -97,7 +97,10 @@ const AdminPage: React.FC = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <DataSyncPanel />
+                    {/* DataSyncPanel disabled */}
+                    <div className="text-muted-foreground text-sm p-4 border rounded">
+                      Компонент синхронизации временно отключен
+                    </div>
                   </CardContent>
                 </Card>
 

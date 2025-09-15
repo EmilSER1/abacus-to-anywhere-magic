@@ -14,12 +14,12 @@ import TurarDepartmentSelector from '@/components/TurarDepartmentSelector';
 import TurarRoomSelector from '@/components/TurarRoomSelector';
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
-import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById";
+// import { useDeleteRoomConnectionById } from "@/hooks/useRoomConnectionsById"; // Disabled
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useCleanupUnknownRooms } from '@/hooks/useCleanupUnknownRooms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import RoomLinkDropdown from '@/components/RoomLinkDropdown';
+// import RoomLinkDropdown from '@/components/RoomLinkDropdown'; // Disabled
 import { useProjectorDepartmentTurarLink } from '@/hooks/useProjectorDepartmentTurarLink';
 import { useUserRole } from '@/hooks/useUserRole';
 import * as XLSX from 'xlsx';
@@ -174,7 +174,7 @@ export default function FloorsPage() {
   const addEquipmentMutation = useAddProjectorEquipment();
   const createConnectionMutation = useCreateRoomConnection();
   const deleteConnectionMutation = useDeleteRoomConnection();
-  const deleteRoomConnectionMutation = useDeleteRoomConnectionById();
+  // const deleteRoomConnectionMutation = useDeleteRoomConnectionById(); // Disabled
   const linkDepartmentMutation = useLinkDepartmentToTurar();
   const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
   const cleanupUnknownRoomsMutation = useCleanupUnknownRooms();
@@ -818,7 +818,7 @@ export default function FloorsPage() {
                                                                 <button 
                                                                   onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    deleteRoomConnectionMutation.mutate(conn.id);
+                                                                    deleteConnectionMutation.mutate(conn.id);
                                                                   }}
                                                                   className="ml-1 hover:bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                   title="Удалить связь"
@@ -862,7 +862,7 @@ export default function FloorsPage() {
                                                             <div className="text-xs text-green-600 dark:text-green-300">→ {conn.turar_room}</div>
                                                           </div>
                                                           <button 
-                                                            onClick={() => deleteRoomConnectionMutation.mutate(conn.id)}
+                                                            onClick={() => deleteConnectionMutation.mutate(conn.id)}
                                                             className="ml-2 hover:bg-red-500 text-red-600 hover:text-white rounded-full p-1 transition-colors"
                                                             title="Удалить связь"
                                                           >
@@ -899,23 +899,13 @@ export default function FloorsPage() {
                                                               : `🔗 Связать с кабинетом из: ${connectedTurarDept}`
                                                             }
                                                           </div>
-                                                           <RoomLinkDropdown
-                                                             roomId={room.code}
-                                                             roomName={room.name}
-                                                             departmentId={department.name}
-                                                             departmentName={department.name}
-                                                             connectedTurarDepartment={connectedTurarDept}
-                                                             isProjectorDepartment={true}
-                                                             onSuccess={() => {
-                                                               console.log('✅ Связи созданы успешно');
-                                                             }}
-                                                           />
-                                                        </div>
-                                                      </div>
-                                                    ) : null;
-                                                 })()
-                                               );
-                                             })()}
+                                                           {/* RoomLinkDropdown temporarily disabled */}
+                                                           <div className="text-muted-foreground text-xs p-2 border rounded">
+                                                             Компонент связывания временно отключен
+                                                           </div>
+                                                       </div>
+                                                     ) : null;
+                                                  })()}
                                              
                                                <AccordionContent className="px-3 pb-3">
                                                <div className="mb-3 flex justify-between items-center">

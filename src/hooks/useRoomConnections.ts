@@ -137,38 +137,30 @@ export const useDeleteRoomConnection = () => {
         .single();
 
       if (connection) {
-        // Use ID-based cleanup if available
-        if (connection.projector_room_id && connection.turar_room_id) {
+        try {
+          // Use string-based cleanup (ID fields don't exist in current schema)
           await Promise.all([
             supabase
               .from("projector_floors")
-              .update({ connected_turar_room_id: null })
-              .eq("id", connection.projector_room_id),
-            supabase
-              .from("turar_medical")
-              .update({ connected_projector_room_id: null })
-              .eq("id", connection.turar_room_id)
-          ]);
-        } else {
-          // Fallback to string-based cleanup
-          await Promise.all([
-            supabase
-              .from("turar_medical")
-              .update({
-                connected_projector_department: null,
-                connected_projector_room: null
-              })
-              .eq("Отделение/Блок", connection.turar_department)
-              .eq("Помещение/Кабинет", connection.turar_room),
-            supabase
-              .from("projector_floors")
-              .update({
+              .update({ 
                 connected_turar_department: null,
-                connected_turar_room: null
+                connected_turar_room: null,
+                connected_turar_room_id: null
               })
               .eq("ОТДЕЛЕНИЕ", connection.projector_department)
-              .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room)
+              .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room),
+            supabase
+              .from("turar_medical")
+              .update({ 
+                connected_projector_department: null,
+                connected_projector_room: null,
+                connected_projector_room_id: null
+              })
+              .eq("Отделение/Блок", connection.turar_department)
+              .eq("Помещение/Кабинет", connection.turar_room)
           ]);
+        } catch (cleanupError) {
+          console.error("Error during cleanup:", cleanupError);
         }
       }
 
