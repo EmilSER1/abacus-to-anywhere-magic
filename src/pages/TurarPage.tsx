@@ -53,14 +53,6 @@ const TurarPage: React.FC = () => {
       
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
       console.log('🔗 Room connections data:', roomConnections);
-      console.log('🔗 Projector data sample with connections:', projectorData?.filter(item => item.connected_turar_department).slice(0, 5));
-      console.log('📊 Projector departments with turar connections:', projectorData?.filter(item => item.connected_turar_department)
-        .reduce((acc, item) => {
-          const dept = item.connected_turar_department!;
-          acc[dept] = (acc[dept] || new Set()).add(item["ОТДЕЛЕНИЕ"]);
-          return acc;
-        }, {} as Record<string, Set<string>>)
-      );
       console.log('📊 All room connections:', roomConnections?.map(conn => ({ 
         turar_dept: conn.turar_department, 
         projector_dept: conn.projector_department,
@@ -121,36 +113,6 @@ const TurarPage: React.FC = () => {
       }
     }
   }, [turarData, searchParams]);
-
-  // Функция для получения связанных отделений проектировщиков для отделения Турар
-  const getDepartmentProjectorLinks = (turarDepartmentName: string): string[] => {
-    if (!projectorData && !roomConnections) return [];
-    
-    // Получаем связи из таблицы room_connections (новый способ)
-    const connectionsFromTable = roomConnections
-      ?.filter(conn => conn.turar_department === turarDepartmentName)
-      ?.map(conn => conn.projector_department) || [];
-    
-    // Получаем связи из projector_floors (старый способ)
-    const connectionsFromProjector = projectorData
-      ?.filter(item => item.connected_turar_department === turarDepartmentName)
-      ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
-    
-    // Объединяем и убираем дубликаты
-    const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
-    const uniqueConnections = [...new Set(allConnections)];
-    
-    // Логирование для отладки
-    if (uniqueConnections.length > 0) {
-      console.log(`🔗 Department "${turarDepartmentName}" connections:`, {
-        fromTable: connectionsFromTable,
-        fromProjector: connectionsFromProjector,
-        final: uniqueConnections
-      });
-    }
-    
-    return uniqueConnections;
-  };
 
   const processTurarData = (data: any[]): TurarDepartment[] => {
     const departmentMap = new Map<string, Map<string, any[]>>();
@@ -355,19 +317,29 @@ const TurarPage: React.FC = () => {
                            </div>
                          </div>
                          {/* Показываем связанные отделения проектировщиков */}
-                         {(() => {
-                           const connectedDepartments = getDepartmentProjectorLinks(department.name);
+                         {(roomConnections || projectorData) && (() => {
+                           // Получаем связи из таблицы room_connections
+                           const connectionsFromTable = roomConnections
+                             ?.filter(conn => conn.turar_department === department.name)
+                             ?.map(conn => conn.projector_department) || [];
+                           
+                           // Получаем связи из projector_floors (старый способ)
+                           const connectionsFromProjector = projectorData
+                             ?.filter(item => item.connected_turar_department === department.name)
+                             ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
+                           
+                           // Объединяем и убираем дубликаты
+                           const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
+                           const connectedDepartments = [...new Set(allConnections)];
+                           
+                           console.log(`📊 Department "${department.name}" has ${connectedDepartments.length} connected projector departments:`, connectedDepartments);
                            
                            return connectedDepartments.length > 0 ? (
                              <div className="flex flex-wrap gap-1">
-                               {connectedDepartments.map((projectorDept, idx) => (
-                                 <Badge 
-                                   key={idx} 
-                                   variant="secondary" 
-                                   className="bg-blue-100 text-blue-800 border-blue-200 text-xs"
-                                 >
+                               {connectedDepartments.map((projectorDept, index) => (
+                                 <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                    <Link className="h-3 w-3 mr-1" />
-                                   {projectorDept}
+                                   Проектировщики: {projectorDept}
                                  </Badge>
                                ))}
                              </div>
