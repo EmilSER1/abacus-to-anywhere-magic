@@ -167,6 +167,21 @@ const TurarPage: React.FC = () => {
     return uniqueConnections;
   };
 
+  // Функция для проверки, есть ли связь между отделениями (в любом направлении)
+  const hasDepartmentConnection = (turarDept: string, projectorDept: string): boolean => {
+    // Проверяем room_connections
+    const roomConnection = roomConnections?.some(conn => 
+      conn.turar_department === turarDept && conn.projector_department === projectorDept
+    );
+    
+    // Проверяем прямые связи отделений в projector_floors
+    const directConnection = projectorData?.some(item => 
+      item["ОТДЕЛЕНИЕ"] === projectorDept && item.connected_turar_department === turarDept
+    );
+    
+    return roomConnection || directConnection;
+  };
+
   // Получение ВСЕХ уникальных отделений проектировщиков
   const projectorDepartments = React.useMemo(() => {
     console.log('🏗️ ProjectorData state:', {

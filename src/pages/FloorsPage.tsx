@@ -207,6 +207,21 @@ export default function FloorsPage() {
     
     return Array.from(uniqueTurarDepartments);
   };
+
+  // Функция для проверки, есть ли связь между отделениями (в любом направлении)
+  const hasDepartmentConnection = (projectorDept: string, turarDept: string): boolean => {
+    // Проверяем room_connections
+    const roomConnection = roomConnections?.some(conn => 
+      conn.projector_department === projectorDept && conn.turar_department === turarDept
+    );
+    
+    // Проверяем прямые связи отделений в allData
+    const directConnection = allData?.some(item => 
+      item["ОТДЕЛЕНИЕ"] === projectorDept && item.connected_turar_department === turarDept
+    );
+    
+    return roomConnection || directConnection;
+  };
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
@@ -710,7 +725,7 @@ export default function FloorsPage() {
                                        {/* Индикатор связи с Турар */}
                                        {(() => {
                                          const directLink = getDepartmentTurarLink(department.name);
-                                         const roomConnections = getDepartmentTurarConnectionsFromRooms(department.name);
+                                         const roomConnectionsFromTurar = getDepartmentTurarConnectionsFromRooms(department.name);
                                          
                                          if (directLink) {
                                            return (
@@ -719,11 +734,11 @@ export default function FloorsPage() {
                                                Турар: {directLink}
                                              </Badge>
                                            );
-                                         } else if (roomConnections.length > 0) {
+                                         } else if (roomConnectionsFromTurar.length > 0) {
                                            return (
                                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
                                                <Link2 className="h-3 w-3 mr-1" />
-                                               Турар: {roomConnections.join(', ')}
+                                               Турар: {roomConnectionsFromTurar.slice(0, 2).join(', ')}{roomConnectionsFromTurar.length > 2 ? '...' : ''}
                                              </Badge>
                                            );
                                          }
