@@ -295,8 +295,14 @@ export default function MultiSelectProjectorRooms({
           </CardContent>
         </Card>
       ) : (
-        <div className="text-xs text-muted-foreground italic">
-          Сначала свяжите отделения
+        <div className="p-3 border border-dashed rounded bg-yellow-50 dark:bg-yellow-900/20">
+          <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+            Сначала свяжите отделения
+          </div>
+          <div className="text-xs text-yellow-700 dark:text-yellow-300">
+            Отделение "{turarDepartment}" не связано ни с одним отделением проектировщиков. 
+            Сначала установите связь между отделениями в разделе выше, затем станут доступны кабинеты для связи.
+          </div>
         </div>
       )}
     </div>
