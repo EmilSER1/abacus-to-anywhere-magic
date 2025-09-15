@@ -201,7 +201,7 @@ const TurarPage: React.FC = () => {
       return [];
     }
     
-    if (!projectorData) {
+    if (!projectorData || projectorData.length === 0) {
       console.log('🏗️ No projector data available');
       return [];
     }
@@ -211,17 +211,21 @@ const TurarPage: React.FC = () => {
     
     const departments = new Set<string>();
     let processedCount = 0;
+    let emptyCount = 0;
     
     projectorData.forEach((item, index) => {
-      if (item["ОТДЕЛЕНИЕ"] && item["ОТДЕЛЕНИЕ"].trim()) {
-        departments.add(item["ОТДЕЛЕНИЕ"].trim());
+      const dept = item["ОТДЕЛЕНИЕ"];
+      if (dept && typeof dept === 'string' && dept.trim().length > 0) {
+        const cleanDept = dept.trim();
+        departments.add(cleanDept);
         processedCount++;
         if (index < 10) {
-          console.log(`🏗️ Record ${index}: ОТДЕЛЕНИЕ = "${item["ОТДЕЛЕНИЕ"]}"`);
+          console.log(`🏗️ Record ${index}: ОТДЕЛЕНИЕ = "${cleanDept}"`);
         }
       } else {
+        emptyCount++;
         if (index < 10) {
-          console.log(`🏗️ Record ${index}: Missing or empty ОТДЕЛЕНИЕ`, item);
+          console.log(`🏗️ Record ${index}: Missing or empty ОТДЕЛЕНИЕ`, { dept, item });
         }
       }
     });
@@ -230,6 +234,7 @@ const TurarPage: React.FC = () => {
     console.log('🏗️ Projector departments processing:', {
       totalRecords: projectorData.length,
       recordsWithDepartments: processedCount,
+      emptyDepartments: emptyCount,
       uniqueDepartments: sorted.length,
       departments: sorted
     });
