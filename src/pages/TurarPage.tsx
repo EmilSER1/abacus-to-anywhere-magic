@@ -157,13 +157,11 @@ const TurarPage: React.FC = () => {
     const uniqueConnections = [...new Set(allConnections)];
     
     // Логирование для отладки
-    if (uniqueConnections.length > 0) {
-      console.log(`🔗 Department "${turarDepartmentName}" connections:`, {
-        fromTable: connectionsFromTable,
-        fromProjector: connectionsFromProjector,
-        final: uniqueConnections
-      });
-    }
+    console.log(`🔗 Getting department links for "${turarDepartmentName}":`, {
+      fromTable: connectionsFromTable,
+      fromProjector: connectionsFromProjector,
+      final: uniqueConnections
+    });
     
     return uniqueConnections;
   };
@@ -212,6 +210,7 @@ const TurarPage: React.FC = () => {
 
   // Обработчики связывания отделений
   const handleAddDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
+    console.log('🔗 Creating department link:', { turarDepartmentName, projectorDepartment });
     linkDepartmentMutation.mutate({
       departmentName: projectorDepartment,
       turarDepartment: turarDepartmentName
@@ -219,11 +218,13 @@ const TurarPage: React.FC = () => {
   };
 
   const handleRemoveSingleDepartmentLink = (projectorDepartment: string) => {
+    console.log('🗑️ Removing department link:', { projectorDepartment });
     unlinkDepartmentMutation.mutate(projectorDepartment);
   };
 
   const handleRemoveAllDepartmentLinks = (turarDepartmentName: string) => {
     const connectedProjectorDepartments = getDepartmentProjectorLinks(turarDepartmentName);
+    console.log('🗑️ Removing all department links:', { turarDepartmentName, connectedProjectorDepartments });
     connectedProjectorDepartments.forEach(projectorDept => {
       unlinkDepartmentMutation.mutate(projectorDept);
     });
