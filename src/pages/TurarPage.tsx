@@ -53,6 +53,14 @@ const TurarPage: React.FC = () => {
       
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
       console.log('🔗 Room connections data:', roomConnections);
+      console.log('🔗 Projector data sample with connections:', projectorData?.filter(item => item.connected_turar_department).slice(0, 5));
+      console.log('📊 Projector departments with turar connections:', projectorData?.filter(item => item.connected_turar_department)
+        .reduce((acc, item) => {
+          const dept = item.connected_turar_department!;
+          acc[dept] = (acc[dept] || new Set()).add(item["ОТДЕЛЕНИЕ"]);
+          return acc;
+        }, {} as Record<string, Set<string>>)
+      );
       console.log('📊 All room connections:', roomConnections?.map(conn => ({ 
         turar_dept: conn.turar_department, 
         projector_dept: conn.projector_department,
@@ -130,7 +138,18 @@ const TurarPage: React.FC = () => {
     
     // Объединяем и убираем дубликаты
     const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
-    return [...new Set(allConnections)];
+    const uniqueConnections = [...new Set(allConnections)];
+    
+    // Логирование для отладки
+    if (uniqueConnections.length > 0) {
+      console.log(`🔗 Department "${turarDepartmentName}" connections:`, {
+        fromTable: connectionsFromTable,
+        fromProjector: connectionsFromProjector,
+        final: uniqueConnections
+      });
+    }
+    
+    return uniqueConnections;
   };
 
   const processTurarData = (data: any[]): TurarDepartment[] => {
