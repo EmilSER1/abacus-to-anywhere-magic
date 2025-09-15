@@ -43,7 +43,7 @@ const TurarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
   const { data: roomConnections } = useRoomConnections();
-  const { data: projectorData } = useProjectorData();
+  const { data: projectorData, isLoading: projectorLoading, error: projectorError } = useProjectorData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -169,20 +169,45 @@ const TurarPage: React.FC = () => {
 
   // Получение ВСЕХ уникальных отделений проектировщиков
   const projectorDepartments = React.useMemo(() => {
+    console.log('🏗️ ProjectorData state:', {
+      loading: projectorLoading,
+      error: projectorError,
+      hasData: !!projectorData,
+      dataLength: projectorData?.length || 0
+    });
+    
+    if (projectorLoading) {
+      console.log('🏗️ Projector data is still loading...');
+      return [];
+    }
+    
+    if (projectorError) {
+      console.error('🏗️ Projector data error:', projectorError);
+      return [];
+    }
+    
     if (!projectorData) {
       console.log('🏗️ No projector data available');
       return [];
     }
     
     console.log('🏗️ Processing projector data, total records:', projectorData.length);
+    console.log('🏗️ Sample projector records:', projectorData.slice(0, 3));
     
     const departments = new Set<string>();
     let processedCount = 0;
     
-    projectorData.forEach(item => {
+    projectorData.forEach((item, index) => {
       if (item["ОТДЕЛЕНИЕ"] && item["ОТДЕЛЕНИЕ"].trim()) {
         departments.add(item["ОТДЕЛЕНИЕ"].trim());
         processedCount++;
+        if (index < 10) {
+          console.log(`🏗️ Record ${index}: ОТДЕЛЕНИЕ = "${item["ОТДЕЛЕНИЕ"]}"`);
+        }
+      } else {
+        if (index < 10) {
+          console.log(`🏗️ Record ${index}: Missing or empty ОТДЕЛЕНИЕ`, item);
+        }
       }
     });
     
@@ -195,7 +220,7 @@ const TurarPage: React.FC = () => {
     });
     
     return sorted;
-  }, [projectorData]);
+  }, [projectorData, projectorLoading, projectorError]);
 
   // Обработчики связывания отделений
   const handleAddDepartmentLink = (turarDepartmentName: string, projectorDepartment: string) => {
