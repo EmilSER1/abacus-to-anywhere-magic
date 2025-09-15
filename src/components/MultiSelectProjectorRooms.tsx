@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, Link, Check, Building2 } from 'lucide-react';
 import { useProjectorData } from '@/hooks/useProjectorData';
 import { useDepartmentMappings } from '@/hooks/useDepartmentMappings';
@@ -29,7 +28,6 @@ export default function MultiSelectProjectorRooms({
   onRemove,
   isLoading = false
 }: MultiSelectProjectorRoomsProps) {
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedRooms, setSelectedRooms] = useState<Set<string>>(new Set());
 
   const { data: projectorData } = useProjectorData();
@@ -71,71 +69,55 @@ export default function MultiSelectProjectorRooms({
     return finalDepartments;
   }, [projectorData, departmentMappings, turarDepartment]);
 
-  // Получаем комнаты выбранного отделения проектировщиков
+  // Получаем все кабинеты из связанных отделений проектировщиков
   const availableRooms = React.useMemo(() => {
-    if (!projectorData || !selectedDepartment) {
-      console.log('⚠️ No projectorData or selectedDepartment:', { 
+    if (!projectorData || linkedProjectorDepartments.length === 0) {
+      console.log('⚠️ No projectorData or linkedDepartments:', { 
         hasProjectorData: !!projectorData, 
-        projectorDataLength: projectorData?.length || 0,
-        selectedDepartment 
+        linkedDepartments: linkedProjectorDepartments
       });
       return [];
     }
     
-    console.log('🏠 Getting rooms for department:', `"${selectedDepartment}"`);
-    console.log('📊 Total projector data records:', projectorData.length);
+    console.log('🏠 Getting rooms from all linked departments:', linkedProjectorDepartments);
     
-    // Сначала найдем все уникальные отделения в данных
-    const allDepartments = [...new Set(projectorData.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean))];
-    console.log('📋 All departments in projector data:', allDepartments.slice(0, 10));
+    const allRooms = new Map<string, string>(); // room -> department
     
-    // Точное сравнение названий отделений
-    const departmentRecords = projectorData.filter(item => {
-      const itemDepartment = item["ОТДЕЛЕНИЕ"];
-      if (!itemDepartment) return false;
+    // Проходим по всем связанным отделениям и собираем их кабинеты
+    linkedProjectorDepartments.forEach(department => {
+      const departmentRecords = projectorData.filter(item => 
+        item["ОТДЕЛЕНИЕ"]?.trim() === department.trim()
+      );
       
-      const normalizedItem = itemDepartment.trim();
-      const normalizedSelected = selectedDepartment.trim();
-      const isMatch = normalizedItem === normalizedSelected;
+      console.log(`📋 Found ${departmentRecords.length} records for department "${department}"`);
       
-      // Логирование для отладки
-      if (normalizedItem.includes('гинекологии') || normalizedSelected.includes('гинекологии')) {
-        console.log('🔍 Gynecology department comparison:', {
-          itemDepartment: `"${normalizedItem}"`,
-          selectedDepartment: `"${normalizedSelected}"`,
-          isMatch,
-          itemLength: normalizedItem.length,
-          selectedLength: normalizedSelected.length,
-          itemCharCodes: normalizedItem.split('').map(c => c.charCodeAt(0)),
-          selectedCharCodes: normalizedSelected.split('').map(c => c.charCodeAt(0))
-        });
-      }
-      
-      return isMatch;
+      departmentRecords.forEach(item => {
+        const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
+        if (roomName && roomName.trim()) {
+          allRooms.set(roomName.trim(), department);
+        }
+      });
     });
     
-    console.log('📋 Records for selected department:', departmentRecords.length);
-    
-    if (departmentRecords.length > 0) {
-      console.log('📋 Sample records for department:', departmentRecords.slice(0, 3).map(item => ({
-        department: item["ОТДЕЛЕНИЕ"],
-        room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]
-      })));
-    }
-    
-    const rooms = new Set<string>();
-    departmentRecords.forEach(item => {
-      const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
-      if (roomName && roomName.trim()) {
-        rooms.add(roomName.trim());
-      }
-    });
-    
-    const roomsArray = Array.from(rooms).sort();
-    console.log('🏠 Final rooms for department:', roomsArray.length, roomsArray.slice(0, 5));
+    const roomsArray = Array.from(allRooms.keys()).sort();
+    console.log('🏠 All available rooms from linked departments:', roomsArray.length, roomsArray.slice(0, 10));
     
     return roomsArray;
-  }, [projectorData, selectedDepartment]);
+  }, [projectorData, linkedProjectorDepartments]);
+
+  // Получаем отделение для конкретной комнаты
+  const getRoomDepartment = (roomName: string): string => {
+    if (!projectorData) return '';
+    
+    for (const department of linkedProjectorDepartments) {
+      const hasRoom = projectorData.some(item => 
+        item["ОТДЕЛЕНИЕ"]?.trim() === department.trim() && 
+        item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]?.trim() === roomName.trim()
+      );
+      if (hasRoom) return department;
+    }
+    return linkedProjectorDepartments[0] || '';
+  };
 
   const handleRoomCheckboxChange = (room: string, checked: boolean) => {
     const newSelectedRooms = new Set(selectedRooms);
@@ -148,29 +130,26 @@ export default function MultiSelectProjectorRooms({
   };
 
   const handleAddSelectedRooms = () => {
-    if (!selectedDepartment || selectedRooms.size === 0) return;
+    if (selectedRooms.size === 0) return;
     
     // Добавляем все выбранные комнаты
     selectedRooms.forEach(room => {
-      onAdd(selectedDepartment, room);
+      const department = getRoomDepartment(room);
+      onAdd(department, room);
     });
     
     // Очищаем выбор
     setSelectedRooms(new Set());
-    setSelectedDepartment('');
   };
 
-  const isRoomAlreadyConnected = (dept: string, room: string) => {
-    return connectedRooms.some(conn => 
-      conn.projector_department === dept && conn.projector_room === room
-    );
+  const isRoomAlreadyConnected = (roomName: string) => {
+    return connectedRooms.some(conn => conn.projector_room === roomName);
   };
 
   console.log('🏠 MultiSelectProjectorRooms Debug:', {
     turarDepartment,
     turarRoom,
     linkedDepartments: linkedProjectorDepartments,
-    selectedDepartment,
     availableRooms: availableRooms.length,
     connectedRooms: connectedRooms.length
   });
@@ -212,7 +191,7 @@ export default function MultiSelectProjectorRooms({
         </div>
       )}
 
-      {/* Интерфейс добавления новых связей */}
+      {/* Простой интерфейс выбора кабинетов */}
       {linkedProjectorDepartments.length > 0 ? (
         <Card className="border-dashed">
           <CardContent className="p-3">
@@ -220,85 +199,65 @@ export default function MultiSelectProjectorRooms({
               Добавить связи с кабинетами проектировщиков:
             </div>
             
-            {/* Выбор отделения */}
-            <div className="space-y-3">
-              <Select
-                value={selectedDepartment}
-                onValueChange={(value) => {
-                  setSelectedDepartment(value);
-                  setSelectedRooms(new Set()); // Очищаем выбранные комнаты при смене отделения
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите отделение проектировщиков" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  {linkedProjectorDepartments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Выбор комнат */}
-              {selectedDepartment && availableRooms.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Выберите кабинеты:</div>
-                  <div className="max-h-40 overflow-y-auto space-y-2 border rounded p-2">
-                    {availableRooms.map((room) => {
-                      const isConnected = isRoomAlreadyConnected(selectedDepartment, room);
-                      const isSelected = selectedRooms.has(room);
-                      
-                      return (
-                        <div key={room} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`room-${room}`}
-                            checked={isSelected}
-                            disabled={isConnected || isLoading}
-                            onCheckedChange={(checked) => handleRoomCheckboxChange(room, checked as boolean)}
-                          />
-                          <label 
-                            htmlFor={`room-${room}`} 
-                            className={`text-sm flex-1 cursor-pointer ${
-                              isSelected ? 'font-medium text-green-700 dark:text-green-400' : ''
-                            } ${
-                              isConnected ? 'opacity-50 line-through' : ''
-                            }`}
-                          >
-                            {room}
-                            {isConnected && (
-                              <span className="text-xs text-muted-foreground ml-2">(уже связан)</span>
-                            )}
-                          </label>
-                          {isSelected && (
-                            <Check className="h-4 w-4 text-green-600" />
+            {/* Прямой выбор кабинетов */}
+            {availableRooms.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Выберите кабинеты:</div>
+                <div className="max-h-40 overflow-y-auto space-y-2 border rounded p-2">
+                  {availableRooms.map((room) => {
+                    const isConnected = isRoomAlreadyConnected(room);
+                    const isSelected = selectedRooms.has(room);
+                    const roomDepartment = getRoomDepartment(room);
+                    
+                    return (
+                      <div key={room} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`room-${room}`}
+                          checked={isSelected}
+                          disabled={isConnected || isLoading}
+                          onCheckedChange={(checked) => handleRoomCheckboxChange(room, checked as boolean)}
+                        />
+                        <label 
+                          htmlFor={`room-${room}`} 
+                          className={`text-sm flex-1 cursor-pointer ${
+                            isSelected ? 'font-medium text-green-700 dark:text-green-400' : ''
+                          } ${
+                            isConnected ? 'opacity-50 line-through' : ''
+                          }`}
+                        >
+                          <div>{room}</div>
+                          <div className="text-xs text-muted-foreground">{roomDepartment}</div>
+                          {isConnected && (
+                            <span className="text-xs text-muted-foreground ml-2">(уже связан)</span>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {selectedRooms.size > 0 && (
-                    <Button
-                      size="sm"
-                      onClick={handleAddSelectedRooms}
-                      disabled={isLoading}
-                      className="w-full"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Добавить выбранные кабинеты ({selectedRooms.size})
-                    </Button>
-                  )}
+                        </label>
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-green-600" />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+                
+                {selectedRooms.size > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleAddSelectedRooms}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Добавить выбранные кабинеты ({selectedRooms.size})
+                  </Button>
+                )}
+              </div>
+            )}
 
-              {selectedDepartment && availableRooms.length === 0 && (
-                <div className="text-xs text-muted-foreground italic">
-                  Нет доступных кабинетов в выбранном отделении
-                </div>
-              )}
-            </div>
+            {availableRooms.length === 0 && (
+              <div className="text-xs text-muted-foreground italic">
+                Нет доступных кабинетов в связанных отделениях
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
