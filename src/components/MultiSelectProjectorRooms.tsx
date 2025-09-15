@@ -39,37 +39,87 @@ export default function MultiSelectProjectorRooms({
   const linkedProjectorDepartments = React.useMemo(() => {
     const departments = new Set<string>();
     
+    console.log(`🔗 MultiSelectProjectorRooms: Ищем связанные отделения для "${turarDepartment}"`);
+    
     // Сначала проверяем department_mappings (новый способ)
-    departmentMappings?.forEach(mapping => {
-      if (mapping.turar_department.trim() === turarDepartment.trim()) {
-        departments.add(mapping.projector_department.trim());
-      }
+    const mappingsForDepartment = departmentMappings?.filter(mapping => 
+      mapping.turar_department.trim() === turarDepartment.trim()
+    ) || [];
+    
+    console.log('📋 Mappings found:', mappingsForDepartment);
+    
+    mappingsForDepartment.forEach(mapping => {
+      departments.add(mapping.projector_department.trim());
     });
     
     // Затем проверяем projector_floors (старый способ для обратной совместимости)
     if (projectorData) {
-      projectorData.forEach(item => {
-        if (item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]) {
-          departments.add(item["ОТДЕЛЕНИЕ"].trim());
-        }
+      const oldStyleConnections = projectorData.filter(item => 
+        item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]
+      );
+      
+      console.log('🏗️ Old style connections found:', oldStyleConnections.length);
+      
+      oldStyleConnections.forEach(item => {
+        departments.add(item["ОТДЕЛЕНИЕ"].trim());
       });
     }
     
-    return Array.from(departments).sort();
+    const finalDepartments = Array.from(departments).sort();
+    console.log('✅ Final linked departments:', finalDepartments);
+    
+    return finalDepartments;
   }, [projectorData, departmentMappings, turarDepartment]);
 
   // Получаем комнаты выбранного отделения проектировщиков
   const availableRooms = React.useMemo(() => {
-    if (!projectorData || !selectedDepartment) return [];
+    if (!projectorData || !selectedDepartment) {
+      console.log('⚠️ No projectorData or selectedDepartment:', { 
+        hasProjectorData: !!projectorData, 
+        selectedDepartment 
+      });
+      return [];
+    }
+    
+    console.log('🏠 Getting rooms for department:', selectedDepartment);
+    console.log('📊 Total projector data records:', projectorData.length);
+    
+    // Точное сравнение названий отделений
+    const departmentRecords = projectorData.filter(item => {
+      const itemDepartment = item["ОТДЕЛЕНИЕ"]?.trim();
+      const isMatch = itemDepartment === selectedDepartment.trim();
+      
+      if (itemDepartment && itemDepartment.includes('дневной стационар')) {
+        console.log('🔍 Department comparison:', {
+          itemDepartment: `"${itemDepartment}"`,
+          selectedDepartment: `"${selectedDepartment.trim()}"`,
+          isMatch,
+          itemLength: itemDepartment.length,
+          selectedLength: selectedDepartment.trim().length
+        });
+      }
+      
+      return isMatch;
+    });
+    
+    console.log('📋 Records for selected department:', departmentRecords.length);
+    console.log('📋 Sample records:', departmentRecords.slice(0, 3).map(item => ({
+      department: item["ОТДЕЛЕНИЕ"],
+      room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]
+    })));
     
     const rooms = new Set<string>();
-    projectorData.forEach(item => {
-      if (item["ОТДЕЛЕНИЕ"]?.trim() === selectedDepartment && item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]) {
-        rooms.add(item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]);
+    departmentRecords.forEach(item => {
+      const roomName = item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"];
+      if (roomName && roomName.trim()) {
+        rooms.add(roomName.trim());
       }
     });
     
-    return Array.from(rooms).sort();
+    const roomsArray = Array.from(rooms).sort();
+    console.log('🏠 Final rooms for department:', roomsArray);
+    
+    return roomsArray;
   }, [projectorData, selectedDepartment]);
 
   const handleRoomCheckboxChange = (room: string, checked: boolean) => {
