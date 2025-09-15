@@ -138,16 +138,16 @@ export const useDeleteRoomConnection = () => {
 
       if (connection) {
         // Use ID-based cleanup if available
-        if (connection.projector_room_id && connection.turar_room_id) {
+        if (false) { // Отключаем ID-based cleanup
           await Promise.all([
             supabase
               .from("projector_floors")
               .update({ connected_turar_room_id: null })
-              .eq("id", connection.projector_room_id),
+              .eq("id", "dummy"), // connection.projector_room_id
             supabase
               .from("turar_medical")
               .update({ connected_projector_room_id: null })
-              .eq("id", connection.turar_room_id)
+              .eq("id", "dummy") // connection.turar_room_id
           ]);
         } else {
           // Fallback to string-based cleanup
