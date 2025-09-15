@@ -195,6 +195,18 @@ export default function FloorsPage() {
     
     return linkedRecord?.connected_turar_department || null;
   };
+
+  // Функция для получения связанных отделений Турар через room_connections
+  const getDepartmentTurarConnectionsFromRooms = (departmentName: string): string[] => {
+    if (!roomConnections) return [];
+    
+    const uniqueTurarDepartments = new Set<string>();
+    roomConnections
+      .filter(conn => conn.projector_department === departmentName)
+      .forEach(conn => uniqueTurarDepartments.add(conn.turar_department));
+    
+    return Array.from(uniqueTurarDepartments);
+  };
   
   // Helper function to check if a room is connected using new ID-based structure
   const isRoomConnected = (room: Room, departmentName: string) => {
@@ -697,13 +709,26 @@ export default function FloorsPage() {
                                        </span>
                                        {/* Индикатор связи с Турар */}
                                        {(() => {
-                                         const turarLink = getDepartmentTurarLink(department.name);
-                                         return turarLink ? (
-                                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                                             <Link2 className="h-3 w-3 mr-1" />
-                                             Турар: {turarLink}
-                                           </Badge>
-                                         ) : null;
+                                         const directLink = getDepartmentTurarLink(department.name);
+                                         const roomConnections = getDepartmentTurarConnectionsFromRooms(department.name);
+                                         
+                                         if (directLink) {
+                                           return (
+                                             <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                                               <Link2 className="h-3 w-3 mr-1" />
+                                               Турар: {directLink}
+                                             </Badge>
+                                           );
+                                         } else if (roomConnections.length > 0) {
+                                           return (
+                                             <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                                               <Link2 className="h-3 w-3 mr-1" />
+                                               Турар: {roomConnections.join(', ')}
+                                             </Badge>
+                                           );
+                                         }
+                                         
+                                         return null;
                                        })()}
                                        {/* Индикатор связей на уровне отделения */}
                                        {roomConnections && (() => {

@@ -178,7 +178,9 @@ const TurarPage: React.FC = () => {
       }
     });
     
-    return Array.from(departments).sort();
+    const sorted = Array.from(departments).sort();
+    console.log('🏗️ All projector departments available:', sorted);
+    return sorted;
   }, [projectorData]);
 
   // Обработчики связывания отделений
