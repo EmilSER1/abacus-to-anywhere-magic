@@ -16,6 +16,9 @@ export interface ProjectorEquipment {
   "Площадь (м2)"?: number;
   "Ед. изм."?: string;
   "Примечания"?: string;
+  connected_turar_department?: string;
+  connected_turar_room?: string;
+  connected_turar_room_id?: string;
   created_at: string;
   updated_at: string;
 }

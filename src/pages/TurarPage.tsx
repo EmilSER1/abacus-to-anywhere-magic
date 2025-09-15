@@ -11,6 +11,7 @@ import { Building2, Users, MapPin, Download, Search, Package, Link } from 'lucid
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
+import { useProjectorData } from '@/hooks/useProjectorData';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -36,6 +37,7 @@ const TurarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
   const { data: roomConnections } = useRoomConnections();
+  const { data: projectorData } = useProjectorData();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
@@ -51,6 +53,12 @@ const TurarPage: React.FC = () => {
       
       console.log('🔍 Sample turar data with connections:', turarData.slice(0, 2));
       console.log('🔗 Room connections data:', roomConnections);
+      console.log('📊 All room connections:', roomConnections?.map(conn => ({ 
+        turar_dept: conn.turar_department, 
+        projector_dept: conn.projector_department,
+        turar_room: conn.turar_room,
+        projector_room: conn.projector_room
+      })));
       console.log('📊 Turar departments:', processedData.map(d => ({ name: d.name, roomCount: d.rooms.length })));
       
       // Handle search params from URL
@@ -309,14 +317,20 @@ const TurarPage: React.FC = () => {
                            </div>
                          </div>
                          {/* Показываем связанные отделения проектировщиков */}
-                         {roomConnections && (() => {
-                           const connectedDepartments = roomConnections
-                             ?.filter(conn => {
-                               console.log(`🔍 Checking connection for dept "${department.name}": conn.turar_department="${conn.turar_department}"`);
-                               return conn.turar_department === department.name;
-                             })
-                             ?.map(conn => conn.projector_department)
-                             ?.filter((dept, index, arr) => arr.indexOf(dept) === index) || [];
+                         {(roomConnections || projectorData) && (() => {
+                           // Получаем связи из таблицы room_connections
+                           const connectionsFromTable = roomConnections
+                             ?.filter(conn => conn.turar_department === department.name)
+                             ?.map(conn => conn.projector_department) || [];
+                           
+                           // Получаем связи из projector_floors (старый способ)
+                           const connectionsFromProjector = projectorData
+                             ?.filter(item => item.connected_turar_department === department.name)
+                             ?.map(item => item["ОТДЕЛЕНИЕ"]) || [];
+                           
+                           // Объединяем и убираем дубликаты
+                           const allConnections = [...connectionsFromTable, ...connectionsFromProjector];
+                           const connectedDepartments = [...new Set(allConnections)];
                            
                            console.log(`📊 Department "${department.name}" has ${connectedDepartments.length} connected projector departments:`, connectedDepartments);
                            
