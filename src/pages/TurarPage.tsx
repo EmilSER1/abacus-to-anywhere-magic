@@ -323,36 +323,59 @@ const TurarPage: React.FC = () => {
                                     <MapPin className="h-4 w-4 text-muted-foreground" />
                                     <div className="text-left flex-1">
                                       <div className="font-medium">{room.name}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        {room.equipment.length} типов оборудования
-                                        {(() => {
-                                          // Проверяем есть ли связь в данных этого кабинета
-                                          const hasConnection = room.equipment.some((eq: any) => 
-                                            eq.connected_projector_room || eq.connected_projector_department
-                                          );
-                                          return hasConnection ? ' • Связан' : '';
-                                        })()}
-                                      </div>
+                                       <div className="text-sm text-muted-foreground">
+                                         {room.equipment.length} типов оборудования
+                                         {(() => {
+                                           // Проверяем есть ли связь в данных этого кабинета
+                                           const hasConnection = room.equipment.some((eq: any) => 
+                                             eq.connected_projector_room || eq.connected_projector_department
+                                           );
+                                           
+                                           // Также проверяем связи из room_connections
+                                           const roomConnection = roomConnections?.find(conn => 
+                                             conn.turar_department === department.name && 
+                                             conn.turar_room === room.name
+                                           );
+                                           
+                                           return (hasConnection || roomConnection) ? ' • Связан' : '';
+                                         })()}
+                                       </div>
                                     </div>
-                                    {(() => {
-                                      // Находим связь в данных кабинета
-                                      const connectedEquipment = room.equipment.find((eq: any) => 
-                                        eq.connected_projector_room || eq.connected_projector_department
-                                      );
-                                      
-                                      if (connectedEquipment) {
-                                        return (
-                                          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                            <Link className="h-3 w-3 mr-1" />
-                                            {connectedEquipment.connected_projector_room 
-                                              ? `${connectedEquipment.connected_projector_room}` 
-                                              : `${connectedEquipment.connected_projector_department}`
-                                            }
-                                          </Badge>
-                                        );
-                                      }
-                                      return null;
-                                    })()}
+                                     {(() => {
+                                       // Находим связь в данных кабинета
+                                       const connectedEquipment = room.equipment.find((eq: any) => 
+                                         eq.connected_projector_room || eq.connected_projector_department
+                                       );
+                                       
+                                       // Также проверяем связи из room_connections
+                                       const roomConnection = roomConnections?.find(conn => 
+                                         conn.turar_department === department.name && 
+                                         conn.turar_room === room.name
+                                       );
+                                       
+                                       if (connectedEquipment) {
+                                         return (
+                                           <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                             <Link className="h-3 w-3 mr-1" />
+                                             {connectedEquipment.connected_projector_room 
+                                               ? `${connectedEquipment.connected_projector_room}` 
+                                               : `${connectedEquipment.connected_projector_department}`
+                                             }
+                                           </Badge>
+                                         );
+                                       }
+                                       
+                                       if (roomConnection) {
+                                         return (
+                                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                             <Link className="h-3 w-3 mr-1" />
+                                             {roomConnection.projector_department} - {roomConnection.projector_room}
+                                           </Badge>
+                                         );
+                                       }
+                                       
+                                       return null;
+                                     })()}
                                   </div>
                               </AccordionTrigger>
                               <AccordionContent className="px-4 pb-4">
