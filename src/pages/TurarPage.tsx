@@ -13,10 +13,7 @@ import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
 import { useRoomConnections } from '@/hooks/useRoomConnections';
 import { useProjectorData } from '@/hooks/useProjectorData';
 import { useLinkDepartmentToTurar, useUnlinkDepartmentFromTurar } from '@/hooks/useDepartmentTurarLink';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -53,7 +50,6 @@ const TurarPage: React.FC = () => {
   
   const linkDepartmentMutation = useLinkDepartmentToTurar();
   const unlinkDepartmentMutation = useUnlinkDepartmentFromTurar();
-  const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   useEffect(() => {
     if (turarData) {
@@ -196,49 +192,6 @@ const TurarPage: React.FC = () => {
     });
   };
 
-  // Функция для получения связанных комнат проектировщиков для конкретной комнаты Турар
-  const getRoomProjectorLinks = (turarDepartment: string, turarRoom: string) => {
-    if (!roomConnections) return [];
-    
-    return roomConnections.filter(conn => 
-      conn.turar_department === turarDepartment && 
-      conn.turar_room === turarRoom
-    ).map(conn => ({
-      id: conn.id,
-      projector_department: conn.projector_department,
-      projector_room: conn.projector_room
-    }));
-  };
-
-  // Функция для автоматического создания связей комнат
-  const handleBulkCreateConnections = async () => {
-    setIsBulkCreating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('bulk-create-room-connections');
-      
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Связи созданы",
-        description: `Создано ${data.details?.newConnectionsCreated || 0} новых связей комнат`,
-      });
-
-      // Обновляем данные
-      window.location.reload();
-    } catch (error) {
-      console.error('Error creating bulk connections:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось создать автоматические связи",
-        variant: "destructive",
-      });
-    } finally {
-      setIsBulkCreating(false);
-    }
-  };
-
   const processTurarData = (data: any[]): TurarDepartment[] => {
     const departmentMap = new Map<string, Map<string, any[]>>();
 
@@ -361,21 +314,10 @@ const TurarPage: React.FC = () => {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleBulkCreateConnections} 
-              variant="outline" 
-              className="gap-2"
-              disabled={isBulkCreating}
-            >
-              <Link2 className="h-4 w-4" />
-              {isBulkCreating ? 'Создание связей...' : 'Создать связи комнат'}
-            </Button>
-            <Button onClick={exportData} variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              Экспорт в Excel
-            </Button>
-          </div>
+          <Button onClick={exportData} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" />
+            Экспорт в Excel
+          </Button>
         </div>
 
         {/* Statistics Cards */}
@@ -590,21 +532,8 @@ const TurarPage: React.FC = () => {
                                      })()}
                                   </div>
                               </AccordionTrigger>
-                               <AccordionContent className="px-4 pb-4">
-                                 {/* Компонент связывания комнат */}
-                                 <div className="mb-4 p-3 bg-background/30 rounded-lg border border-border/50">
-                                   <TurarRoomLinkDropdown
-                                     turarDepartment={department.name}
-                                     turarRoom={room.name}
-                                     connectedRooms={getRoomProjectorLinks(department.name, room.name)}
-                                     onSuccess={() => {
-                                       // Обновляем данные после успешного создания/удаления связи
-                                       console.log('✅ Room connection updated');
-                                     }}
-                                   />
-                                 </div>
-                                 
-                                 <div className="space-y-2">
+                              <AccordionContent className="px-4 pb-4">
+                                <div className="space-y-2">
                                    {room.equipment.map((equipment, eqIndex) => {
                                      const urlSearchTerm = searchParams.get('search');
                                      const urlDepartment = searchParams.get('department');
