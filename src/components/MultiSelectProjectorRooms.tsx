@@ -76,26 +76,38 @@ export default function MultiSelectProjectorRooms({
     if (!projectorData || !selectedDepartment) {
       console.log('⚠️ No projectorData or selectedDepartment:', { 
         hasProjectorData: !!projectorData, 
+        projectorDataLength: projectorData?.length || 0,
         selectedDepartment 
       });
       return [];
     }
     
-    console.log('🏠 Getting rooms for department:', selectedDepartment);
+    console.log('🏠 Getting rooms for department:', `"${selectedDepartment}"`);
     console.log('📊 Total projector data records:', projectorData.length);
+    
+    // Сначала найдем все уникальные отделения в данных
+    const allDepartments = [...new Set(projectorData.map(item => item["ОТДЕЛЕНИЕ"]).filter(Boolean))];
+    console.log('📋 All departments in projector data:', allDepartments.slice(0, 10));
     
     // Точное сравнение названий отделений
     const departmentRecords = projectorData.filter(item => {
-      const itemDepartment = item["ОТДЕЛЕНИЕ"]?.trim();
-      const isMatch = itemDepartment === selectedDepartment.trim();
+      const itemDepartment = item["ОТДЕЛЕНИЕ"];
+      if (!itemDepartment) return false;
       
-      if (itemDepartment && itemDepartment.includes('дневной стационар')) {
-        console.log('🔍 Department comparison:', {
-          itemDepartment: `"${itemDepartment}"`,
-          selectedDepartment: `"${selectedDepartment.trim()}"`,
+      const normalizedItem = itemDepartment.trim();
+      const normalizedSelected = selectedDepartment.trim();
+      const isMatch = normalizedItem === normalizedSelected;
+      
+      // Логирование для отладки
+      if (normalizedItem.includes('гинекологии') || normalizedSelected.includes('гинекологии')) {
+        console.log('🔍 Gynecology department comparison:', {
+          itemDepartment: `"${normalizedItem}"`,
+          selectedDepartment: `"${normalizedSelected}"`,
           isMatch,
-          itemLength: itemDepartment.length,
-          selectedLength: selectedDepartment.trim().length
+          itemLength: normalizedItem.length,
+          selectedLength: normalizedSelected.length,
+          itemCharCodes: normalizedItem.split('').map(c => c.charCodeAt(0)),
+          selectedCharCodes: normalizedSelected.split('').map(c => c.charCodeAt(0))
         });
       }
       
@@ -103,10 +115,13 @@ export default function MultiSelectProjectorRooms({
     });
     
     console.log('📋 Records for selected department:', departmentRecords.length);
-    console.log('📋 Sample records:', departmentRecords.slice(0, 3).map(item => ({
-      department: item["ОТДЕЛЕНИЕ"],
-      room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]
-    })));
+    
+    if (departmentRecords.length > 0) {
+      console.log('📋 Sample records for department:', departmentRecords.slice(0, 3).map(item => ({
+        department: item["ОТДЕЛЕНИЕ"],
+        room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]
+      })));
+    }
     
     const rooms = new Set<string>();
     departmentRecords.forEach(item => {
@@ -117,7 +132,7 @@ export default function MultiSelectProjectorRooms({
     });
     
     const roomsArray = Array.from(rooms).sort();
-    console.log('🏠 Final rooms for department:', roomsArray);
+    console.log('🏠 Final rooms for department:', roomsArray.length, roomsArray.slice(0, 5));
     
     return roomsArray;
   }, [projectorData, selectedDepartment]);
