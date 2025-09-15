@@ -69,16 +69,33 @@ export default function MultiSelectProjectorRooms({
       departments.add(mapping.projector_department.trim());
     });
     
-    // Затем проверяем projector_floors (старый способ для обратной совместимости)
+    // КРИТИЧНО! Также проверяем старые связи в projector_floors 
+    // (для совместимости со связями, созданными в FloorsPage)
     if (projectorData) {
-      const oldStyleConnections = projectorData.filter(item => 
-        item.connected_turar_department === turarDepartment && item["ОТДЕЛЕНИЕ"]
-      );
+      const oldStyleConnections = projectorData.filter(item => {
+        const connectedTurar = item.connected_turar_department;
+        if (!connectedTurar) return false;
+        
+        const connectedNormalized = connectedTurar.trim();
+        const inputNormalized = turarDepartment.trim();
+        const isMatch = connectedNormalized === inputNormalized;
+        
+        console.log('🏗️ Old style connection check:', {
+          connectedTurar: `"${connectedNormalized}"`,
+          inputTurar: `"${inputNormalized}"`,
+          isMatch,
+          department: item["ОТДЕЛЕНИЕ"]
+        });
+        
+        return isMatch;
+      });
       
       console.log('🏗️ Old style connections found:', oldStyleConnections.length);
       
       oldStyleConnections.forEach(item => {
-        departments.add(item["ОТДЕЛЕНИЕ"].trim());
+        if (item["ОТДЕЛЕНИЕ"]) {
+          departments.add(item["ОТДЕЛЕНИЕ"].trim());
+        }
       });
     }
     
