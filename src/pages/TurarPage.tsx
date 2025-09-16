@@ -18,8 +18,9 @@ import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentM
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { toast } from '@/hooks/use-toast';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
-import MultiSelectProjectorRoomsById from '@/components/MultiSelectProjectorRoomsById';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
+import RoomLinkingModal from '@/components/RoomLinkingModal';
+import RoomConnectionIndicator from '@/components/RoomConnectionIndicator';
 import * as XLSX from 'xlsx';
 
 // Define the interface for Turar equipment data
@@ -55,6 +56,8 @@ const TurarPage: React.FC = () => {
   const [highlightTimeout, setHighlightTimeout] = useState<boolean>(false);
   const [targetEquipmentId, setTargetEquipmentId] = useState<string | null>(null);
   const [departmentProjectorSelections, setDepartmentProjectorSelections] = useState<Record<string, string>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<{department: string, room: string} | null>(null);
   
   const createDepartmentMappingMutation = useCreateDepartmentMapping();
   const deleteDepartmentMappingMutation = useDeleteDepartmentMapping();
@@ -270,6 +273,25 @@ const TurarPage: React.FC = () => {
       projector_department: conn.projector_department,
       projector_room: conn.projector_room
     }));
+  };
+
+  // Получить количество доступных кабинетов проектировщиков для отделения
+  const getAvailableProjectorRoomsCount = (turarDepartment: string) => {
+    if (!departmentMappings || !projectorData) return 0;
+    
+    const linkedProjectorDepartments = departmentMappings
+      .filter(mapping => mapping.turar_department === turarDepartment)
+      .map(mapping => mapping.projector_department);
+    
+    return projectorData.filter(room => 
+      linkedProjectorDepartments.includes(room["ОТДЕЛЕНИЕ"])
+    ).length;
+  };
+
+  // Открыть модал связывания комнат
+  const handleOpenRoomLinking = (department: string, room: string) => {
+    setSelectedRoom({ department, room });
+    setModalOpen(true);
   };
 
   // Функция для автоматического создания связей комнат
@@ -634,13 +656,15 @@ const TurarPage: React.FC = () => {
                                      })()}
                                   </div>
                               </AccordionTrigger>
-                               <AccordionContent className="px-4 pb-4">
-                                 {/* Компонент связывания комнат */}
+                                <AccordionContent className="px-4 pb-4">
+                                 {/* Индикатор и кнопка связывания комнат */}
                                  <div className="mb-4 p-3 bg-background/30 rounded-lg border border-border/50">
-                                      <MultiSelectProjectorRoomsById
-                                        turarDepartment={department.name}
-                                        turarRoom={room.name}
-                                      />
+                                   <RoomConnectionIndicator
+                                     connectedCount={getRoomProjectorLinks(department.name, room.name).length}
+                                     totalAvailable={getAvailableProjectorRoomsCount(department.name)}
+                                     onClick={() => handleOpenRoomLinking(department.name, room.name)}
+                                     variant="turar"
+                                   />
                                  </div>
                                  
                                  <div className="space-y-2">
@@ -709,6 +733,15 @@ const TurarPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Модальное окно связывания комнат */}
+      <RoomLinkingModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        mode="turar-to-projector"
+        turarDepartment={selectedRoom?.department}
+        turarRoom={selectedRoom?.room}
+      />
     </div>
   );
 };
