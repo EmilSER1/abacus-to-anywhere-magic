@@ -291,20 +291,40 @@ const TurarPage: React.FC = () => {
     
     if (linkedProjectorDepartments.length === 0) {
       console.log(`⚠️ No linked projector departments for "${turarDepartment}"`);
+      console.log('🔍 Available mappings:', departmentMappings.map(m => ({ 
+        turar: m.turar_department, 
+        projector: m.projector_department 
+      })));
       return 0;
     }
     
+    console.log(`🔍 Looking for projector departments:`, linkedProjectorDepartments);
+    console.log(`🔍 Sample projector data departments:`, [...new Set(projectorData.slice(0, 10).map(room => room["ОТДЕЛЕНИЕ"]))]);
+    
     // Считаем уникальные комнаты, а не все записи оборудования
     const uniqueRooms = new Set<string>();
+    const matchedDepartments = new Set<string>();
+    
     projectorData.forEach(room => {
-      if (linkedProjectorDepartments.includes(room["ОТДЕЛЕНИЕ"])) {
-        const roomKey = `${room["ОТДЕЛЕНИЕ"]}-${room["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]}`;
+      const roomDepartment = room["ОТДЕЛЕНИЕ"];
+      
+      // Нормализуем названия отделений для сравнения (убираем лишние пробелы)
+      const normalizedRoomDept = roomDepartment?.trim().replace(/\s+/g, ' ');
+      const hasMatch = linkedProjectorDepartments.some(linkedDept => {
+        const normalizedLinkedDept = linkedDept?.trim().replace(/\s+/g, ' ');
+        return normalizedRoomDept === normalizedLinkedDept;
+      });
+      
+      if (hasMatch) {
+        matchedDepartments.add(roomDepartment);
+        const roomKey = `${roomDepartment}-${room["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]}`;
         uniqueRooms.add(roomKey);
       }
     });
     
     console.log(`📊 Available projector rooms for "${turarDepartment}":`, {
       linkedDepartments: linkedProjectorDepartments,
+      matchedDepartments: Array.from(matchedDepartments),
       uniqueRoomsCount: uniqueRooms.size,
       sampleRooms: Array.from(uniqueRooms).slice(0, 3)
     });
@@ -696,8 +716,24 @@ const TurarPage: React.FC = () => {
                                           room: room.name, 
                                           connectedCount: getRoomProjectorLinks(department.name, room.name).length,
                                           totalAvailable: availableCount,
-                                          isDisabled: !availableCount || availableCount === 0
+                                          isDisabled: !availableCount || availableCount === 0,
+                                          departmentMappingsCount: departmentMappings?.length || 0,
+                                          projectorDataCount: projectorData?.length || 0
                                         });
+                                        
+                                        // Дополнительная диагностика для травматологии
+                                        if (department.name.includes('травматологии')) {
+                                          console.log('🏥 ТРАВМАТОЛОГИЯ DEBUG:', {
+                                            mappings: departmentMappings?.filter(m => 
+                                              m.turar_department.includes('травматологии') || 
+                                              m.projector_department.includes('травматологии')
+                                            ),
+                                            projectorRooms: projectorData?.filter(room => 
+                                              room["ОТДЕЛЕНИЕ"].includes('травматологии')
+                                            ).slice(0, 3)
+                                          });
+                                        }
+                                        
                                         handleOpenRoomLinking(department.name, room.name);
                                       }}
                                       variant="turar"
