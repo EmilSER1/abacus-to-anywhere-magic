@@ -662,12 +662,22 @@ const TurarPage: React.FC = () => {
                                 <AccordionContent className="px-4 pb-4">
                                  {/* Индикатор и кнопка связывания комнат */}
                                  <div className="mb-4 p-3 bg-background/30 rounded-lg border border-border/50">
-                                   <RoomConnectionIndicator
-                                     connectedCount={getRoomProjectorLinks(department.name, room.name).length}
-                                     totalAvailable={getAvailableProjectorRoomsCount(department.name)}
-                                     onClick={() => handleOpenRoomLinking(department.name, room.name)}
-                                     variant="turar"
-                                   />
+                                    <RoomConnectionIndicator
+                                      connectedCount={getRoomProjectorLinks(department.name, room.name).length}
+                                      totalAvailable={getAvailableProjectorRoomsCount(department.name)}
+                                      onClick={() => {
+                                        const availableCount = getAvailableProjectorRoomsCount(department.name);
+                                        console.log('🔥 BUTTON CLICKED!', { 
+                                          department: department.name, 
+                                          room: room.name, 
+                                          connectedCount: getRoomProjectorLinks(department.name, room.name).length,
+                                          totalAvailable: availableCount,
+                                          isDisabled: !availableCount || availableCount === 0
+                                        });
+                                        handleOpenRoomLinking(department.name, room.name);
+                                      }}
+                                      variant="turar"
+                                    />
                                  </div>
                                  
                                  <div className="space-y-2">
