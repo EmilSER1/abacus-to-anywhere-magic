@@ -10,7 +10,7 @@ import { EditRoomDialog } from '@/components/EditRoomDialog';
 import { Building2, Users, MapPin, Download, Search, Package, Link, Link2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTurarMedicalData } from '@/hooks/useTurarMedicalData';
-import { useRoomConnections } from '@/hooks/useRoomConnections';
+import { useRoomConnectionsById } from '@/hooks/useRoomConnectionsById';
 import { useProjectorData } from '@/hooks/useProjectorData';
 import { useProjectorDepartments } from '@/hooks/useProjectorDepartments';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,7 @@ import { useDepartmentMappings, useCreateDepartmentMapping, useDeleteDepartmentM
 import { useCreateRoomConnection, useDeleteRoomConnection } from '@/hooks/useRoomConnections';
 import { toast } from '@/hooks/use-toast';
 import TurarRoomLinkDropdown from '@/components/TurarRoomLinkDropdown';
-import MultiSelectProjectorRooms from '@/components/MultiSelectProjectorRooms';
+import MultiSelectProjectorRoomsById from '@/components/MultiSelectProjectorRoomsById';
 import MultiSelectProjectorDepartments from '@/components/MultiSelectProjectorDepartments';
 import * as XLSX from 'xlsx';
 
@@ -44,7 +44,7 @@ const TurarPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: turarData, isLoading, error } = useTurarMedicalData();
-  const { data: roomConnections } = useRoomConnections();
+  const { data: roomConnections } = useRoomConnectionsById();
   const { data: projectorData, isLoading: projectorLoading, error: projectorError } = useProjectorData();
   const { data: departmentMappings } = useDepartmentMappings();
   const [departments, setDepartments] = useState<TurarDepartment[]>([]);
@@ -266,7 +266,7 @@ const TurarPage: React.FC = () => {
       conn.turar_department === turarDepartment && 
       conn.turar_room === turarRoom
     ).map(conn => ({
-      id: conn.id,
+      id: conn.connection_id,
       projector_department: conn.projector_department,
       projector_room: conn.projector_room
     }));
@@ -637,21 +637,10 @@ const TurarPage: React.FC = () => {
                                <AccordionContent className="px-4 pb-4">
                                  {/* Компонент связывания комнат */}
                                  <div className="mb-4 p-3 bg-background/30 rounded-lg border border-border/50">
-                                    <MultiSelectProjectorRooms
-                                      turarDepartment={department.name}
-                                      turarRoom={room.name}
-                                      connectedRooms={getRoomProjectorLinks(department.name, room.name)}
-                                      onAdd={(projectorDept, projectorRoom) => {
-                                        createRoomConnectionMutation.mutate({
-                                          turar_department: department.name,
-                                          turar_room: room.name,
-                                          projector_department: projectorDept,
-                                          projector_room: projectorRoom
-                                        });
-                                      }}
-                                      onRemove={handleRemoveRoomConnection}
-                                      isLoading={createRoomConnectionMutation.isPending || deleteRoomConnectionMutation.isPending}
-                                    />
+                                      <MultiSelectProjectorRoomsById
+                                        turarDepartment={department.name}
+                                        turarRoom={room.name}
+                                      />
                                  </div>
                                  
                                  <div className="space-y-2">
