@@ -277,15 +277,39 @@ const TurarPage: React.FC = () => {
 
   // Получить количество доступных кабинетов проектировщиков для отделения
   const getAvailableProjectorRoomsCount = (turarDepartment: string) => {
-    if (!departmentMappings || !projectorData) return 0;
+    if (!departmentMappings || !projectorData) {
+      console.log('⚠️ getAvailableProjectorRoomsCount: Missing data', { 
+        hasMappings: !!departmentMappings, 
+        hasProjectorData: !!projectorData 
+      });
+      return 0;
+    }
     
     const linkedProjectorDepartments = departmentMappings
       .filter(mapping => mapping.turar_department === turarDepartment)
       .map(mapping => mapping.projector_department);
     
-    return projectorData.filter(room => 
-      linkedProjectorDepartments.includes(room["ОТДЕЛЕНИЕ"])
-    ).length;
+    if (linkedProjectorDepartments.length === 0) {
+      console.log(`⚠️ No linked projector departments for "${turarDepartment}"`);
+      return 0;
+    }
+    
+    // Считаем уникальные комнаты, а не все записи оборудования
+    const uniqueRooms = new Set<string>();
+    projectorData.forEach(room => {
+      if (linkedProjectorDepartments.includes(room["ОТДЕЛЕНИЕ"])) {
+        const roomKey = `${room["ОТДЕЛЕНИЕ"]}-${room["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"]}`;
+        uniqueRooms.add(roomKey);
+      }
+    });
+    
+    console.log(`📊 Available projector rooms for "${turarDepartment}":`, {
+      linkedDepartments: linkedProjectorDepartments,
+      uniqueRoomsCount: uniqueRooms.size,
+      sampleRooms: Array.from(uniqueRooms).slice(0, 3)
+    });
+    
+    return uniqueRooms.size;
   };
 
   // Открыть модал связывания комнат

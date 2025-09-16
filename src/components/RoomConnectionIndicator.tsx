@@ -17,7 +17,15 @@ export default function RoomConnectionIndicator({
   variant = 'turar'
 }: RoomConnectionIndicatorProps) {
   const hasConnections = connectedCount > 0;
-  const hasAvailable = totalAvailable && totalAvailable > 0;
+  const hasAvailable = totalAvailable != null && totalAvailable > 0;
+  
+  console.log('🔗 RoomConnectionIndicator render:', {
+    connectedCount,
+    totalAvailable,
+    hasConnections,
+    hasAvailable,
+    isDisabled: !hasAvailable
+  });
   
   const getStatusColor = () => {
     if (!hasAvailable) return 'secondary';
