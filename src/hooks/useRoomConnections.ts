@@ -45,49 +45,43 @@ export const useCreateRoomConnection = () => {
 
   return useMutation({
     mutationFn: async (connection: CreateRoomConnectionRequest) => {
-      // Create connection record
+      // Найти ID комнат, если они не переданы
+      let turarRoomId = connection.turar_room_id;
+      let projectorRoomId = connection.projector_room_id;
+
+      if (!turarRoomId) {
+        const { data: turarRoom } = await supabase
+          .from("turar_medical")
+          .select("id")
+          .eq("Отделение/Блок", connection.turar_department)
+          .eq("Помещение/Кабинет", connection.turar_room)
+          .maybeSingle();
+        turarRoomId = turarRoom?.id || null;
+      }
+
+      if (!projectorRoomId) {
+        const { data: projectorRoom } = await supabase
+          .from("projector_floors")
+          .select("id")
+          .eq("ОТДЕЛЕНИЕ", connection.projector_department)
+          .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room)
+          .maybeSingle();
+        projectorRoomId = projectorRoom?.id || null;
+      }
+
+      // Создать запись связи с ID
       const { data, error } = await supabase
         .from("room_connections")
-        .insert([connection])
+        .insert([{
+          ...connection,
+          turar_room_id: turarRoomId,
+          projector_room_id: projectorRoomId
+        }])
         .select()
         .single();
 
       if (error) {
         throw error;
-      }
-
-      // Приоритет ID-based связям, если они есть
-      if (connection.projector_room_id && connection.turar_room_id) {
-        await Promise.all([
-          supabase
-            .from("projector_floors")
-            .update({ connected_turar_room_id: connection.turar_room_id })
-            .eq("id", connection.projector_room_id),
-          supabase
-            .from("turar_medical")
-            .update({ connected_projector_room_id: connection.projector_room_id })
-            .eq("id", connection.turar_room_id)
-        ]);
-      } else {
-        // Fallback к string-based обновлениям для обратной совместимости
-        await Promise.all([
-          supabase
-            .from("turar_medical")
-            .update({
-              connected_projector_department: connection.projector_department,
-              connected_projector_room: connection.projector_room
-            })
-            .eq("Отделение/Блок", connection.turar_department)
-            .eq("Помещение/Кабинет", connection.turar_room),
-          supabase
-            .from("projector_floors")
-            .update({
-              connected_turar_department: connection.turar_department,
-              connected_turar_room: connection.turar_room
-            })
-            .eq("ОТДЕЛЕНИЕ", connection.projector_department)
-            .eq("НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ", connection.projector_room)
-        ]);
       }
 
       return data;

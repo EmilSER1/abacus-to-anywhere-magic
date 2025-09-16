@@ -172,8 +172,10 @@ export type Database = {
           id: string
           projector_department: string
           projector_room: string
+          projector_room_id: string | null
           turar_department: string
           turar_room: string
+          turar_room_id: string | null
           updated_at: string
         }
         Insert: {
@@ -181,8 +183,10 @@ export type Database = {
           id?: string
           projector_department: string
           projector_room: string
+          projector_room_id?: string | null
           turar_department: string
           turar_room: string
+          turar_room_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -190,8 +194,10 @@ export type Database = {
           id?: string
           projector_department?: string
           projector_room?: string
+          projector_room_id?: string | null
           turar_department?: string
           turar_room?: string
+          turar_room_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -254,6 +260,20 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_room_connections_with_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          connection_id: string
+          created_at: string
+          projector_department: string
+          projector_room: string
+          projector_room_id: string
+          turar_department: string
+          turar_room: string
+          turar_room_id: string
+          updated_at: string
+        }[]
       }
       get_unique_projector_departments: {
         Args: Record<PropertyKey, never>
