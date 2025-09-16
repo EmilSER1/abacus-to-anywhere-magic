@@ -61,22 +61,58 @@ export default function RoomLinkingModal({
 
   // Get linked departments based on mode
   const linkedDepartments = useMemo(() => {
+    console.log('🔗 Computing linkedDepartments:', {
+      mode,
+      turarDepartment,
+      projectorDepartment,
+      totalMappings: departmentMappings.length,
+      mappings: departmentMappings.slice(0, 3)
+    });
+
+    let result;
     if (mode === 'turar-to-projector') {
-      return departmentMappings
+      result = departmentMappings
         .filter(mapping => mapping.turar_department === turarDepartment)
         .map(mapping => mapping.projector_department);
     } else {
-      return departmentMappings
+      result = departmentMappings
         .filter(mapping => mapping.projector_department === projectorDepartment)
         .map(mapping => mapping.turar_department);
     }
+
+    console.log('✅ linkedDepartments result:', result);
+    return result;
   }, [departmentMappings, mode, turarDepartment, projectorDepartment]);
 
   // Get available rooms based on mode and linked departments
   const availableRooms = useMemo(() => {
+    console.log('🏠 Computing availableRooms:', {
+      mode,
+      linkedDepartmentsCount: linkedDepartments.length,
+      linkedDepartments,
+      projectorDataCount: projectorData?.length || 0,
+      turarDataCount: turarData?.length || 0,
+      sampleProjectorDepts: projectorData?.slice(0, 3).map(r => r["ОТДЕЛЕНИЕ"]) || [],
+      sampleTurarDepts: turarData?.slice(0, 3).map(r => r["Отделение/Блок"]) || []
+    });
+
+    if (!linkedDepartments.length) {
+      console.log('❌ No linked departments');
+      return [];
+    }
+
+    let result;
     if (mode === 'turar-to-projector') {
-      return projectorData
-        .filter(room => linkedDepartments.includes(room["ОТДЕЛЕНИЕ"]))
+      const filtered = projectorData.filter(room => {
+        const roomDept = room["ОТДЕЛЕНИЕ"];
+        const hasMatch = linkedDepartments.includes(roomDept);
+        if (hasMatch) {
+          console.log('✅ Found matching projector room:', { roomDept, room: room["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] });
+        }
+        return hasMatch;
+      });
+
+      result = filtered
         .map(room => ({
           id: room.id,
           department: room["ОТДЕЛЕНИЕ"],
@@ -85,8 +121,16 @@ export default function RoomLinkingModal({
         }))
         .sort((a, b) => a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
     } else {
-      return turarData
-        .filter(room => linkedDepartments.includes(room["Отделение/Блок"]))
+      const filtered = turarData.filter(room => {
+        const roomDept = room["Отделение/Блок"];
+        const hasMatch = linkedDepartments.includes(roomDept);
+        if (hasMatch) {
+          console.log('✅ Found matching turar room:', { roomDept, room: room["Помещение/Кабинет"] });
+        }
+        return hasMatch;
+      });
+
+      result = filtered
         .map(room => ({
           id: room.id,
           department: room["Отделение/Блок"],
@@ -95,6 +139,16 @@ export default function RoomLinkingModal({
         }))
         .sort((a, b) => a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
     }
+
+    console.log('🎯 Final availableRooms:', {
+      count: result.length,
+      byDepartment: result.reduce((acc, room) => {
+        acc[room.department] = (acc[room.department] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
+
+    return result;
   }, [projectorData, turarData, linkedDepartments, mode]);
 
   // Filter rooms based on search
@@ -267,13 +321,26 @@ export default function RoomLinkingModal({
 
           {/* Available rooms */}
           <div className="flex-1 overflow-y-auto space-y-4">
+            {/* Debug info */}
+            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+              Связанных отделений: {linkedDepartments.length} | 
+              Доступных кабинетов: {availableRooms.length} | 
+              После фильтра: {filteredRooms.length}
+            </div>
+
             {linkedDepartments.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                Нет связанных отделений
+                <div className="text-lg font-medium mb-2">Нет связанных отделений</div>
+                <div className="text-sm">
+                  Сначала необходимо создать связи между отделениями в разделе администрирования
+                </div>
               </div>
             ) : Object.keys(roomsByDepartment).length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                Нет доступных кабинетов
+                <div className="text-lg font-medium mb-2">Нет доступных кабинетов</div>
+                <div className="text-sm">
+                  В связанных отделениях ({linkedDepartments.join(', ')}) не найдено кабинетов
+                </div>
               </div>
             ) : (
               Object.entries(roomsByDepartment).map(([department, rooms]) => (
