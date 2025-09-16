@@ -290,6 +290,9 @@ const TurarPage: React.FC = () => {
 
   // Открыть модал связывания комнат
   const handleOpenRoomLinking = (department: string, room: string) => {
+    console.log('🔍 TurarPage handleOpenRoomLinking called with:', { department, room });
+    console.log('🔍 Current departmentMappings:', departmentMappings?.length || 0);
+    console.log('🔍 Current projectorData:', projectorData?.length || 0);
     setSelectedRoom({ department, room });
     setModalOpen(true);
   };
