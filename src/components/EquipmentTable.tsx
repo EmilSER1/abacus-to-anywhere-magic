@@ -201,7 +201,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
           Нет оборудования в этом помещении
         </div>
       ) : (
-        <div className="relative">
+        <>
           <div ref={scrollContainerRef} className="overflow-x-auto">
             <Table>
               <TableHeader className="sticky top-0 z-20 bg-muted/30">
@@ -587,14 +587,14 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
             </Table>
           </div>
           
-          {/* Custom horizontal scrollbar */}
+          {/* Fixed scrollbar at bottom of screen */}
           <div 
             ref={scrollbarRef}
-            className="w-full h-4 bg-muted/80 backdrop-blur-sm border-t border-border mt-2"
+            className="fixed bottom-0 left-0 md:left-[280px] right-0 h-5 bg-muted/90 backdrop-blur-sm border-t border-border z-50"
           >
-            <div className="h-full bg-primary/70 rounded-full cursor-grab active:cursor-grabbing hover:bg-primary transition-colors" />
+            <div className="h-full bg-primary rounded-full cursor-grab active:cursor-grabbing hover:bg-primary/80 transition-colors" />
           </div>
-        </div>
+        </>
       )}
 
       <EquipmentDialog
