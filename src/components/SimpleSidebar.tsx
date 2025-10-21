@@ -28,7 +28,7 @@ const getNavItems = (userRole: string | null) => [
     allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
-    title: "Проектировщики", 
+    title: "Проект", 
     url: "/floors",
     icon: Building2,
     allowedRoles: ['admin', 'staff', 'user'] as UserRole[]

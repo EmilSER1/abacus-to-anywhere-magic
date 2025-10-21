@@ -1,40 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 
 import { Search, Package, MapPin, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Interfaces
-interface TurarEquipment {
-  "Отделение/Блок": string;
-  "Помещение/Кабинет": string;
-  "Код оборудования": string;
-  "Наименование": string;
-  "Кол-во": number;
-}
-
-interface FloorEquipment {
-  department: string;
-  room: string;
-  code: string;
-  name: string;
-  quantity: number;
-}
-
 interface SearchResult {
   department: string;
   room: string;
   code: string;
   name: string;
   quantity: number;
-  source: 'turar' | 'floors';
   searchType: SearchType;
-  displayValue: string; // What to display based on search type
+  displayValue: string;
 }
 
 type SearchType = 'equipment' | 'code' | 'department' | 'room';
@@ -43,14 +24,12 @@ const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchType, setSearchType] = useState<SearchType>('equipment');
-  const [turarResults, setTurarResults] = useState<SearchResult[]>([]);
-  const [floorResults, setFloorResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const searchData = async (query: string, type: SearchType) => {
     if (!query.trim()) {
-      setTurarResults([]);
-      setFloorResults([]);
+      setResults([]);
       return;
     }
 
@@ -58,59 +37,11 @@ const SearchPage: React.FC = () => {
     const searchLower = query.toLowerCase();
 
     try {
-      // Search Turar data
-      const turarResponse = await fetch(`/turar_full.json?t=${Date.now()}`);
-      const turarData: TurarEquipment[] = await turarResponse.json();
-      
-      const filteredTurarResults = turarData
-        .filter(item => {
-          switch (type) {
-            case 'code':
-              return item["Код оборудования"].toLowerCase().includes(searchLower);
-            case 'department':
-              return item["Отделение/Блок"].toLowerCase().includes(searchLower);
-            case 'room':
-              return item["Помещение/Кабинет"].toLowerCase().includes(searchLower);
-            case 'equipment':
-            default:
-              return item["Наименование"].toLowerCase().includes(searchLower);
-          }
-        })
-        .map(item => {
-          let displayValue = '';
-          switch (type) {
-            case 'code':
-              displayValue = item["Код оборудования"];
-              break;
-            case 'department':
-              displayValue = item["Отделение/Блок"];
-              break;
-            case 'room':
-              displayValue = item["Помещение/Кабинет"];
-              break;
-            case 'equipment':
-            default:
-              displayValue = item["Наименование"];
-              break;
-          }
-          
-          return {
-            department: item["Отделение/Блок"],
-            room: item["Помещение/Кабинет"],
-            code: item["Код оборудования"],
-            name: item["Наименование"],
-            quantity: typeof item["Кол-во"] === 'number' ? item["Кол-во"] : parseInt(item["Кол-во"]) || 0,
-            source: 'turar' as const,
-            searchType: type,
-            displayValue
-          };
-        });
-
-      // Search Floor data  
+      // Search only Floor data  
       const floorsResponse = await fetch(`/combined_floors.json?t=${Date.now()}`);
       const allFloorData = await floorsResponse.json();
       
-      const filteredFloorResults: SearchResult[] = [];
+      const filteredResults: SearchResult[] = [];
       
       allFloorData.forEach(item => {
         // Skip items with null/empty equipment
@@ -156,21 +87,19 @@ const SearchPage: React.FC = () => {
               break;
           }
           
-          filteredFloorResults.push({
+          filteredResults.push({
             department: item["ОТДЕЛЕНИЕ"] || '',
             room: item["НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ"] || '',
             code: String(item["Код оборудования"] || ''),
             name: item["Наименование оборудования"] || '',
             quantity: item["Кол-во"] || 1,
-            source: 'floors',
             searchType: type,
             displayValue
           });
         }
       });
 
-      setTurarResults(filteredTurarResults.slice(0, 50)); // Limit results
-      setFloorResults(filteredFloorResults.slice(0, 50)); // Limit results
+      setResults(filteredResults.slice(0, 100)); // Limit to 100 results
     } catch (error) {
       console.error('Error searching data:', error);
     } finally {
@@ -188,13 +117,7 @@ const SearchPage: React.FC = () => {
 
   const ResultCard = ({ result }: { result: SearchResult }) => {
     const handleClick = () => {
-      if (result.source === 'turar') {
-        // Always pass the search term that was used to find this result for proper highlighting
-        navigate(`/turar?search=${encodeURIComponent(searchTerm)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
-      } else {
-        // For floors, use the same logic  
-        navigate(`/floors?search=${encodeURIComponent(searchTerm)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
-      }
+      navigate(`/floors?search=${encodeURIComponent(searchTerm)}&department=${encodeURIComponent(result.department)}&room=${encodeURIComponent(result.room)}`);
     };
 
     return (
@@ -235,19 +158,10 @@ const SearchPage: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Поиск</h1>
-        <p className="text-muted-foreground">Быстрый поиск по всем данным системы</p>
+        <h1 className="text-3xl font-bold">Поиск по проекту</h1>
+        <p className="text-muted-foreground text-lg">Быстрый поиск оборудования по данным проекта</p>
       </div>
       <main className="max-w-6xl">
-
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Поиск оборудования
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Поиск по данным Турар и Проектировщиков
-          </p>
-        </div>
 
         {/* Search Controls */}
         <div className="mb-8 space-y-4">
@@ -289,50 +203,24 @@ const SearchPage: React.FC = () => {
         )}
 
         {searchTerm && !isLoading && (
-          <div className="space-y-8">
-            {/* Floor Results */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-2xl font-semibold">Проектировщики</h2>
-                <Badge variant="outline">{floorResults.length} результатов</Badge>
-              </div>
-              {floorResults.length === 0 ? (
-                <Card className="bg-card/50 backdrop-blur border-border/50">
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    Результаты не найдены в данных Проектировщиков
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {floorResults.map((result, index) => (
-                    <ResultCard key={`floor-${index}`} result={result} />
-                  ))}
-                </div>
-              )}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-2xl font-semibold">Результаты</h2>
+              <Badge variant="outline">{results.length} найдено</Badge>
             </div>
-
-            <Separator />
-
-            {/* Turar Results */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-2xl font-semibold">Турар</h2>
-                <Badge variant="outline">{turarResults.length} результатов</Badge>
+            {results.length === 0 ? (
+              <Card className="bg-card/50 backdrop-blur border-border/50">
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  Результаты не найдены
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {results.map((result, index) => (
+                  <ResultCard key={`result-${index}`} result={result} />
+                ))}
               </div>
-              {turarResults.length === 0 ? (
-                <Card className="bg-card/50 backdrop-blur border-border/50">
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    Результаты не найдены в данных Турар
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {turarResults.map((result, index) => (
-                    <ResultCard key={`turar-${index}`} result={result} />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
 

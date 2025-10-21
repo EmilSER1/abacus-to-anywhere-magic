@@ -34,7 +34,7 @@ export function Navigation() {
       icon: Home,
     },
     {
-      name: 'Проектировщики',
+      name: 'Проект',
       href: '/floors',
       icon: Building2,
     },
