@@ -49,21 +49,20 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       const containerWidth = scrollContainer.clientWidth;
       const scrollWidth = scrollContainer.scrollWidth;
       
-      if (scrollWidth <= containerWidth) {
-        scrollbar.style.display = 'none';
-        return;
-      }
-      
-      scrollbar.style.display = 'block';
-      
       // Calculate thumb width based on visible content ratio
-      const thumbWidth = (containerWidth / scrollWidth) * scrollbar.clientWidth;
+      const thumbWidthRatio = Math.min(containerWidth / scrollWidth, 1);
+      const thumbWidth = thumbWidthRatio * scrollbar.clientWidth;
       scrollbarThumb.style.width = `${thumbWidth}px`;
       
       // Calculate thumb position
-      const scrollPercentage = scrollContainer.scrollLeft / (scrollWidth - containerWidth);
-      const maxThumbPos = scrollbar.clientWidth - thumbWidth;
-      scrollbarThumb.style.transform = `translateX(${scrollPercentage * maxThumbPos}px)`;
+      const maxScroll = scrollWidth - containerWidth;
+      if (maxScroll > 0) {
+        const scrollPercentage = scrollContainer.scrollLeft / maxScroll;
+        const maxThumbPos = scrollbar.clientWidth - thumbWidth;
+        scrollbarThumb.style.transform = `translateX(${scrollPercentage * maxThumbPos}px)`;
+      } else {
+        scrollbarThumb.style.transform = `translateX(0px)`;
+      }
     };
 
     const handleScroll = () => {
@@ -74,29 +73,28 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     let startX = 0;
     let startScrollLeft = 0;
 
-    const handleThumbMouseDown = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent) => {
       const thumbRect = scrollbarThumb.getBoundingClientRect();
       
-      // Only start drag if clicking on the thumb
+      // Check if clicking on the thumb
       if (e.clientX >= thumbRect.left && e.clientX <= thumbRect.right) {
         isDragging = true;
         startX = e.clientX;
         startScrollLeft = scrollContainer.scrollLeft;
         e.preventDefault();
         e.stopPropagation();
-        scrollbarThumb.style.cursor = 'grabbing';
-      }
-    };
-
-    const handleTrackClick = (e: MouseEvent) => {
-      const thumbRect = scrollbarThumb.getBoundingClientRect();
-      
-      // If clicking on track (not thumb), jump to that position
-      if (e.clientX < thumbRect.left || e.clientX > thumbRect.right) {
+        document.body.style.userSelect = 'none';
+      } else {
+        // Clicking on track - jump to position
         const scrollbarRect = scrollbar.getBoundingClientRect();
-        const clickPercentage = (e.clientX - scrollbarRect.left) / scrollbarRect.width;
+        const clickPosition = e.clientX - scrollbarRect.left;
+        const thumbWidth = parseFloat(scrollbarThumb.style.width);
+        const targetThumbPos = clickPosition - (thumbWidth / 2);
+        const maxThumbPos = scrollbar.clientWidth - thumbWidth;
+        const percentage = Math.max(0, Math.min(1, targetThumbPos / maxThumbPos));
+        
         const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-        scrollContainer.scrollLeft = clickPercentage * maxScroll;
+        scrollContainer.scrollLeft = percentage * maxScroll;
       }
     };
 
@@ -104,12 +102,10 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       if (!isDragging) return;
       
       const dx = e.clientX - startX;
-      const containerWidth = scrollContainer.clientWidth;
-      const scrollWidth = scrollContainer.scrollWidth;
-      const maxScroll = scrollWidth - containerWidth;
-      
       const thumbWidth = parseFloat(scrollbarThumb.style.width);
       const maxThumbMove = scrollbar.clientWidth - thumbWidth;
+      
+      const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
       
       if (maxThumbMove > 0) {
         const scrollRatio = maxScroll / maxThumbMove;
@@ -122,18 +118,17 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     const handleMouseUp = () => {
       if (isDragging) {
         isDragging = false;
-        scrollbarThumb.style.cursor = 'grab';
+        document.body.style.userSelect = '';
       }
     };
 
     scrollContainer.addEventListener('scroll', handleScroll);
-    scrollbar.addEventListener('mousedown', handleThumbMouseDown);
-    scrollbar.addEventListener('click', handleTrackClick);
+    scrollbar.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
     // Initial update
-    updateScrollbarThumb();
+    setTimeout(updateScrollbarThumb, 100);
     
     // Update on window resize
     const handleResize = () => updateScrollbarThumb();
@@ -141,8 +136,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
-      scrollbar.removeEventListener('mousedown', handleThumbMouseDown);
-      scrollbar.removeEventListener('click', handleTrackClick);
+      scrollbar.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('resize', handleResize);
