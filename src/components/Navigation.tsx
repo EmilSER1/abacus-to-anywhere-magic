@@ -39,24 +39,9 @@ export function Navigation() {
       icon: Building2,
     },
     {
-      name: 'Турар',
-      href: '/turar',
-      icon: Users,
-    },
-    {
       name: 'Поиск',
       href: '/search',
       icon: Search,
-    },
-    {
-      name: 'Консолидация',
-      href: '/consolidation',
-      icon: BarChart3,
-    },
-    {
-      name: 'Таблица соединения',
-      href: '/connections',
-      icon: Database,
     },
     {
       name: 'Админ',

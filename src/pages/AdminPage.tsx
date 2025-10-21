@@ -1,7 +1,4 @@
 import React, { useState } from 'react';
-import { DataSyncPanel } from '@/components/DataSyncPanel';
-import { CsvUploadPanel } from '@/components/CsvUploadPanel';
-import { ExportWithConnectionsPanel } from '@/components/ExportWithConnectionsPanel';
 import { ImportWithValidationPanel } from '@/components/ImportWithValidationPanel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,19 +7,16 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Settings, 
   Database, 
-  Upload, 
-  Download, 
-  FileText, 
-  RefreshCw,
   Import,
   BarChart3,
   Users,
   Shield,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('data-management');
+  const [activeTab, setActiveTab] = useState('import-export');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -55,18 +49,10 @@ const AdminPage: React.FC = () => {
         {/* Main Admin Tabs */}
         <div className="max-w-7xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 h-12">
-              <TabsTrigger value="data-management" className="gap-2">
-                <Database className="h-4 w-4" />
-                Управление данными
-              </TabsTrigger>
-              <TabsTrigger value="file-operations" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Файловые операции
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-12">
               <TabsTrigger value="import-export" className="gap-2">
                 <Import className="h-4 w-4" />
-                Импорт/Экспорт
+                Импорт данных
               </TabsTrigger>
               <TabsTrigger value="system-settings" className="gap-2">
                 <Settings className="h-4 w-4" />
@@ -74,47 +60,30 @@ const AdminPage: React.FC = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Data Management Tab */}
-            <TabsContent value="data-management" className="space-y-6">
+            {/* Import/Export Tab */}
+            <TabsContent value="import-export" className="space-y-6">
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold">Управление данными</h2>
+                <h2 className="text-2xl font-semibold">Импорт данных</h2>
                 <p className="text-muted-foreground">
-                  Синхронизация и загрузка данных из различных источников
+                  Импорт данных проектировщиков с валидацией
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="max-w-4xl mx-auto">
                 <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <RefreshCw className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                        <Import className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       </div>
-                      Синхронизация из JSON
+                      Импорт с валидацией
                     </CardTitle>
                     <CardDescription>
-                      Загрузка и синхронизация данных из JSON файлов с автоматической обработкой
+                      Импорт данных с расширенной валидацией и проверкой целостности
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <DataSyncPanel />
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                        <Upload className="h-5 w-5 text-green-600 dark:text-green-400" />
-                      </div>
-                      Загрузка CSV файлов
-                    </CardTitle>
-                    <CardDescription>
-                      Импорт данных из CSV файлов с валидацией и автоматическим форматированием
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <CsvUploadPanel />
+                    <ImportWithValidationPanel />
                   </CardContent>
                 </Card>
               </div>
@@ -125,7 +94,7 @@ const AdminPage: React.FC = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        СТАТУС СИНХРОНИЗАЦИИ
+                        СТАТУС СИСТЕМЫ
                       </CardTitle>
                       <Database className="h-4 w-4 text-blue-500" />
                     </div>
@@ -133,7 +102,7 @@ const AdminPage: React.FC = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">Готов</div>
                     <p className="text-xs text-muted-foreground">
-                      Система готова к загрузке данных
+                      Система готова к работе
                     </p>
                   </CardContent>
                 </Card>
@@ -142,7 +111,7 @@ const AdminPage: React.FC = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        ПОСЛЕДНЯЯ СИНХРОНИЗАЦИЯ
+                        ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ
                       </CardTitle>
                       <RefreshCw className="h-4 w-4 text-green-500" />
                     </div>
@@ -150,7 +119,7 @@ const AdminPage: React.FC = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">--</div>
                     <p className="text-xs text-muted-foreground">
-                      Данные еще не синхронизированы
+                      Данные еще не обновлялись
                     </p>
                   </CardContent>
                 </Card>
@@ -169,98 +138,6 @@ const AdminPage: React.FC = () => {
                     <p className="text-xs text-muted-foreground">
                       Записей в системе
                     </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* File Operations Tab */}
-            <TabsContent value="file-operations" className="space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold">Файловые операции</h2>
-                <p className="text-muted-foreground">
-                  Работа с файлами, шаблонами и документами
-                </p>
-              </div>
-              
-              <div className="max-w-4xl mx-auto">
-                <Card className="shadow-lg border-2">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                        <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      Управление файлами
-                    </CardTitle>
-                    <CardDescription>
-                      Загрузка, обработка и экспорт файлов различных форматов
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-2">Поддерживаемые форматы:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline">CSV</Badge>
-                          <Badge variant="outline">JSON</Badge>
-                          <Badge variant="outline">XLSX</Badge>
-                        </div>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-2">Операции:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary">Импорт</Badge>
-                          <Badge variant="secondary">Экспорт</Badge>
-                          <Badge variant="secondary">Валидация</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Import/Export Tab */}
-            <TabsContent value="import-export" className="space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold">Импорт и экспорт данных</h2>
-                <p className="text-muted-foreground">
-                  Расширенные возможности импорта и экспорта с валидацией
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                        <Download className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      Экспорт со связями
-                    </CardTitle>
-                    <CardDescription>
-                      Экспорт данных с сохранением всех связей между отделениями и кабинетами
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ExportWithConnectionsPanel />
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-2 hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                        <Import className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      Импорт с валидацией
-                    </CardTitle>
-                    <CardDescription>
-                      Импорт данных с расширенной валидацией и проверкой целостности
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ImportWithValidationPanel />
                   </CardContent>
                 </Card>
               </div>

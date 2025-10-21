@@ -7,7 +7,7 @@ export interface ProjectorEquipmentItem {
   "ОТДЕЛЕНИЕ": string;
   "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ": string;
   "КОД ПОМЕЩЕНИЯ": string;
-  "ЭТАЖ": number;
+  "ЭТАЖ": string;
   "БЛОК": string;
   "Площадь (м2)"?: number;
   "Код оборудования"?: string;

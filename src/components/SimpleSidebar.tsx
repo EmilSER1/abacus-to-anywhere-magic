@@ -34,27 +34,9 @@ const getNavItems = (userRole: string | null) => [
     allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
-    title: "Турар",
-    url: "/turar", 
-    icon: Stethoscope,
-    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
-  },
-  {
     title: "Поиск",
     url: "/search",
     icon: Search,
-    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
-  },
-  {
-    title: "Консолидация",
-    url: "/consolidation",
-    icon: BarChart3,
-    allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
-  },
-  {
-    title: "Таблица соединения",
-    url: "/connections",
-    icon: Database,
     allowedRoles: ['admin', 'staff', 'user'] as UserRole[]
   },
   {
