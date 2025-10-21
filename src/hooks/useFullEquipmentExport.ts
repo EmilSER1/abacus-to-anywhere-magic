@@ -76,29 +76,54 @@ export const useFullEquipmentExport = () => {
   return useQuery({
     queryKey: ["full-equipment-export"],
     queryFn: async () => {
-      // Get all equipment with their room information
-      const { data, error } = await supabase
+      console.log("Starting full equipment export...");
+      
+      // Get total count first
+      const { count } = await supabase
         .from("equipment")
-        .select(`
-          *,
-          projector_floors!equipment_room_id_fkey (
-            "ЭТАЖ",
-            "БЛОК",
-            "ОТДЕЛЕНИЕ",
-            "КОД ПОМЕЩЕНИЯ",
-            "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ",
-            "Площадь (м2)"
-          )
-        `)
-        .order("created_at", { ascending: false });
+        .select("*", { count: "exact", head: true });
+      
+      console.log(`Total equipment records: ${count}`);
+      
+      // Fetch all data using pagination to avoid 1000 record limit
+      const PAGE_SIZE = 1000;
+      const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
+      let allData: any[] = [];
+      
+      for (let page = 0; page < totalPages; page++) {
+        const start = page * PAGE_SIZE;
+        const end = start + PAGE_SIZE - 1;
+        
+        console.log(`Fetching page ${page + 1}/${totalPages} (records ${start}-${end})`);
+        
+        const { data, error } = await supabase
+          .from("equipment")
+          .select(`
+            *,
+            projector_floors!equipment_room_id_fkey (
+              "ЭТАЖ",
+              "БЛОК",
+              "ОТДЕЛЕНИЕ",
+              "КОД ПОМЕЩЕНИЯ",
+              "НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ",
+              "Площадь (м2)"
+            )
+          `)
+          .range(start, end)
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching full equipment data:", error);
-        throw error;
+        if (error) {
+          console.error(`Error fetching page ${page + 1}:`, error);
+          throw error;
+        }
+        
+        allData = [...allData, ...(data || [])];
       }
+      
+      console.log(`Fetched ${allData.length} total equipment records`);
 
       // Transform the data into a flattened structure
-      const transformedData: FullEquipmentData[] = (data || []).map((item: any) => {
+      const transformedData: FullEquipmentData[] = allData.map((item: any) => {
         const room = item.projector_floors;
         
         return {
