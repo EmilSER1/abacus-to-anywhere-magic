@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           documents: Json | null
           equipment_code: string | null
+          equipment_code_required: string | null
           equipment_name: string | null
           equipment_type: string | null
           id: string
@@ -39,6 +40,7 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           equipment_code?: string | null
+          equipment_code_required?: string | null
           equipment_name?: string | null
           equipment_type?: string | null
           id?: string
@@ -57,6 +59,7 @@ export type Database = {
           created_at?: string
           documents?: Json | null
           equipment_code?: string | null
+          equipment_code_required?: string | null
           equipment_name?: string | null
           equipment_type?: string | null
           id?: string

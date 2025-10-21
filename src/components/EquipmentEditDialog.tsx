@@ -33,6 +33,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
     equipment_code: '',
     equipment_name: '',
     model_name: '',
+    equipment_code_required: '',
     equipment_type: '' as 'МИ' | 'не МИ' | '',
     brand: '',
     country: '',
@@ -52,6 +53,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         equipment_code: equipment.equipment_code || '',
         equipment_name: equipment.equipment_name || '',
         model_name: equipment.model_name || '',
+        equipment_code_required: equipment.equipment_code_required || '',
         equipment_type: equipment.equipment_type || '',
         brand: equipment.brand || '',
         country: equipment.country || '',
@@ -67,6 +69,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         equipment_code: '',
         equipment_name: '',
         model_name: '',
+        equipment_code_required: '',
         equipment_type: '',
         brand: '',
         country: '',
@@ -160,6 +163,16 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               id="model_name"
               value={formData.model_name}
               onChange={(e) => setFormData({ ...formData, model_name: e.target.value })}
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="equipment_code_required">Код оборудования*</Label>
+            <Input
+              id="equipment_code_required"
+              value={formData.equipment_code_required}
+              onChange={(e) => setFormData({ ...formData, equipment_code_required: e.target.value })}
               disabled={!canEdit}
             />
           </div>

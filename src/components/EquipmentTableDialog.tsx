@@ -78,6 +78,7 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
                 <TableHead>Код оборудования</TableHead>
                 <TableHead>Наименование</TableHead>
                 <TableHead>Наименование (модель)</TableHead>
+                <TableHead>Код оборудования*</TableHead>
                 <TableHead>Вид</TableHead>
                 <TableHead>Бренд</TableHead>
                 <TableHead>Страна</TableHead>
@@ -93,6 +94,7 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
                     <TableCell className="font-mono text-xs">{item.equipment_code || '-'}</TableCell>
                     <TableCell className="font-medium">{item.equipment_name || '-'}</TableCell>
                     <TableCell>{item.model_name || '-'}</TableCell>
+                    <TableCell className="font-mono text-xs">{item.equipment_code_required || '-'}</TableCell>
                     <TableCell>
                       {item.equipment_type ? (
                         <span className={`px-2 py-1 rounded text-xs ${

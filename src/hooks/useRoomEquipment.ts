@@ -8,6 +8,7 @@ export interface Equipment {
   equipment_code: string | null;
   equipment_name: string | null;
   model_name: string | null;
+  equipment_code_required: string | null;
   equipment_type: 'МИ' | 'не МИ' | null;
   brand: string | null;
   country: string | null;
