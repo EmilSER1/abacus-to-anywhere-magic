@@ -201,419 +201,400 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
           Нет оборудования в этом помещении
         </div>
       ) : (
-        <>
-        <div ref={scrollContainerRef} className="overflow-x-auto">
-        <Table>
-          <TableHeader className="sticky top-0 z-20 bg-muted/30">
-            <TableRow>
-              <TableHead className="bg-muted/30">Код оборудования</TableHead>
-              <TableHead className="bg-muted/30">Наименование</TableHead>
-              <TableHead className="bg-muted/30">Наименование (модель)</TableHead>
-              <TableHead className="bg-muted/30">Код оборудования*</TableHead>
-              <TableHead className="bg-muted/30">Вид</TableHead>
-              <TableHead className="bg-muted/30">Бренд</TableHead>
-              <TableHead className="bg-muted/30">Страна</TableHead>
-              <TableHead className="bg-muted/30">Спецификация</TableHead>
-              <TableHead className="bg-muted/30">Документы</TableHead>
-              <TableHead className="bg-muted/30">Стандарт</TableHead>
-              <TableHead className="text-right sticky right-0 bg-muted/30 shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-30">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {equipment.map((eq) => (
-              <React.Fragment key={eq.id}>
+        <div className="relative">
+          <div ref={scrollContainerRef} className="overflow-x-auto">
+            <Table>
+              <TableHeader className="sticky top-0 z-20 bg-muted/30">
                 <TableRow>
-                  <TableCell>{eq.equipment_code || '-'}</TableCell>
-                  <TableCell className="font-medium">{eq.equipment_name || '-'}</TableCell>
-                  <TableCell>{eq.model_name || '-'}</TableCell>
-                  <TableCell>{eq.equipment_code_required || '-'}</TableCell>
-                  <TableCell>
-                    {eq.equipment_type ? (
-                      <Badge variant={eq.equipment_type === 'МИ' ? 'default' : 'secondary'}>
-                        {eq.equipment_type}
-                      </Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>{eq.brand || '-'}</TableCell>
-                  <TableCell>{eq.country || '-'}</TableCell>
-                  <TableCell className="max-w-xs truncate">{eq.specification || '-'}</TableCell>
-                  <TableCell>
-                    {eq.documents && Array.isArray(eq.documents) && eq.documents.length > 0 ? (
-                      <div className="flex flex-col gap-1">
-                        {eq.documents.map((doc: any, idx: number) => (
-                          <a
-                            key={idx}
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline truncate max-w-[150px]"
-                            title={doc.url}
-                          >
-                            {doc.name || `Документ ${idx + 1}`}
-                          </a>
-                        ))}
-                      </div>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>{eq.standard || '-'}</TableCell>
-                  <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
-                    <div className="flex justify-end gap-2">
-                      {canEdit() && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => togglePurchase(eq.id)}
-                            title="Закупочная информация"
-                          >
-                            <DollarSign className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      {hasSpecs(eq) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleSpecs(eq.id)}
-                          title="Технические характеристики"
-                        >
-                          {expandedSpecs.includes(eq.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                      {canEdit() && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(eq)}
-                            title="Редактировать"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleteConfirm(eq)}
-                            title="Удалить"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableHead className="bg-muted/30">Код оборудования</TableHead>
+                  <TableHead className="bg-muted/30">Наименование</TableHead>
+                  <TableHead className="bg-muted/30">Наименование (модель)</TableHead>
+                  <TableHead className="bg-muted/30">Код оборудования*</TableHead>
+                  <TableHead className="bg-muted/30">Вид</TableHead>
+                  <TableHead className="bg-muted/30">Бренд</TableHead>
+                  <TableHead className="bg-muted/30">Страна</TableHead>
+                  <TableHead className="bg-muted/30">Спецификация</TableHead>
+                  <TableHead className="bg-muted/30">Документы</TableHead>
+                  <TableHead className="bg-muted/30">Стандарт</TableHead>
+                  <TableHead className="text-right sticky right-0 bg-muted/30 shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-30">Действия</TableHead>
                 </TableRow>
-                {canEdit() && expandedPurchase.includes(eq.id) && (
-                  <TableRow className="bg-accent/20">
-                    <TableCell colSpan={11}>
-                      <div className="p-4 space-y-4">
-                        <h4 className="font-semibold text-sm mb-3">Закупочная информация</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {eq.purchase_price && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Цена закупа</div>
-                              <div className="text-sm font-medium">
-                                {new Intl.NumberFormat('ru-RU').format(eq.purchase_price)} {eq.purchase_currency || ''}
-                              </div>
-                            </div>
+              </TableHeader>
+              <TableBody>
+                {equipment.map((eq) => (
+                  <React.Fragment key={eq.id}>
+                    <TableRow>
+                      <TableCell>{eq.equipment_code || '-'}</TableCell>
+                      <TableCell className="font-medium">{eq.equipment_name || '-'}</TableCell>
+                      <TableCell>{eq.model_name || '-'}</TableCell>
+                      <TableCell>{eq.equipment_code_required || '-'}</TableCell>
+                      <TableCell>
+                        {eq.equipment_type ? (
+                          <Badge variant={eq.equipment_type === 'МИ' ? 'default' : 'secondary'}>
+                            {eq.equipment_type}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>{eq.brand || '-'}</TableCell>
+                      <TableCell>{eq.country || '-'}</TableCell>
+                      <TableCell className="max-w-xs truncate">{eq.specification || '-'}</TableCell>
+                      <TableCell>
+                        {eq.documents && Array.isArray(eq.documents) && eq.documents.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {eq.documents.map((doc: any, idx: number) => (
+                              <a
+                                key={idx}
+                                href={doc.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline truncate max-w-[150px]"
+                                title={doc.url}
+                              >
+                                {doc.name || `Документ ${idx + 1}`}
+                              </a>
+                            ))}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>{eq.standard || '-'}</TableCell>
+                      <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
+                        <div className="flex justify-end gap-2">
+                          {canEdit() && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => togglePurchase(eq.id)}
+                                title="Закупочная информация"
+                              >
+                                <DollarSign className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
-                          {eq.price_updated_at && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Дата обновления</div>
-                              <div className="text-sm font-medium">
-                                {new Date(eq.price_updated_at).toLocaleDateString('ru-RU')}
-                              </div>
-                            </div>
+                          {hasSpecs(eq) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleSpecs(eq.id)}
+                              title="Технические характеристики"
+                            >
+                              {expandedSpecs.includes(eq.id) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
                           )}
-                          {eq.incoterms && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Условия инкотермс</div>
-                              <div className="text-sm font-medium">{eq.incoterms}</div>
-                            </div>
+                          {canEdit() && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(eq)}
+                                title="Редактировать"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteConfirm(eq)}
+                                title="Удалить"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
                           )}
-                          {eq.supplier && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Поставщик</div>
-                              <div className="text-sm font-medium">{eq.supplier}</div>
-                            </div>
-                          )}
-                          {eq.supplier_status && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Статус поставщика</div>
-                              <div className="text-sm font-medium">
-                                <Badge variant="outline">{eq.supplier_status}</Badge>
-                              </div>
-                            </div>
-                          )}
-                          {eq.supplier_contacts && eq.supplier_contacts.length > 0 && (
-                            <div className="col-span-2 md:col-span-3">
-                              <div className="text-xs text-muted-foreground mb-2">Контакты</div>
-                              <div className="space-y-3">
-                                {eq.supplier_contacts.map((contact: any, idx: number) => (
-                                  <div key={idx} className="border rounded-lg p-3 space-y-1">
-                                    {contact.name && (
-                                      <div className="font-medium">{contact.name}</div>
-                                    )}
-                                    {contact.phones && contact.phones.length > 0 && (
-                                      <div className="text-xs flex flex-wrap gap-1">
-                                        <span className="text-muted-foreground">Тел: </span>
-                                        {contact.phones.map((phone: string, pIdx: number) => (
-                                          <a 
-                                            key={pIdx}
-                                            href={`tel:${phone.replace(/\s/g, '')}`}
-                                            className="text-primary hover:underline"
-                                          >
-                                            {phone}{pIdx < contact.phones.length - 1 ? ',' : ''}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {contact.emails && contact.emails.length > 0 && (
-                                      <div className="text-xs flex flex-wrap gap-1">
-                                        <span className="text-muted-foreground">Email: </span>
-                                        {contact.emails.map((email: string, eIdx: number) => (
-                                          <a 
-                                            key={eIdx}
-                                            href={`mailto:${email}`}
-                                            className="text-primary hover:underline"
-                                          >
-                                            {email}{eIdx < contact.emails.length - 1 ? ',' : ''}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {contact.city && (
-                                      <div className="text-xs">
-                                        <span className="text-muted-foreground">Город: </span>
-                                        {contact.city}
-                                      </div>
-                                    )}
-                                    {contact.address && (
-                                      <div className="text-xs">
-                                        <span className="text-muted-foreground">Адрес: </span>
-                                        <a 
-                                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:underline"
-                                        >
-                                          {contact.address}
-                                        </a>
-                                      </div>
-                                    )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {canEdit() && expandedPurchase.includes(eq.id) && (
+                      <TableRow className="bg-accent/20">
+                        <TableCell colSpan={11}>
+                          <div className="p-4 space-y-4">
+                            <h4 className="font-semibold text-sm mb-3">Закупочная информация</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {eq.purchase_price && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Цена закупа</div>
+                                  <div className="text-sm font-medium">
+                                    {new Intl.NumberFormat('ru-RU').format(eq.purchase_price)} {eq.purchase_currency || ''}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
+                              {eq.price_updated_at && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Дата обновления</div>
+                                  <div className="text-sm font-medium">
+                                    {new Date(eq.price_updated_at).toLocaleDateString('ru-RU')}
+                                  </div>
+                                </div>
+                              )}
+                              {eq.incoterms && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Условия инкотермс</div>
+                                  <div className="text-sm font-medium">{eq.incoterms}</div>
+                                </div>
+                              )}
+                              {eq.supplier && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Поставщик</div>
+                                  <div className="text-sm font-medium">{eq.supplier}</div>
+                                </div>
+                              )}
+                              {eq.supplier_status && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Статус поставщика</div>
+                                  <div className="text-sm font-medium">
+                                    <Badge variant="outline">{eq.supplier_status}</Badge>
+                                  </div>
+                                </div>
+                              )}
+                              {eq.supplier_contacts && eq.supplier_contacts.length > 0 && (
+                                <div className="col-span-2 md:col-span-3">
+                                  <div className="text-xs text-muted-foreground mb-2">Контакты</div>
+                                  <div className="space-y-3">
+                                    {eq.supplier_contacts.map((contact: any, idx: number) => (
+                                      <div key={idx} className="border rounded-lg p-3 space-y-1">
+                                        {contact.name && (
+                                          <div className="font-medium">{contact.name}</div>
+                                        )}
+                                        {contact.phones && contact.phones.length > 0 && (
+                                          <div className="text-xs flex flex-wrap gap-1">
+                                            <span className="text-muted-foreground">Тел: </span>
+                                            {contact.phones.map((phone: string, pIdx: number) => (
+                                              <a 
+                                                key={pIdx}
+                                                href={`tel:${phone.replace(/\s/g, '')}`}
+                                                className="text-primary hover:underline"
+                                              >
+                                                {phone}{pIdx < contact.phones.length - 1 ? ',' : ''}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {contact.emails && contact.emails.length > 0 && (
+                                          <div className="text-xs flex flex-wrap gap-1">
+                                            <span className="text-muted-foreground">Email: </span>
+                                            {contact.emails.map((email: string, eIdx: number) => (
+                                              <a 
+                                                key={eIdx}
+                                                href={`mailto:${email}`}
+                                                className="text-primary hover:underline"
+                                              >
+                                                {email}{eIdx < contact.emails.length - 1 ? ',' : ''}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-                {expandedSpecs.includes(eq.id) && (
-                  <TableRow className="bg-muted/50">
-                    <TableCell colSpan={11}>
-                      <div className="p-4 space-y-4">
-                        <h4 className="font-semibold text-sm mb-3">Технические характеристики</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {eq.dimensions && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Размеры (Ш/Д/В), мм</div>
-                              <div className="text-sm font-medium">{eq.dimensions}</div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {expandedSpecs.includes(eq.id) && (
+                      <TableRow className="bg-accent/20">
+                        <TableCell colSpan={11}>
+                          <div className="p-4 space-y-4">
+                            <h4 className="font-semibold text-sm mb-3">Технические характеристики</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {eq.dimensions && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Габариты</div>
+                                  <div className="text-sm font-medium">{eq.dimensions}</div>
+                                </div>
+                              )}
+                              {eq.humidity_temperature && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Влажность/Температура</div>
+                                  <div className="text-sm font-medium">{eq.humidity_temperature}</div>
+                                </div>
+                              )}
+                              {eq.voltage && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Напряжение</div>
+                                  <div className="text-sm font-medium">{eq.voltage}</div>
+                                </div>
+                              )}
+                              {eq.frequency && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Частота</div>
+                                  <div className="text-sm font-medium">{eq.frequency}</div>
+                                </div>
+                              )}
+                              {eq.power_watts && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Мощность (Вт)</div>
+                                  <div className="text-sm font-medium">{eq.power_watts}</div>
+                                </div>
+                              )}
+                              {eq.power_watts_peak && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Пиковая мощность (Вт)</div>
+                                  <div className="text-sm font-medium">{eq.power_watts_peak}</div>
+                                </div>
+                              )}
+                              {eq.ups && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">ИБП</div>
+                                  <div className="text-sm font-medium">{eq.ups}</div>
+                                </div>
+                              )}
+                              {eq.floor_load && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Нагрузка на пол</div>
+                                  <div className="text-sm font-medium">{eq.floor_load}</div>
+                                </div>
+                              )}
+                              {eq.floor_load_heaviest && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Макс. нагрузка на пол</div>
+                                  <div className="text-sm font-medium">{eq.floor_load_heaviest}</div>
+                                </div>
+                              )}
+                              {eq.ceiling_load_heaviest && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Макс. нагрузка на потолок</div>
+                                  <div className="text-sm font-medium">{eq.ceiling_load_heaviest}</div>
+                                </div>
+                              )}
+                              {eq.chiller && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Чиллер</div>
+                                  <div className="text-sm font-medium">{eq.chiller}</div>
+                                </div>
+                              )}
+                              {eq.precision_ac && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Прецизионный кондиционер</div>
+                                  <div className="text-sm font-medium">{eq.precision_ac}</div>
+                                </div>
+                              )}
+                              {eq.exhaust && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Вытяжка</div>
+                                  <div className="text-sm font-medium">{eq.exhaust}</div>
+                                </div>
+                              )}
+                              {eq.drainage && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Дренаж</div>
+                                  <div className="text-sm font-medium">{eq.drainage}</div>
+                                </div>
+                              )}
+                              {eq.hot_water && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Горячая вода</div>
+                                  <div className="text-sm font-medium">{eq.hot_water}</div>
+                                </div>
+                              )}
+                              {eq.cold_water && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Холодная вода</div>
+                                  <div className="text-sm font-medium">{eq.cold_water}</div>
+                                </div>
+                              )}
+                              {eq.distilled_water && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Дистиллированная вода</div>
+                                  <div className="text-sm font-medium">{eq.distilled_water}</div>
+                                </div>
+                              )}
+                              {eq.neutralization_tank && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Бак нейтрализации</div>
+                                  <div className="text-sm font-medium">{eq.neutralization_tank}</div>
+                                </div>
+                              )}
+                              {eq.data_requirements && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Требования к данным</div>
+                                  <div className="text-sm font-medium">{eq.data_requirements}</div>
+                                </div>
+                              )}
+                              {eq.emergency_buttons && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Кнопки экстренного вызова</div>
+                                  <div className="text-sm font-medium">{eq.emergency_buttons}</div>
+                                </div>
+                              )}
+                              {eq.xray_warning_lamps && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Лампы предупреждения о рентгене</div>
+                                  <div className="text-sm font-medium">{eq.xray_warning_lamps}</div>
+                                </div>
+                              )}
+                              {eq.raised_floor && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Фальшпол</div>
+                                  <div className="text-sm font-medium">{eq.raised_floor}</div>
+                                </div>
+                              )}
+                              {eq.ceiling_drops && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Потолочные свесы</div>
+                                  <div className="text-sm font-medium">{eq.ceiling_drops}</div>
+                                </div>
+                              )}
+                              {eq.medical_gas_o2 && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Медгазы (O2)</div>
+                                  <div className="text-sm font-medium">{eq.medical_gas_o2}</div>
+                                </div>
+                              )}
+                              {eq.medical_gas_ma4 && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Медгазы (MA4)</div>
+                                  <div className="text-sm font-medium">{eq.medical_gas_ma4}</div>
+                                </div>
+                              )}
+                              {eq.medical_gas_ma7 && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Медгазы (MA7)</div>
+                                  <div className="text-sm font-medium">{eq.medical_gas_ma7}</div>
+                                </div>
+                              )}
+                              {eq.medical_gas_n2o && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Медгазы (N2O)</div>
+                                  <div className="text-sm font-medium">{eq.medical_gas_n2o}</div>
+                                </div>
+                              )}
+                              {eq.medical_gas_other && (
+                                <div>
+                                  <div className="text-xs text-muted-foreground">Медгазы (Другие)</div>
+                                  <div className="text-sm font-medium">{eq.medical_gas_other}</div>
+                                </div>
+                              )}
+                              {eq.other_requirements && (
+                                <div className="col-span-2 md:col-span-3">
+                                  <div className="text-xs text-muted-foreground">Прочие требования</div>
+                                  <div className="text-sm font-medium">{eq.other_requirements}</div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {eq.humidity_temperature && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Влажность и температура</div>
-                              <div className="text-sm font-medium">{eq.humidity_temperature}</div>
-                            </div>
-                          )}
-                          {eq.voltage && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Вольт</div>
-                              <div className="text-sm font-medium">{eq.voltage}</div>
-                            </div>
-                          )}
-                          {eq.frequency && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Частота</div>
-                              <div className="text-sm font-medium">{eq.frequency}</div>
-                            </div>
-                          )}
-                          {eq.power_watts && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Мощность в Ватт</div>
-                              <div className="text-sm font-medium">{eq.power_watts}</div>
-                            </div>
-                          )}
-                          {eq.power_watts_peak && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Мощность Ватт пиковая</div>
-                              <div className="text-sm font-medium">{eq.power_watts_peak}</div>
-                            </div>
-                          )}
-                          {eq.ups && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Источник бесперебойного питания</div>
-                              <div className="text-sm font-medium">{eq.ups}</div>
-                            </div>
-                          )}
-                          {eq.floor_load && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Нагрузка на пол</div>
-                              <div className="text-sm font-medium">{eq.floor_load}</div>
-                            </div>
-                          )}
-                          {eq.floor_load_heaviest && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Самая тяжелая часть</div>
-                              <div className="text-sm font-medium">{eq.floor_load_heaviest}</div>
-                            </div>
-                          )}
-                          {eq.ceiling_load_heaviest && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Нагрузка на потолок (самая тяжелая часть)</div>
-                              <div className="text-sm font-medium">{eq.ceiling_load_heaviest}</div>
-                            </div>
-                          )}
-                          {eq.chiller !== null && eq.chiller !== undefined && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Чиллер</div>
-                              <div className="text-sm font-medium">{eq.chiller ? 'Да' : 'Нет'}</div>
-                            </div>
-                          )}
-                          {eq.precision_ac !== null && eq.precision_ac !== undefined && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Прецизионный кондиционер</div>
-                              <div className="text-sm font-medium">{eq.precision_ac ? 'Да' : 'Нет'}</div>
-                            </div>
-                          )}
-                          {eq.exhaust && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Вытяжка (Диаметр и расход)</div>
-                              <div className="text-sm font-medium">{eq.exhaust}</div>
-                            </div>
-                          )}
-                          {eq.drainage && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Дренаж (Диаметр и расход)</div>
-                              <div className="text-sm font-medium">{eq.drainage}</div>
-                            </div>
-                          )}
-                          {eq.hot_water && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Горячая вода (Диаметр и расход)</div>
-                              <div className="text-sm font-medium">{eq.hot_water}</div>
-                            </div>
-                          )}
-                          {eq.cold_water && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Холодная вода (Диаметр и расход)</div>
-                              <div className="text-sm font-medium">{eq.cold_water}</div>
-                            </div>
-                          )}
-                          {eq.distilled_water && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Дистиллированная вода (Диаметр и расход)</div>
-                              <div className="text-sm font-medium">{eq.distilled_water}</div>
-                            </div>
-                          )}
-                          {eq.neutralization_tank && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Дренаж - резервуар для нейтрализации</div>
-                              <div className="text-sm font-medium">{eq.neutralization_tank}</div>
-                            </div>
-                          )}
-                          {eq.data_requirements && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Требования к данным</div>
-                              <div className="text-sm font-medium">{eq.data_requirements}</div>
-                            </div>
-                          )}
-                          {eq.emergency_buttons && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Кнопки экстренного вызова</div>
-                              <div className="text-sm font-medium">{eq.emergency_buttons}</div>
-                            </div>
-                          )}
-                          {eq.xray_warning_lamps && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Рентгеновские предупреждающие лампы</div>
-                              <div className="text-sm font-medium">{eq.xray_warning_lamps}</div>
-                            </div>
-                          )}
-                          {eq.raised_floor && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Фальшпол (Да/Нет и Глубина)</div>
-                              <div className="text-sm font-medium">{eq.raised_floor}</div>
-                            </div>
-                          )}
-                          {eq.ceiling_drops && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Опуски плит (Да/Нет и Глубина)</div>
-                              <div className="text-sm font-medium">{eq.ceiling_drops}</div>
-                            </div>
-                          )}
-                          {eq.medical_gas_o2 && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Медгазы (O2)</div>
-                              <div className="text-sm font-medium">{eq.medical_gas_o2}</div>
-                            </div>
-                          )}
-                          {eq.medical_gas_ma4 && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Медгазы (MA4)</div>
-                              <div className="text-sm font-medium">{eq.medical_gas_ma4}</div>
-                            </div>
-                          )}
-                          {eq.medical_gas_ma7 && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Медгазы (MA7)</div>
-                              <div className="text-sm font-medium">{eq.medical_gas_ma7}</div>
-                            </div>
-                          )}
-                          {eq.medical_gas_n2o && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Медгазы (N2O)</div>
-                              <div className="text-sm font-medium">{eq.medical_gas_n2o}</div>
-                            </div>
-                          )}
-                          {eq.medical_gas_other && (
-                            <div>
-                              <div className="text-xs text-muted-foreground">Медгазы (Другие)</div>
-                              <div className="text-sm font-medium">{eq.medical_gas_other}</div>
-                            </div>
-                          )}
-                          {eq.other_requirements && (
-                            <div className="col-span-2 md:col-span-3">
-                              <div className="text-xs text-muted-foreground">Прочие требования</div>
-                              <div className="text-sm font-medium">{eq.other_requirements}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {/* Custom horizontal scrollbar */}
+          <div 
+            ref={scrollbarRef}
+            className="w-full h-4 bg-muted/80 backdrop-blur-sm border-t border-border mt-2"
+          >
+            <div className="h-full bg-primary/70 rounded-full cursor-grab active:cursor-grabbing hover:bg-primary transition-colors" />
+          </div>
         </div>
-        
-        {/* Fixed scrollbar at bottom of screen, accounting for sidebar */}
-        <div 
-          ref={scrollbarRef}
-          className="fixed bottom-0 left-0 md:left-[280px] right-0 h-4 bg-muted/80 backdrop-blur-sm border-t border-border z-50"
-        >
-          <div className="h-full bg-primary/70 rounded-full cursor-grab active:cursor-grabbing hover:bg-primary transition-colors" />
-        </div>
-        </>
       )}
 
       <EquipmentDialog
