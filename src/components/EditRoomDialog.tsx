@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Edit, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUserRole } from '@/hooks/useUserRole'
+import { supabase } from '@/integrations/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Room {
   id: string
@@ -32,7 +34,8 @@ interface EditRoomDialogProps {
 export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { canEdit } = useUserRole()
+  const { canViewAdminPanel } = useUserRole()
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     name: room.name,
     code: room.code || '',
@@ -40,7 +43,7 @@ export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) 
     description: room.description || ''
   })
 
-  if (!canEdit()) {
+  if (!canViewAdminPanel()) {
     return null
   }
 
@@ -49,12 +52,25 @@ export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) 
     setLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Обновляем кабинет по ID
+      const { error } = await supabase
+        .from('projector_floors')
+        .update({
+          'НАИМЕНОВАНИЕ ПОМЕЩЕНИЯ': formData.name.trim(),
+          'КОД ПОМЕЩЕНИЯ': formData.code.trim(),
+          'Площадь (м2)': formData.area
+        })
+        .eq('id', room.id)
+
+      if (error) throw error
+      
+      // Обновляем кэш
+      queryClient.invalidateQueries({ queryKey: ['floors-data'] })
       
       toast.success('Кабинет успешно обновлен')
       setOpen(false)
     } catch (error) {
+      console.error('Error updating room:', error)
       toast.error('Ошибка при обновлении кабинета')
     } finally {
       setLoading(false)

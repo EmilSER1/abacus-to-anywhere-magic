@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Download } from 'lucide-react';
+import { Building2, Download, Edit, Plus } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { EquipmentTable } from '@/components/EquipmentTable';
+import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
+import { EditRoomDialog } from '@/components/EditRoomDialog';
 
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData, FloorData } from '@/hooks/useFloorsData';
@@ -387,6 +389,7 @@ const FloorsPage: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{department.name}</span>
                                 <Badge variant="secondary">{department.block}</Badge>
+                                <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {department.rooms.length} помещений • {department.equipmentCount} оборудования • {department.totalArea.toFixed(1)} м²
@@ -407,6 +410,7 @@ const FloorsPage: React.FC = () => {
                                         <div className="flex items-center gap-2">
                                           <span className="font-medium text-sm">{room.name}</span>
                                           <Badge variant="outline" className="text-xs">{room.code}</Badge>
+                                          <EditRoomDialog room={{ id: room.id, name: room.name, code: room.code, area: room.area }} />
                                         </div>
                                         <div className="text-xs text-muted-foreground">
                                           {room.area} м²
