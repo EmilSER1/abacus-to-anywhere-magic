@@ -40,29 +40,19 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     const scrollContainer = scrollContainerRef.current;
     const scrollbar = scrollbarRef.current;
     
-    if (!scrollContainer || !scrollbar) {
-      console.log('Missing refs:', { scrollContainer: !!scrollContainer, scrollbar: !!scrollbar });
-      return;
-    }
+    if (!scrollContainer || !scrollbar) return;
 
     const scrollbarThumb = scrollbar.firstChild as HTMLElement;
-    if (!scrollbarThumb) {
-      console.log('Missing scrollbar thumb');
-      return;
-    }
-
-    console.log('Scrollbar initialized');
+    if (!scrollbarThumb) return;
 
     const updateScrollbarThumb = () => {
       const containerWidth = scrollContainer.clientWidth;
       const scrollWidth = scrollContainer.scrollWidth;
       
-      // Calculate thumb width based on visible content ratio
       const thumbWidthRatio = Math.min(containerWidth / scrollWidth, 1);
       const thumbWidth = thumbWidthRatio * scrollbar.clientWidth;
       scrollbarThumb.style.width = `${thumbWidth}px`;
       
-      // Calculate thumb position
       const maxScroll = scrollWidth - containerWidth;
       if (maxScroll > 0) {
         const scrollPercentage = scrollContainer.scrollLeft / maxScroll;
@@ -73,31 +63,20 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       }
     };
 
-    const handleScroll = () => {
-      updateScrollbarThumb();
-    };
-
     let isDragging = false;
     let startX = 0;
     let startScrollLeft = 0;
 
     const handleMouseDown = (e: MouseEvent) => {
-      console.log('Mouse down on scrollbar');
       const thumbRect = scrollbarThumb.getBoundingClientRect();
       
-      // Check if clicking on the thumb
       if (e.clientX >= thumbRect.left && e.clientX <= thumbRect.right) {
-        console.log('Starting drag on thumb');
         isDragging = true;
         startX = e.clientX;
         startScrollLeft = scrollContainer.scrollLeft;
         e.preventDefault();
-        e.stopPropagation();
         document.body.style.userSelect = 'none';
-        scrollbarThumb.style.opacity = '0.8';
       } else {
-        console.log('Clicking on track');
-        // Clicking on track - jump to position
         const scrollbarRect = scrollbar.getBoundingClientRect();
         const clickPosition = e.clientX - scrollbarRect.left;
         const thumbWidth = parseFloat(scrollbarThumb.style.width);
@@ -113,18 +92,14 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
       
-      console.log('Dragging:', e.clientX);
       const dx = e.clientX - startX;
       const thumbWidth = parseFloat(scrollbarThumb.style.width);
       const maxThumbMove = scrollbar.clientWidth - thumbWidth;
-      
       const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
       
       if (maxThumbMove > 0) {
         const scrollRatio = maxScroll / maxThumbMove;
-        const newScrollLeft = startScrollLeft + (dx * scrollRatio);
-        console.log('New scroll:', newScrollLeft);
-        scrollContainer.scrollLeft = newScrollLeft;
+        scrollContainer.scrollLeft = startScrollLeft + (dx * scrollRatio);
       }
       
       e.preventDefault();
@@ -132,25 +107,20 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
 
     const handleMouseUp = () => {
       if (isDragging) {
-        console.log('Drag ended');
         isDragging = false;
         document.body.style.userSelect = '';
-        scrollbarThumb.style.opacity = '1';
       }
     };
+
+    const handleScroll = () => updateScrollbarThumb();
 
     scrollContainer.addEventListener('scroll', handleScroll);
     scrollbar.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
-    // Initial update with delay
-    setTimeout(() => {
-      updateScrollbarThumb();
-      console.log('Initial scrollbar update complete');
-    }, 200);
+    setTimeout(updateScrollbarThumb, 100);
     
-    // Update on window resize
     const handleResize = () => updateScrollbarThumb();
     window.addEventListener('resize', handleResize);
 
