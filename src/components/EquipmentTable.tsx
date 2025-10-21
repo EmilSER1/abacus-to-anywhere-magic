@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, DollarSign, ChevronLeft } from 'lucide-react';
 import { Equipment, useRoomEquipment, useDeleteEquipment } from '@/hooks/useRoomEquipment';
 import { EquipmentDialog } from './EquipmentDialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,6 +26,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const { data: equipment = [], isLoading } = useRoomEquipment(roomId);
   const deleteEquipment = useDeleteEquipment();
   const { canEdit } = useUserRole();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -84,13 +85,47 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       eq.supplier || eq.supplier_status || (eq.supplier_contacts && eq.supplier_contacts.length > 0));
   };
 
+  const scrollTable = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 400;
+      const newScrollLeft = direction === 'left' 
+        ? scrollContainerRef.current.scrollLeft - scrollAmount
+        : scrollContainerRef.current.scrollLeft + scrollAmount;
+      
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   if (isLoading) {
     return <div className="p-4 text-muted-foreground">Загрузка оборудования...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => scrollTable('left')} 
+            size="sm" 
+            variant="outline"
+            className="gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Влево
+          </Button>
+          <Button 
+            onClick={() => scrollTable('right')} 
+            size="sm" 
+            variant="outline"
+            className="gap-2"
+          >
+            Вправо
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
         <Button onClick={handleAddNew} size="sm" className="gap-2">
           <Plus className="h-4 w-4" />
           Добавить оборудование
@@ -102,6 +137,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
           Нет оборудования в этом помещении
         </div>
       ) : (
+        <div ref={scrollContainerRef} className="overflow-x-auto border rounded-lg">
         <Table>
           <TableHeader className="sticky top-0 z-20 bg-muted/30">
             <TableRow>
@@ -503,6 +539,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
             ))}
           </TableBody>
         </Table>
+        </div>
       )}
 
       <EquipmentDialog
