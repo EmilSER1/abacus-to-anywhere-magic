@@ -103,10 +103,20 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
   };
 
   const handleSave = () => {
+    // Если есть незавершенный документ в полях ввода, добавляем его
+    const finalDocuments = [...formData.documents];
+    if (newDocumentUrl.trim() && newDocumentName.trim()) {
+      finalDocuments.push({ 
+        url: newDocumentUrl.trim(), 
+        name: newDocumentName.trim() 
+      });
+    }
+
     if (isNew) {
       addEquipment.mutate({
         room_id: roomId,
         ...formData,
+        documents: finalDocuments,
         equipment_type: formData.equipment_type || null,
         quantity: null,
         unit: null,
@@ -117,6 +127,7 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
         id: equipment.id,
         room_id: equipment.room_id,
         ...formData,
+        documents: finalDocuments,
         equipment_type: formData.equipment_type || null,
       });
     }

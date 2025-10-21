@@ -115,15 +115,26 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
 
   const handleSave = async () => {
     try {
+      // Если есть незавершенный документ в полях ввода, добавляем его
+      const finalDocuments = [...formData.documents];
+      if (newDocumentUrl.trim() && newDocumentName.trim()) {
+        finalDocuments.push({ 
+          url: newDocumentUrl.trim(), 
+          name: newDocumentName.trim() 
+        });
+      }
+
       if (isNew) {
         await addEquipment.mutateAsync({
           ...formData,
+          documents: finalDocuments,
           room_id: roomId,
           equipment_type: formData.equipment_type || null,
         });
       } else if (equipment) {
         await updateEquipment.mutateAsync({
           ...formData,
+          documents: finalDocuments,
           id: equipment.id,
           room_id: roomId,
           equipment_type: formData.equipment_type || null,
