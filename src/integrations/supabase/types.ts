@@ -24,6 +24,7 @@ export type Database = {
           equipment_name: string | null
           equipment_type: string | null
           id: string
+          model_name: string | null
           notes: string | null
           quantity: string | null
           room_id: string | null
@@ -41,6 +42,7 @@ export type Database = {
           equipment_name?: string | null
           equipment_type?: string | null
           id?: string
+          model_name?: string | null
           notes?: string | null
           quantity?: string | null
           room_id?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           equipment_name?: string | null
           equipment_type?: string | null
           id?: string
+          model_name?: string | null
           notes?: string | null
           quantity?: string | null
           room_id?: string | null

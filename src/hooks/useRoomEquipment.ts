@@ -7,6 +7,7 @@ export interface Equipment {
   room_id: string;
   equipment_code: string | null;
   equipment_name: string | null;
+  model_name: string | null;
   equipment_type: 'МИ' | 'не МИ' | null;
   brand: string | null;
   country: string | null;

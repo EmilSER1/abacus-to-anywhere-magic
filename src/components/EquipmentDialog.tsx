@@ -28,6 +28,7 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
   const [formData, setFormData] = useState({
     equipment_code: '',
     equipment_name: '',
+    model_name: '',
     equipment_type: '' as 'МИ' | 'не МИ' | '',
     brand: '',
     country: '',
@@ -41,6 +42,7 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
       setFormData({
         equipment_code: equipment.equipment_code || '',
         equipment_name: equipment.equipment_name || '',
+        model_name: equipment.model_name || '',
         equipment_type: equipment.equipment_type || '',
         brand: equipment.brand || '',
         country: equipment.country || '',
@@ -52,6 +54,7 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
       setFormData({
         equipment_code: '',
         equipment_name: '',
+        model_name: '',
         equipment_type: '',
         brand: '',
         country: '',
@@ -109,6 +112,15 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
               value={formData.equipment_name}
               onChange={(e) => setFormData({ ...formData, equipment_name: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="model_name">Наименование (модель)</Label>
+            <Input
+              id="model_name"
+              value={formData.model_name}
+              onChange={(e) => setFormData({ ...formData, model_name: e.target.value })}
             />
           </div>
 

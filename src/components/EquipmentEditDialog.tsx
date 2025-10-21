@@ -6,9 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAddEquipment, useUpdateEquipment, Equipment } from "@/hooks/useRoomEquipment";
-import { useEquipmentFiles, EquipmentDocument } from "@/hooks/useEquipmentFiles";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Loader2, X, Download } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface EquipmentEditDialogProps {
@@ -28,29 +27,31 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
 }) => {
   const addEquipment = useAddEquipment();
   const updateEquipment = useUpdateEquipment();
-  const { uploadFile, deleteFile, getFileUrl } = useEquipmentFiles();
   const { canEdit } = useUserRole();
-  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     equipment_code: '',
     equipment_name: '',
+    model_name: '',
     equipment_type: '' as 'МИ' | 'не МИ' | '',
     brand: '',
     country: '',
     specification: '',
-    documents: [] as any[],
+    documents: [] as Array<{ url: string }>,
     standard: '',
     quantity: '',
     unit: '',
     notes: '',
   });
 
+  const [newDocumentUrl, setNewDocumentUrl] = useState('');
+
   useEffect(() => {
     if (equipment && !isNew) {
       setFormData({
         equipment_code: equipment.equipment_code || '',
         equipment_name: equipment.equipment_name || '',
+        model_name: equipment.model_name || '',
         equipment_type: equipment.equipment_type || '',
         brand: equipment.brand || '',
         country: equipment.country || '',
@@ -65,6 +66,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
       setFormData({
         equipment_code: '',
         equipment_name: '',
+        model_name: '',
         equipment_type: '',
         brand: '',
         country: '',
@@ -76,40 +78,29 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         notes: '',
       });
     }
-  }, [equipment, isNew]);
+    setNewDocumentUrl('');
+  }, [equipment, isNew, isOpen]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    const uploadedDocs: EquipmentDocument[] = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const doc = await uploadFile(file, equipment?.id || 'temp');
-      if (doc) {
-        uploadedDocs.push(doc);
-      }
+  const handleAddDocumentUrl = () => {
+    if (!newDocumentUrl.trim()) {
+      toast.error("Введите ссылку на документ");
+      return;
     }
 
     setFormData({
       ...formData,
-      documents: [...formData.documents, ...uploadedDocs],
+      documents: [...formData.documents, { url: newDocumentUrl.trim() }],
     });
-    setUploading(false);
-    e.target.value = '';
+    setNewDocumentUrl('');
+    toast.success("Ссылка добавлена");
   };
 
-  const handleFileDelete = async (doc: EquipmentDocument) => {
-    const success = await deleteFile(doc.url);
-    if (success) {
-      setFormData({
-        ...formData,
-        documents: formData.documents.filter((d: EquipmentDocument) => d.url !== doc.url),
-      });
-      toast.success("Файл удален");
-    }
+  const handleDeleteDocumentUrl = (index: number) => {
+    setFormData({
+      ...formData,
+      documents: formData.documents.filter((_, i) => i !== index),
+    });
+    toast.success("Ссылка удалена");
   };
 
   const handleSave = async () => {
@@ -148,6 +139,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               id="equipment_code"
               value={formData.equipment_code}
               onChange={(e) => setFormData({ ...formData, equipment_code: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
 
@@ -158,6 +150,17 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               value={formData.equipment_name}
               onChange={(e) => setFormData({ ...formData, equipment_name: e.target.value })}
               required
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="model_name">Наименование (модель)</Label>
+            <Input
+              id="model_name"
+              value={formData.model_name}
+              onChange={(e) => setFormData({ ...formData, model_name: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
 
@@ -166,6 +169,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
             <Select
               value={formData.equipment_type}
               onValueChange={(value: 'МИ' | 'не МИ') => setFormData({ ...formData, equipment_type: value })}
+              disabled={!canEdit}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Выберите вид" />
@@ -183,6 +187,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               id="brand"
               value={formData.brand}
               onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
 
@@ -192,6 +197,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               id="country"
               value={formData.country}
               onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
 
@@ -202,52 +208,57 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               value={formData.specification}
               onChange={(e) => setFormData({ ...formData, specification: e.target.value })}
               rows={3}
+              disabled={!canEdit}
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="documents">Документы</Label>
+            <Label>Ссылки на документы</Label>
             {canEdit && (
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <Input
-                  id="documents"
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
+                  type="url"
+                  placeholder="https://example.com/document.pdf"
+                  value={newDocumentUrl}
+                  onChange={(e) => setNewDocumentUrl(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddDocumentUrl();
+                    }
+                  }}
                 />
-                {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <Button
+                  type="button"
+                  onClick={handleAddDocumentUrl}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             )}
             {formData.documents.length > 0 && (
               <div className="space-y-2 mt-2">
-                {formData.documents.map((doc: EquipmentDocument, index: number) => (
+                {formData.documents.map((doc, index) => (
                   <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm truncate max-w-[200px]">{doc.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({(doc.size / 1024).toFixed(2)} KB)
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline flex-1 truncate"
+                    >
+                      {doc.url}
+                    </a>
+                    {canEdit && (
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.open(getFileUrl(doc.url), '_blank')}
+                        onClick={() => handleDeleteDocumentUrl(index)}
                       >
-                        <Download className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </Button>
-                      {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFileDelete(doc)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -260,6 +271,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
               id="standard"
               value={formData.standard}
               onChange={(e) => setFormData({ ...formData, standard: e.target.value })}
+              disabled={!canEdit}
             />
           </div>
         </div>
@@ -268,7 +280,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Отмена
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={!canEdit}>
             Сохранить
           </Button>
         </DialogFooter>

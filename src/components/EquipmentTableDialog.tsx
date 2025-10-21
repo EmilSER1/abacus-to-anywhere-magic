@@ -74,23 +74,25 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Код оборудования</TableHead>
-                  <TableHead>Наименование</TableHead>
-                  <TableHead>Вид</TableHead>
-                  <TableHead>Бренд</TableHead>
-                  <TableHead>Страна</TableHead>
-                  <TableHead>Спецификация</TableHead>
-                  <TableHead>Документы</TableHead>
-                  <TableHead>Стандарт</TableHead>
-                  {canEdit && <TableHead className="w-[100px]">Действия</TableHead>}
-                </TableRow>
+              <TableRow>
+                <TableHead>Код оборудования</TableHead>
+                <TableHead>Наименование</TableHead>
+                <TableHead>Наименование (модель)</TableHead>
+                <TableHead>Вид</TableHead>
+                <TableHead>Бренд</TableHead>
+                <TableHead>Страна</TableHead>
+                <TableHead>Спецификация</TableHead>
+                <TableHead>Документы</TableHead>
+                <TableHead>Стандарт</TableHead>
+                {canEdit && <TableHead className="w-[100px]">Действия</TableHead>}
+              </TableRow>
               </TableHeader>
               <TableBody>
                 {equipment.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono text-xs">{item.equipment_code || '-'}</TableCell>
                     <TableCell className="font-medium">{item.equipment_name || '-'}</TableCell>
+                    <TableCell>{item.model_name || '-'}</TableCell>
                     <TableCell>
                       {item.equipment_type ? (
                         <span className={`px-2 py-1 rounded text-xs ${
@@ -109,7 +111,7 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
                     </TableCell>
                     <TableCell>
                       {item.documents && Array.isArray(item.documents) && item.documents.length > 0 
-                        ? `${item.documents.length} файл(ов)` 
+                        ? `${item.documents.length} ссылок` 
                         : '-'}
                     </TableCell>
                     <TableCell>{item.standard || '-'}</TableCell>
