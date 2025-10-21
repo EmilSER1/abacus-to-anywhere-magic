@@ -389,7 +389,9 @@ const FloorsPage: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{department.name}</span>
                                 <Badge variant="secondary">{department.block}</Badge>
-                                <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
+                                {canEdit() && (
+                                  <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
+                                )}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {department.rooms.length} помещений • {department.equipmentCount} оборудования • {department.totalArea.toFixed(1)} м²
@@ -410,7 +412,9 @@ const FloorsPage: React.FC = () => {
                                         <div className="flex items-center gap-2">
                                           <span className="font-medium text-sm">{room.name}</span>
                                           <Badge variant="outline" className="text-xs">{room.code}</Badge>
-                                          <EditRoomDialog room={{ id: room.id, name: room.name, code: room.code, area: room.area }} />
+                                          {canEdit() && (
+                                            <EditRoomDialog room={{ id: room.id, name: room.name, code: room.code, area: room.area }} />
+                                          )}
                                         </div>
                                         <div className="text-xs text-muted-foreground">
                                           {room.area} м²

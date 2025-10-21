@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Edit, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useUserRole } from '@/hooks/useUserRole'
 import { supabase } from '@/integrations/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -34,7 +33,6 @@ interface EditRoomDialogProps {
 export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { canViewAdminPanel } = useUserRole()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     name: room.name,
@@ -42,10 +40,6 @@ export function EditRoomDialog({ room, type = 'regular' }: EditRoomDialogProps) 
     area: room.area || 0,
     description: room.description || ''
   })
-
-  if (!canViewAdminPanel()) {
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

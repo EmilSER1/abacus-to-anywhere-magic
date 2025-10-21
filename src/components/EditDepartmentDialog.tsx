@@ -16,7 +16,6 @@ import { Edit, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
-import { useUserRole } from '@/hooks/useUserRole'
 
 interface Department {
   id: string
@@ -33,17 +32,12 @@ interface EditDepartmentDialogProps {
 export function EditDepartmentDialog({ department, type = 'regular' }: EditDepartmentDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { canViewAdminPanel } = useUserRole()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     name: department.name,
     code: department.code || '',
     description: department.description || ''
   })
-
-  if (!canViewAdminPanel()) {
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
