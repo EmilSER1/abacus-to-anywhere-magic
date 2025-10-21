@@ -42,35 +42,47 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     
     if (!scrollContainer || !scrollbar) return;
 
-    const handleScroll = () => {
-      const scrollPercentage = scrollContainer.scrollLeft / (scrollContainer.scrollWidth - scrollContainer.clientWidth);
-      const scrollbarInner = scrollbar.firstChild as HTMLElement;
-      if (scrollbarInner) {
-        scrollbarInner.style.transform = `translateX(${scrollPercentage * (scrollbar.clientWidth - scrollbarInner.clientWidth)}px)`;
-      }
-    };
-
-    const handleScrollbarDrag = (e: MouseEvent) => {
+    const updateScrollbarThumb = () => {
       const scrollbarInner = scrollbar.firstChild as HTMLElement;
       if (!scrollbarInner) return;
       
-      const scrollbarRect = scrollbar.getBoundingClientRect();
-      const percentage = (e.clientX - scrollbarRect.left) / scrollbarRect.width;
-      scrollContainer.scrollLeft = percentage * (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+      const scrollPercentage = scrollContainer.scrollLeft / (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+      const maxScroll = scrollbar.clientWidth - scrollbarInner.clientWidth;
+      scrollbarInner.style.transform = `translateX(${scrollPercentage * maxScroll}px)`;
+    };
+
+    const handleScroll = () => {
+      updateScrollbarThumb();
     };
 
     let isDragging = false;
+    let startX = 0;
+    let scrollLeft = 0;
 
     const handleMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      handleScrollbarDrag(e);
-      e.preventDefault();
+      const scrollbarInner = scrollbar.firstChild as HTMLElement;
+      const rect = scrollbarInner.getBoundingClientRect();
+      
+      // Check if click is on the thumb
+      if (e.clientX >= rect.left && e.clientX <= rect.right) {
+        isDragging = true;
+        startX = e.clientX;
+        scrollLeft = scrollContainer.scrollLeft;
+        e.preventDefault();
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        handleScrollbarDrag(e);
-      }
+      if (!isDragging) return;
+      
+      const dx = e.clientX - startX;
+      const scrollbarWidth = scrollbar.clientWidth;
+      const scrollbarInnerWidth = (scrollbar.firstChild as HTMLElement).clientWidth;
+      const maxScrollbarMove = scrollbarWidth - scrollbarInnerWidth;
+      const maxTableScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+      
+      const ratio = maxTableScroll / maxScrollbarMove;
+      scrollContainer.scrollLeft = scrollLeft + (dx * ratio);
     };
 
     const handleMouseUp = () => {
@@ -83,7 +95,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     document.addEventListener('mouseup', handleMouseUp);
 
     // Initial update
-    handleScroll();
+    updateScrollbarThumb();
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
@@ -162,7 +174,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
         </div>
       ) : (
         <>
-        <div ref={scrollContainerRef} className="overflow-x-auto border rounded-lg">
+        <div ref={scrollContainerRef} className="overflow-x-auto">
         <Table>
           <TableHeader className="sticky top-0 z-20 bg-muted/30">
             <TableRow>
@@ -566,12 +578,12 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
         </Table>
         </div>
         
-        {/* Fixed scrollbar at bottom of screen */}
+        {/* Fixed scrollbar at bottom of screen, accounting for sidebar */}
         <div 
           ref={scrollbarRef}
-          className="fixed bottom-0 left-0 right-0 h-3 bg-muted/30 backdrop-blur-sm border-t border-border cursor-pointer z-50"
+          className="fixed bottom-0 left-0 md:left-[280px] right-0 h-3 bg-muted/50 backdrop-blur-sm border-t border-border cursor-pointer z-50"
         >
-          <div className="h-full w-1/3 bg-border rounded-full transition-transform" />
+          <div className="h-full w-1/3 bg-primary/60 rounded-full transition-transform hover:bg-primary/80" />
         </div>
         </>
       )}

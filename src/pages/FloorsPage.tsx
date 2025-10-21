@@ -210,7 +210,7 @@ const FloorsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-0 py-8 max-w-full">
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
