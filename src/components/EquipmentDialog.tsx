@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import { Equipment, useUpdateEquipment, useAddEquipment } from '@/hooks/useRoomEquipment';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronDown } from 'lucide-react';
 import { toast } from "sonner";
 
 interface EquipmentDialogProps {
@@ -38,10 +40,41 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
     specification: '',
     documents: [] as Array<{ url: string; name: string }>,
     standard: '',
+    // Technical specifications
+    dimensions: '',
+    humidity_temperature: '',
+    voltage: '',
+    frequency: '',
+    power_watts: '',
+    power_watts_peak: '',
+    ups: '',
+    floor_load: '',
+    floor_load_heaviest: '',
+    ceiling_load_heaviest: '',
+    chiller: false,
+    exhaust: '',
+    drainage: '',
+    hot_water: '',
+    cold_water: '',
+    distilled_water: '',
+    neutralization_tank: '',
+    data_requirements: '',
+    emergency_buttons: '',
+    xray_warning_lamps: '',
+    raised_floor: '',
+    ceiling_drops: '',
+    precision_ac: false,
+    medical_gas_o2: '',
+    medical_gas_ma4: '',
+    medical_gas_ma7: '',
+    medical_gas_n2o: '',
+    medical_gas_other: '',
+    other_requirements: '',
   });
 
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
   const [newDocumentName, setNewDocumentName] = useState('');
+  const [techSpecsOpen, setTechSpecsOpen] = useState(false);
 
   useEffect(() => {
     if (equipment) {
@@ -56,6 +89,35 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
         specification: equipment.specification || '',
         documents: equipment.documents || [],
         standard: equipment.standard || '',
+        dimensions: equipment.dimensions || '',
+        humidity_temperature: equipment.humidity_temperature || '',
+        voltage: equipment.voltage || '',
+        frequency: equipment.frequency || '',
+        power_watts: equipment.power_watts || '',
+        power_watts_peak: equipment.power_watts_peak || '',
+        ups: equipment.ups || '',
+        floor_load: equipment.floor_load || '',
+        floor_load_heaviest: equipment.floor_load_heaviest || '',
+        ceiling_load_heaviest: equipment.ceiling_load_heaviest || '',
+        chiller: equipment.chiller || false,
+        exhaust: equipment.exhaust || '',
+        drainage: equipment.drainage || '',
+        hot_water: equipment.hot_water || '',
+        cold_water: equipment.cold_water || '',
+        distilled_water: equipment.distilled_water || '',
+        neutralization_tank: equipment.neutralization_tank || '',
+        data_requirements: equipment.data_requirements || '',
+        emergency_buttons: equipment.emergency_buttons || '',
+        xray_warning_lamps: equipment.xray_warning_lamps || '',
+        raised_floor: equipment.raised_floor || '',
+        ceiling_drops: equipment.ceiling_drops || '',
+        precision_ac: equipment.precision_ac || false,
+        medical_gas_o2: equipment.medical_gas_o2 || '',
+        medical_gas_ma4: equipment.medical_gas_ma4 || '',
+        medical_gas_ma7: equipment.medical_gas_ma7 || '',
+        medical_gas_n2o: equipment.medical_gas_n2o || '',
+        medical_gas_other: equipment.medical_gas_other || '',
+        other_requirements: equipment.other_requirements || '',
       });
     } else {
       setFormData({
@@ -69,6 +131,35 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
         specification: '',
         documents: [],
         standard: '',
+        dimensions: '',
+        humidity_temperature: '',
+        voltage: '',
+        frequency: '',
+        power_watts: '',
+        power_watts_peak: '',
+        ups: '',
+        floor_load: '',
+        floor_load_heaviest: '',
+        ceiling_load_heaviest: '',
+        chiller: false,
+        exhaust: '',
+        drainage: '',
+        hot_water: '',
+        cold_water: '',
+        distilled_water: '',
+        neutralization_tank: '',
+        data_requirements: '',
+        emergency_buttons: '',
+        xray_warning_lamps: '',
+        raised_floor: '',
+        ceiling_drops: '',
+        precision_ac: false,
+        medical_gas_o2: '',
+        medical_gas_ma4: '',
+        medical_gas_ma7: '',
+        medical_gas_n2o: '',
+        medical_gas_other: '',
+        other_requirements: '',
       });
     }
     setNewDocumentUrl('');
@@ -297,6 +388,292 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
               onChange={(e) => setFormData({ ...formData, standard: e.target.value })}
             />
           </div>
+
+          <Collapsible open={techSpecsOpen} onOpenChange={setTechSpecsOpen} className="border rounded-lg p-4">
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full justify-between" type="button">
+                <span className="font-semibold">Технические характеристики</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${techSpecsOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="dimensions">Размеры (Ш/Д/В), мм</Label>
+                  <Input
+                    id="dimensions"
+                    value={formData.dimensions}
+                    onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="humidity_temperature">Влажность и температура</Label>
+                  <Input
+                    id="humidity_temperature"
+                    value={formData.humidity_temperature}
+                    onChange={(e) => setFormData({ ...formData, humidity_temperature: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="voltage">Вольт</Label>
+                  <Input
+                    id="voltage"
+                    value={formData.voltage}
+                    onChange={(e) => setFormData({ ...formData, voltage: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="frequency">Частота</Label>
+                  <Input
+                    id="frequency"
+                    value={formData.frequency}
+                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="power_watts">Мощность в Ватт</Label>
+                  <Input
+                    id="power_watts"
+                    value={formData.power_watts}
+                    onChange={(e) => setFormData({ ...formData, power_watts: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="power_watts_peak">Мощность Ватт пиковая</Label>
+                  <Input
+                    id="power_watts_peak"
+                    value={formData.power_watts_peak}
+                    onChange={(e) => setFormData({ ...formData, power_watts_peak: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="ups">Источник бесперебойного питания</Label>
+                  <Input
+                    id="ups"
+                    value={formData.ups}
+                    onChange={(e) => setFormData({ ...formData, ups: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="floor_load">Нагрузка на пол</Label>
+                  <Input
+                    id="floor_load"
+                    value={formData.floor_load}
+                    onChange={(e) => setFormData({ ...formData, floor_load: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="floor_load_heaviest">Самая тяжелая часть (пол)</Label>
+                  <Input
+                    id="floor_load_heaviest"
+                    value={formData.floor_load_heaviest}
+                    onChange={(e) => setFormData({ ...formData, floor_load_heaviest: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="ceiling_load_heaviest">Нагрузка на потолок (самая тяжелая часть)</Label>
+                  <Input
+                    id="ceiling_load_heaviest"
+                    value={formData.ceiling_load_heaviest}
+                    onChange={(e) => setFormData({ ...formData, ceiling_load_heaviest: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="chiller" className="flex items-center gap-2">
+                    Чиллер
+                    <Switch
+                      id="chiller"
+                      checked={formData.chiller}
+                      onCheckedChange={(checked) => setFormData({ ...formData, chiller: checked })}
+                    />
+                  </Label>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="exhaust">Вытяжка (Диаметр и расход)</Label>
+                  <Input
+                    id="exhaust"
+                    value={formData.exhaust}
+                    onChange={(e) => setFormData({ ...formData, exhaust: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="drainage">Дренаж (Диаметр и расход)</Label>
+                  <Input
+                    id="drainage"
+                    value={formData.drainage}
+                    onChange={(e) => setFormData({ ...formData, drainage: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="hot_water">Горячая вода (Диаметр и расход)</Label>
+                  <Input
+                    id="hot_water"
+                    value={formData.hot_water}
+                    onChange={(e) => setFormData({ ...formData, hot_water: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="cold_water">Холодная вода (Диаметр и расход)</Label>
+                  <Input
+                    id="cold_water"
+                    value={formData.cold_water}
+                    onChange={(e) => setFormData({ ...formData, cold_water: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="distilled_water">Дистиллированная вода (Диаметр и расход)</Label>
+                  <Input
+                    id="distilled_water"
+                    value={formData.distilled_water}
+                    onChange={(e) => setFormData({ ...formData, distilled_water: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="neutralization_tank">Дренаж - резервуар для нейтрализации</Label>
+                  <Input
+                    id="neutralization_tank"
+                    value={formData.neutralization_tank}
+                    onChange={(e) => setFormData({ ...formData, neutralization_tank: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="data_requirements">Требования к данным (Тип и количество)</Label>
+                  <Input
+                    id="data_requirements"
+                    value={formData.data_requirements}
+                    onChange={(e) => setFormData({ ...formData, data_requirements: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="emergency_buttons">Кнопки экстренного вызова (Количество)</Label>
+                  <Input
+                    id="emergency_buttons"
+                    value={formData.emergency_buttons}
+                    onChange={(e) => setFormData({ ...formData, emergency_buttons: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="xray_warning_lamps">Рентгеновские предупреждающие лампы</Label>
+                  <Input
+                    id="xray_warning_lamps"
+                    placeholder="Количество и напряжение"
+                    value={formData.xray_warning_lamps}
+                    onChange={(e) => setFormData({ ...formData, xray_warning_lamps: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="raised_floor">Фальшпол</Label>
+                  <Input
+                    id="raised_floor"
+                    placeholder="Да/Нет и Глубина"
+                    value={formData.raised_floor}
+                    onChange={(e) => setFormData({ ...formData, raised_floor: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="ceiling_drops">Опуски плит</Label>
+                  <Input
+                    id="ceiling_drops"
+                    placeholder="Да/Нет и Глубина"
+                    value={formData.ceiling_drops}
+                    onChange={(e) => setFormData({ ...formData, ceiling_drops: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="precision_ac" className="flex items-center gap-2">
+                    Прецизионный кондиционер
+                    <Switch
+                      id="precision_ac"
+                      checked={formData.precision_ac}
+                      onCheckedChange={(checked) => setFormData({ ...formData, precision_ac: checked })}
+                    />
+                  </Label>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medical_gas_o2">Медгазы (O2)</Label>
+                  <Input
+                    id="medical_gas_o2"
+                    placeholder="Прямое подключение устройства"
+                    value={formData.medical_gas_o2}
+                    onChange={(e) => setFormData({ ...formData, medical_gas_o2: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medical_gas_ma4">Медгазы (MA4)</Label>
+                  <Input
+                    id="medical_gas_ma4"
+                    placeholder="Прямое подключение устройства"
+                    value={formData.medical_gas_ma4}
+                    onChange={(e) => setFormData({ ...formData, medical_gas_ma4: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medical_gas_ma7">Медгазы (MA7)</Label>
+                  <Input
+                    id="medical_gas_ma7"
+                    placeholder="Прямое подключение устройства"
+                    value={formData.medical_gas_ma7}
+                    onChange={(e) => setFormData({ ...formData, medical_gas_ma7: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medical_gas_n2o">Медгазы (N2O)</Label>
+                  <Input
+                    id="medical_gas_n2o"
+                    placeholder="Прямое подключение устройства"
+                    value={formData.medical_gas_n2o}
+                    onChange={(e) => setFormData({ ...formData, medical_gas_n2o: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="medical_gas_other">Медгазы (Другие)</Label>
+                  <Input
+                    id="medical_gas_other"
+                    placeholder="Прямое подключение устройства"
+                    value={formData.medical_gas_other}
+                    onChange={(e) => setFormData({ ...formData, medical_gas_other: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2 col-span-2">
+                  <Label htmlFor="other_requirements">Прочие требования</Label>
+                  <Textarea
+                    id="other_requirements"
+                    value={formData.other_requirements}
+                    onChange={(e) => setFormData({ ...formData, other_requirements: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <DialogFooter>

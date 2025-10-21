@@ -17,60 +17,147 @@ export type Database = {
       equipment: {
         Row: {
           brand: string | null
+          ceiling_drops: string | null
+          ceiling_load_heaviest: string | null
+          chiller: boolean | null
+          cold_water: string | null
           country: string | null
           created_at: string
+          data_requirements: string | null
+          dimensions: string | null
+          distilled_water: string | null
           documents: Json | null
+          drainage: string | null
+          emergency_buttons: string | null
           equipment_code: string | null
           equipment_code_required: string | null
           equipment_name: string | null
           equipment_type: string | null
+          exhaust: string | null
+          floor_load: string | null
+          floor_load_heaviest: string | null
+          frequency: string | null
+          hot_water: string | null
+          humidity_temperature: string | null
           id: string
+          medical_gas_ma4: string | null
+          medical_gas_ma7: string | null
+          medical_gas_n2o: string | null
+          medical_gas_o2: string | null
+          medical_gas_other: string | null
           model_name: string | null
+          neutralization_tank: string | null
           notes: string | null
+          other_requirements: string | null
+          power_watts: string | null
+          power_watts_peak: string | null
+          precision_ac: boolean | null
           quantity: string | null
+          raised_floor: string | null
           room_id: string | null
           specification: string | null
           standard: string | null
           unit: string | null
           updated_at: string
+          ups: string | null
+          voltage: string | null
+          xray_warning_lamps: string | null
         }
         Insert: {
           brand?: string | null
+          ceiling_drops?: string | null
+          ceiling_load_heaviest?: string | null
+          chiller?: boolean | null
+          cold_water?: string | null
           country?: string | null
           created_at?: string
+          data_requirements?: string | null
+          dimensions?: string | null
+          distilled_water?: string | null
           documents?: Json | null
+          drainage?: string | null
+          emergency_buttons?: string | null
           equipment_code?: string | null
           equipment_code_required?: string | null
           equipment_name?: string | null
           equipment_type?: string | null
+          exhaust?: string | null
+          floor_load?: string | null
+          floor_load_heaviest?: string | null
+          frequency?: string | null
+          hot_water?: string | null
+          humidity_temperature?: string | null
           id?: string
+          medical_gas_ma4?: string | null
+          medical_gas_ma7?: string | null
+          medical_gas_n2o?: string | null
+          medical_gas_o2?: string | null
+          medical_gas_other?: string | null
           model_name?: string | null
+          neutralization_tank?: string | null
           notes?: string | null
+          other_requirements?: string | null
+          power_watts?: string | null
+          power_watts_peak?: string | null
+          precision_ac?: boolean | null
           quantity?: string | null
+          raised_floor?: string | null
           room_id?: string | null
           specification?: string | null
           standard?: string | null
           unit?: string | null
           updated_at?: string
+          ups?: string | null
+          voltage?: string | null
+          xray_warning_lamps?: string | null
         }
         Update: {
           brand?: string | null
+          ceiling_drops?: string | null
+          ceiling_load_heaviest?: string | null
+          chiller?: boolean | null
+          cold_water?: string | null
           country?: string | null
           created_at?: string
+          data_requirements?: string | null
+          dimensions?: string | null
+          distilled_water?: string | null
           documents?: Json | null
+          drainage?: string | null
+          emergency_buttons?: string | null
           equipment_code?: string | null
           equipment_code_required?: string | null
           equipment_name?: string | null
           equipment_type?: string | null
+          exhaust?: string | null
+          floor_load?: string | null
+          floor_load_heaviest?: string | null
+          frequency?: string | null
+          hot_water?: string | null
+          humidity_temperature?: string | null
           id?: string
+          medical_gas_ma4?: string | null
+          medical_gas_ma7?: string | null
+          medical_gas_n2o?: string | null
+          medical_gas_o2?: string | null
+          medical_gas_other?: string | null
           model_name?: string | null
+          neutralization_tank?: string | null
           notes?: string | null
+          other_requirements?: string | null
+          power_watts?: string | null
+          power_watts_peak?: string | null
+          precision_ac?: boolean | null
           quantity?: string | null
+          raised_floor?: string | null
           room_id?: string | null
           specification?: string | null
           standard?: string | null
           unit?: string | null
           updated_at?: string
+          ups?: string | null
+          voltage?: string | null
+          xray_warning_lamps?: string | null
         }
         Relationships: [
           {

@@ -18,6 +18,36 @@ export interface Equipment {
   quantity: string | null;
   unit: string | null;
   notes: string | null;
+  // Technical specifications
+  dimensions: string | null;
+  humidity_temperature: string | null;
+  voltage: string | null;
+  frequency: string | null;
+  power_watts: string | null;
+  power_watts_peak: string | null;
+  ups: string | null;
+  floor_load: string | null;
+  floor_load_heaviest: string | null;
+  ceiling_load_heaviest: string | null;
+  chiller: boolean | null;
+  exhaust: string | null;
+  drainage: string | null;
+  hot_water: string | null;
+  cold_water: string | null;
+  distilled_water: string | null;
+  neutralization_tank: string | null;
+  data_requirements: string | null;
+  emergency_buttons: string | null;
+  xray_warning_lamps: string | null;
+  raised_floor: string | null;
+  ceiling_drops: string | null;
+  precision_ac: boolean | null;
+  medical_gas_o2: string | null;
+  medical_gas_ma4: string | null;
+  medical_gas_ma7: string | null;
+  medical_gas_n2o: string | null;
+  medical_gas_other: string | null;
+  other_requirements: string | null;
   created_at: string;
   updated_at: string;
 }
