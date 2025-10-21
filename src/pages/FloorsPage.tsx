@@ -8,6 +8,7 @@ import { EquipmentTable } from '@/components/EquipmentTable';
 
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData, FloorData } from '@/hooks/useFloorsData';
+import { useUserRole } from '@/hooks/useUserRole';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -126,6 +127,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 const FloorsPage: React.FC = () => {
   const { data: rawFloorsData, isLoading, error } = useFloorsData();
+  const { canEdit } = useUserRole();
 
   const [searchParams] = useSearchParams();
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
@@ -221,10 +223,12 @@ const FloorsPage: React.FC = () => {
                   <CardDescription>Полная информация по этажам, отделениям и оборудованию</CardDescription>
                 </div>
               </div>
-              <Button onClick={exportToExcel} variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                Excel
-              </Button>
+              {canEdit() && (
+                <Button onClick={exportToExcel} variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Excel
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
