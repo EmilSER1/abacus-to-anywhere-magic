@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipment: {
+        Row: {
+          brand: string | null
+          country: string | null
+          created_at: string
+          documents: Json | null
+          equipment_code: string | null
+          equipment_name: string | null
+          equipment_type: string | null
+          id: string
+          notes: string | null
+          quantity: string | null
+          room_id: string | null
+          specification: string | null
+          standard: string | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json | null
+          equipment_code?: string | null
+          equipment_name?: string | null
+          equipment_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: string | null
+          room_id?: string | null
+          specification?: string | null
+          standard?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          country?: string | null
+          created_at?: string
+          documents?: Json | null
+          equipment_code?: string | null
+          equipment_name?: string | null
+          equipment_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: string | null
+          room_id?: string | null
+          specification?: string | null
+          standard?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "projector_floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

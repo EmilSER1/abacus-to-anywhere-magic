@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Download } from 'lucide-react';
+import { Building2, Download, Package } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData, FloorData } from '@/hooks/useFloorsData';
+import { EquipmentTableDialog } from '@/components/EquipmentTableDialog';
 import * as XLSX from 'xlsx';
 
 // Interface definitions
@@ -128,6 +129,9 @@ const FloorsPage: React.FC = () => {
   const [expandedFloors, setExpandedFloors] = useState<string[]>([]);
   const [expandedDepartments, setExpandedDepartments] = useState<string[]>([]);
   const [expandedRooms, setExpandedRooms] = useState<string[]>([]);
+  
+  const [selectedRoom, setSelectedRoom] = useState<{ id: string; name: string } | null>(null);
+  const [isEquipmentDialogOpen, setIsEquipmentDialogOpen] = useState(false);
 
   useEffect(() => {
     const floor = searchParams.get('floor');
@@ -292,47 +296,37 @@ const FloorsPage: React.FC = () => {
                               
                               return (
                                 <AccordionItem key={roomKey} value={roomKey} className="border-l-2 border-secondary/30 ml-4">
-                                  <AccordionTrigger className="hover:no-underline pl-4">
-                                    <div className="flex items-center justify-between w-full pr-4">
-                                      <div className="flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-sm">{room.name}</span>
-                                          <Badge variant="outline" className="text-xs">{room.code}</Badge>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {room.equipment.length} оборудования • {room.area} м²
+                                   <div className="pl-4 py-2">
+                                    <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
+                                      <div className="flex items-center gap-3">
+                                        <Package className="h-5 w-5 text-muted-foreground" />
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium text-sm">{room.name}</span>
+                                            <Badge variant="outline" className="text-xs">{room.code}</Badge>
+                                          </div>
+                                          <div className="text-xs text-muted-foreground mt-1">
+                                            Площадь: {room.area} м²
+                                          </div>
                                         </div>
                                       </div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          const roomData = (rawFloorsData || []).find(
+                                            r => r["КОД ПОМЕЩЕНИЯ"] === room.code
+                                          );
+                                          if (roomData) {
+                                            setSelectedRoom({ id: roomData.id, name: room.name });
+                                            setIsEquipmentDialogOpen(true);
+                                          }
+                                        }}
+                                      >
+                                        Оборудование
+                                      </Button>
                                     </div>
-                                  </AccordionTrigger>
-                                  <AccordionContent className="pl-4">
-                                    <div className="space-y-2">
-                                      {room.equipment.map((equipment, idx) => (
-                                        <Card key={idx} className="bg-muted/50">
-                                          <CardContent className="p-3">
-                                            <div className="flex items-start justify-between gap-2">
-                                              <div className="flex-1 space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                  <span className="font-medium text-sm">{equipment.name}</span>
-                                                  {equipment.code && (
-                                                    <Badge variant="outline" className="text-xs">{equipment.code}</Badge>
-                                                  )}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                  Количество: {equipment.quantity} {equipment.unit || ''}
-                                                </div>
-                                                {equipment.notes && (
-                                                  <div className="text-xs text-muted-foreground italic">
-                                                    {equipment.notes}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      ))}
-                                    </div>
-                                  </AccordionContent>
+                                  </div>
                                 </AccordionItem>
                               );
                             })}
@@ -346,6 +340,18 @@ const FloorsPage: React.FC = () => {
             </AccordionItem>
           ))}
         </Accordion>
+
+        {selectedRoom && (
+          <EquipmentTableDialog
+            isOpen={isEquipmentDialogOpen}
+            onClose={() => {
+              setIsEquipmentDialogOpen(false);
+              setSelectedRoom(null);
+            }}
+            roomId={selectedRoom.id}
+            roomName={selectedRoom.name}
+          />
+        )}
       </div>
     </div>
   );
