@@ -133,7 +133,7 @@ const processFloorData = (data: FloorData[]): Floor[] => {
 
 const FloorsPage: React.FC = () => {
   const { data: rawFloorsData, isLoading, error } = useFloorsData();
-  const { canEdit } = useUserRole();
+  const { canEdit, canViewAdminPanel } = useUserRole();
   const { refetch: fetchFullExportData } = useFullEquipmentExport();
   const { toast } = useToast();
 
@@ -376,7 +376,7 @@ const FloorsPage: React.FC = () => {
                       {floor.stats.totalDepartments} отд. • {floor.stats.totalRooms} пом. • {floor.stats.totalEquipment} об.
                     </span>
                   </div>
-                  {canEdit() && (
+                  {canViewAdminPanel() && (
                     <AddDepartmentDialog floor={floor.number} />
                   )}
                 </div>
@@ -395,14 +395,14 @@ const FloorsPage: React.FC = () => {
                                 <span className="font-medium">{department.name}</span>
                                 <Badge variant="secondary">{department.block}</Badge>
                                 {canEdit() && (
-                                  <>
-                                    <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
-                                    <AddRoomDialog 
-                                      floor={floor.number} 
-                                      block={department.block} 
-                                      department={department.name} 
-                                    />
-                                  </>
+                                  <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
+                                )}
+                                {canViewAdminPanel() && (
+                                  <AddRoomDialog 
+                                    floor={floor.number} 
+                                    block={department.block} 
+                                    department={department.name} 
+                                  />
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground">
