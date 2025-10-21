@@ -42,13 +42,28 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     
     if (!scrollContainer || !scrollbar) return;
 
+    const scrollbarThumb = scrollbar.firstChild as HTMLElement;
+    if (!scrollbarThumb) return;
+
     const updateScrollbarThumb = () => {
-      const scrollbarInner = scrollbar.firstChild as HTMLElement;
-      if (!scrollbarInner) return;
+      const containerWidth = scrollContainer.clientWidth;
+      const scrollWidth = scrollContainer.scrollWidth;
       
-      const scrollPercentage = scrollContainer.scrollLeft / (scrollContainer.scrollWidth - scrollContainer.clientWidth);
-      const maxScroll = scrollbar.clientWidth - scrollbarInner.clientWidth;
-      scrollbarInner.style.transform = `translateX(${scrollPercentage * maxScroll}px)`;
+      if (scrollWidth <= containerWidth) {
+        scrollbar.style.display = 'none';
+        return;
+      }
+      
+      scrollbar.style.display = 'block';
+      
+      // Calculate thumb width based on visible content ratio
+      const thumbWidth = (containerWidth / scrollWidth) * scrollbar.clientWidth;
+      scrollbarThumb.style.width = `${thumbWidth}px`;
+      
+      // Calculate thumb position
+      const scrollPercentage = scrollContainer.scrollLeft / (scrollWidth - containerWidth);
+      const maxThumbPos = scrollbar.clientWidth - thumbWidth;
+      scrollbarThumb.style.transform = `translateX(${scrollPercentage * maxThumbPos}px)`;
     };
 
     const handleScroll = () => {
@@ -57,18 +72,31 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
 
     let isDragging = false;
     let startX = 0;
-    let scrollLeft = 0;
+    let startScrollLeft = 0;
 
-    const handleMouseDown = (e: MouseEvent) => {
-      const scrollbarInner = scrollbar.firstChild as HTMLElement;
-      const rect = scrollbarInner.getBoundingClientRect();
+    const handleThumbMouseDown = (e: MouseEvent) => {
+      const thumbRect = scrollbarThumb.getBoundingClientRect();
       
-      // Check if click is on the thumb
-      if (e.clientX >= rect.left && e.clientX <= rect.right) {
+      // Only start drag if clicking on the thumb
+      if (e.clientX >= thumbRect.left && e.clientX <= thumbRect.right) {
         isDragging = true;
         startX = e.clientX;
-        scrollLeft = scrollContainer.scrollLeft;
+        startScrollLeft = scrollContainer.scrollLeft;
         e.preventDefault();
+        e.stopPropagation();
+        scrollbarThumb.style.cursor = 'grabbing';
+      }
+    };
+
+    const handleTrackClick = (e: MouseEvent) => {
+      const thumbRect = scrollbarThumb.getBoundingClientRect();
+      
+      // If clicking on track (not thumb), jump to that position
+      if (e.clientX < thumbRect.left || e.clientX > thumbRect.right) {
+        const scrollbarRect = scrollbar.getBoundingClientRect();
+        const clickPercentage = (e.clientX - scrollbarRect.left) / scrollbarRect.width;
+        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+        scrollContainer.scrollLeft = clickPercentage * maxScroll;
       }
     };
 
@@ -76,32 +104,48 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       if (!isDragging) return;
       
       const dx = e.clientX - startX;
-      const scrollbarWidth = scrollbar.clientWidth;
-      const scrollbarInnerWidth = (scrollbar.firstChild as HTMLElement).clientWidth;
-      const maxScrollbarMove = scrollbarWidth - scrollbarInnerWidth;
-      const maxTableScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+      const containerWidth = scrollContainer.clientWidth;
+      const scrollWidth = scrollContainer.scrollWidth;
+      const maxScroll = scrollWidth - containerWidth;
       
-      const ratio = maxTableScroll / maxScrollbarMove;
-      scrollContainer.scrollLeft = scrollLeft + (dx * ratio);
+      const thumbWidth = parseFloat(scrollbarThumb.style.width);
+      const maxThumbMove = scrollbar.clientWidth - thumbWidth;
+      
+      if (maxThumbMove > 0) {
+        const scrollRatio = maxScroll / maxThumbMove;
+        scrollContainer.scrollLeft = startScrollLeft + (dx * scrollRatio);
+      }
+      
+      e.preventDefault();
     };
 
     const handleMouseUp = () => {
-      isDragging = false;
+      if (isDragging) {
+        isDragging = false;
+        scrollbarThumb.style.cursor = 'grab';
+      }
     };
 
     scrollContainer.addEventListener('scroll', handleScroll);
-    scrollbar.addEventListener('mousedown', handleMouseDown);
+    scrollbar.addEventListener('mousedown', handleThumbMouseDown);
+    scrollbar.addEventListener('click', handleTrackClick);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
     // Initial update
     updateScrollbarThumb();
+    
+    // Update on window resize
+    const handleResize = () => updateScrollbarThumb();
+    window.addEventListener('resize', handleResize);
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
-      scrollbar.removeEventListener('mousedown', handleMouseDown);
+      scrollbar.removeEventListener('mousedown', handleThumbMouseDown);
+      scrollbar.removeEventListener('click', handleTrackClick);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleResize);
     };
   }, [equipment]);
 
@@ -581,9 +625,9 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
         {/* Fixed scrollbar at bottom of screen, accounting for sidebar */}
         <div 
           ref={scrollbarRef}
-          className="fixed bottom-0 left-0 md:left-[280px] right-0 h-3 bg-muted/50 backdrop-blur-sm border-t border-border cursor-pointer z-50"
+          className="fixed bottom-0 left-0 md:left-[280px] right-0 h-4 bg-muted/80 backdrop-blur-sm border-t border-border z-50"
         >
-          <div className="h-full w-1/3 bg-primary/60 rounded-full transition-transform hover:bg-primary/80" />
+          <div className="h-full bg-primary/70 rounded-full cursor-grab active:cursor-grabbing hover:bg-primary transition-colors" />
         </div>
         </>
       )}
