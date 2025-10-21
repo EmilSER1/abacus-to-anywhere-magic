@@ -103,19 +103,19 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
         </div>
       ) : (
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-20 bg-muted/30">
             <TableRow>
-              <TableHead>Код оборудования</TableHead>
-              <TableHead>Наименование</TableHead>
-              <TableHead>Наименование (модель)</TableHead>
-              <TableHead>Код оборудования*</TableHead>
-              <TableHead>Вид</TableHead>
-              <TableHead>Бренд</TableHead>
-              <TableHead>Страна</TableHead>
-              <TableHead>Спецификация</TableHead>
-              <TableHead>Документы</TableHead>
-              <TableHead>Стандарт</TableHead>
-              <TableHead className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">Действия</TableHead>
+              <TableHead className="bg-muted/30">Код оборудования</TableHead>
+              <TableHead className="bg-muted/30">Наименование</TableHead>
+              <TableHead className="bg-muted/30">Наименование (модель)</TableHead>
+              <TableHead className="bg-muted/30">Код оборудования*</TableHead>
+              <TableHead className="bg-muted/30">Вид</TableHead>
+              <TableHead className="bg-muted/30">Бренд</TableHead>
+              <TableHead className="bg-muted/30">Страна</TableHead>
+              <TableHead className="bg-muted/30">Спецификация</TableHead>
+              <TableHead className="bg-muted/30">Документы</TableHead>
+              <TableHead className="bg-muted/30">Стандарт</TableHead>
+              <TableHead className="text-right sticky right-0 bg-muted/30 shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-30">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,14 +158,16 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                   <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
                     <div className="flex justify-end gap-2">
                       {canEdit() && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => togglePurchase(eq.id)}
-                          title="Закупочная информация"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => togglePurchase(eq.id)}
+                            title="Закупочная информация"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                       {hasSpecs(eq) && (
                         <Button
@@ -181,22 +183,26 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                           )}
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(eq)}
-                        title="Редактировать"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(eq)}
-                        title="Удалить"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {canEdit() && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(eq)}
+                            title="Редактировать"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteConfirm(eq)}
+                            title="Удалить"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -210,7 +216,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                             <div>
                               <div className="text-xs text-muted-foreground">Цена закупа</div>
                               <div className="text-sm font-medium">
-                                {eq.purchase_price} {eq.purchase_currency || ''}
+                                {new Intl.NumberFormat('ru-RU').format(eq.purchase_price)} {eq.purchase_currency || ''}
                               </div>
                             </div>
                           )}
@@ -252,15 +258,31 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                                       <div className="font-medium">{contact.name}</div>
                                     )}
                                     {contact.phones && contact.phones.length > 0 && (
-                                      <div className="text-xs">
+                                      <div className="text-xs flex flex-wrap gap-1">
                                         <span className="text-muted-foreground">Тел: </span>
-                                        {contact.phones.join(', ')}
+                                        {contact.phones.map((phone: string, pIdx: number) => (
+                                          <a 
+                                            key={pIdx}
+                                            href={`tel:${phone.replace(/\s/g, '')}`}
+                                            className="text-primary hover:underline"
+                                          >
+                                            {phone}{pIdx < contact.phones.length - 1 ? ',' : ''}
+                                          </a>
+                                        ))}
                                       </div>
                                     )}
                                     {contact.emails && contact.emails.length > 0 && (
-                                      <div className="text-xs">
+                                      <div className="text-xs flex flex-wrap gap-1">
                                         <span className="text-muted-foreground">Email: </span>
-                                        {contact.emails.join(', ')}
+                                        {contact.emails.map((email: string, eIdx: number) => (
+                                          <a 
+                                            key={eIdx}
+                                            href={`mailto:${email}`}
+                                            className="text-primary hover:underline"
+                                          >
+                                            {email}{eIdx < contact.emails.length - 1 ? ',' : ''}
+                                          </a>
+                                        ))}
                                       </div>
                                     )}
                                     {contact.city && (
@@ -272,7 +294,14 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                                     {contact.address && (
                                       <div className="text-xs">
                                         <span className="text-muted-foreground">Адрес: </span>
-                                        {contact.address}
+                                        <a 
+                                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-primary hover:underline"
+                                        >
+                                          {contact.address}
+                                        </a>
                                       </div>
                                     )}
                                   </div>
