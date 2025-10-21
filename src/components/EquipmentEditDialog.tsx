@@ -184,6 +184,12 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         medical_gas_n2o: '',
         medical_gas_other: '',
         other_requirements: '',
+        purchase_price: null,
+        price_updated_at: null,
+        incoterms: '',
+        supplier: '',
+        supplier_status: '',
+        supplier_contacts: [],
       });
     }
     setNewDocumentUrl('');
