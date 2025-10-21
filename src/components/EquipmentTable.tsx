@@ -89,7 +89,6 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Тех. хар-ки</TableHead>
               <TableHead>Код оборудования</TableHead>
               <TableHead>Наименование</TableHead>
               <TableHead>Наименование (модель)</TableHead>
@@ -107,24 +106,6 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
             {equipment.map((eq) => (
               <React.Fragment key={eq.id}>
                 <TableRow>
-                  <TableCell>
-                    {hasSpecs(eq) ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleSpecs(eq.id)}
-                        className="p-0 h-8 w-8"
-                      >
-                        {expandedSpecs.includes(eq.id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">-</span>
-                    )}
-                  </TableCell>
                   <TableCell>{eq.equipment_code || '-'}</TableCell>
                   <TableCell className="font-medium">{eq.equipment_name || '-'}</TableCell>
                   <TableCell>{eq.model_name || '-'}</TableCell>
@@ -160,6 +141,20 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                   <TableCell>{eq.standard || '-'}</TableCell>
                   <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     <div className="flex justify-end gap-2">
+                      {hasSpecs(eq) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleSpecs(eq.id)}
+                          title="Технические характеристики"
+                        >
+                          {expandedSpecs.includes(eq.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -179,7 +174,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                 </TableRow>
                 {expandedSpecs.includes(eq.id) && (
                   <TableRow className="bg-muted/50">
-                    <TableCell colSpan={12}>
+                    <TableCell colSpan={11}>
                       <div className="p-4 space-y-4">
                         <h4 className="font-semibold text-sm mb-3">Технические характеристики</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
