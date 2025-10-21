@@ -357,15 +357,10 @@ export type Database = {
         Returns: boolean
       }
       update_user_role_secure: {
-        Args:
-          | {
-              new_role: Database["public"]["Enums"]["app_role"]
-              target_user_id: string
-            }
-          | {
-              new_role: Database["public"]["Enums"]["user_role"]
-              target_user_id: string
-            }
+        Args: {
+          new_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+        }
         Returns: boolean
       }
     }
