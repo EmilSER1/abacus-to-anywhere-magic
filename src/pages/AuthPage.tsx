@@ -13,6 +13,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -118,6 +119,38 @@ export default function AuthPage() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Письмо отправлено",
+        description: "Проверьте почту для сброса пароля.",
+      });
+      
+      setShowResetPassword(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error.message || "Не удалось отправить письмо",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -135,33 +168,71 @@ export default function AuthPage() {
             </TabsList>
             
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="введите ваш email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Пароль</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="введите ваш пароль"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Вход..." : "Войти"}
-                </Button>
-              </form>
+              {!showResetPassword ? (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="введите ваш email"
+                      autoComplete="email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Пароль</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="введите ваш пароль"
+                      autoComplete="current-password"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Вход..." : "Войти"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full" 
+                    onClick={() => setShowResetPassword(true)}
+                  >
+                    Забыли пароль?
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="введите ваш email"
+                      autoComplete="email"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Отправка..." : "Сбросить пароль"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full" 
+                    onClick={() => setShowResetPassword(false)}
+                  >
+                    Вернуться к входу
+                  </Button>
+                </form>
+              )}
             </TabsContent>
             
             <TabsContent value="signup">
@@ -175,6 +246,7 @@ export default function AuthPage() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     placeholder="введите ваше полное имя"
+                    autoComplete="name"
                   />
                 </div>
                 <div className="space-y-2">
@@ -186,6 +258,7 @@ export default function AuthPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="введите ваш email"
+                    autoComplete="email"
                   />
                 </div>
                 <div className="space-y-2">
@@ -198,6 +271,7 @@ export default function AuthPage() {
                     required
                     placeholder="введите пароль (минимум 6 символов)"
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
