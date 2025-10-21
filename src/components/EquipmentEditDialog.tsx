@@ -226,6 +226,17 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
     toast.success("Ссылка удалена");
   };
 
+  const cleanFormData = (data: any) => {
+    const cleaned = { ...data };
+    
+    // Преобразовать пустые строки в null для полей с constraints
+    if (cleaned.purchase_currency === '') cleaned.purchase_currency = null;
+    if (cleaned.supplier_status === '') cleaned.supplier_status = null;
+    if (cleaned.equipment_type === '') cleaned.equipment_type = null;
+    
+    return cleaned;
+  };
+
   const handleSave = async () => {
     try {
       // Если есть незавершенный документ в полях ввода, добавляем его
@@ -237,20 +248,22 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         });
       }
 
+      // Очистить данные перед отправкой
+      const cleanedData = cleanFormData({
+        ...formData,
+        documents: finalDocuments,
+      });
+
       if (isNew) {
         await addEquipment.mutateAsync({
-          ...formData,
-          documents: finalDocuments,
+          ...cleanedData,
           room_id: roomId,
-          equipment_type: formData.equipment_type || null,
         });
       } else if (equipment) {
         await updateEquipment.mutateAsync({
-          ...formData,
-          documents: finalDocuments,
+          ...cleanedData,
           id: equipment.id,
           room_id: roomId,
-          equipment_type: formData.equipment_type || null,
         });
       }
       onClose();

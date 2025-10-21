@@ -99,9 +99,19 @@ export const useAddEquipment = () => {
       queryClient.invalidateQueries({ queryKey: ["room-equipment", variables.room_id] });
       toast.success("Оборудование добавлено");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error adding equipment:", error);
-      toast.error("Ошибка при добавлении оборудования");
+      
+      // Показать более информативное сообщение
+      if (error.message?.includes('purchase_currency_check')) {
+        toast.error("Ошибка: Неверное значение валюты. Выберите USD, RUB, KZT или EUR");
+      } else if (error.message?.includes('supplier_status_check')) {
+        toast.error("Ошибка: Неверный статус поставщика");
+      } else if (error.message?.includes('equipment_type_check')) {
+        toast.error("Ошибка: Тип оборудования должен быть МИ или не МИ");
+      } else {
+        toast.error("Ошибка при добавлении оборудования");
+      }
     },
   });
 };
@@ -126,9 +136,19 @@ export const useUpdateEquipment = () => {
       queryClient.invalidateQueries({ queryKey: ["room-equipment", variables.room_id] });
       toast.success("Оборудование обновлено");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error updating equipment:", error);
-      toast.error("Ошибка при обновлении оборудования");
+      
+      // Показать более информативное сообщение
+      if (error.message?.includes('purchase_currency_check')) {
+        toast.error("Ошибка: Неверное значение валюты. Выберите USD, RUB, KZT или EUR");
+      } else if (error.message?.includes('supplier_status_check')) {
+        toast.error("Ошибка: Неверный статус поставщика");
+      } else if (error.message?.includes('equipment_type_check')) {
+        toast.error("Ошибка: Тип оборудования должен быть МИ или не МИ");
+      } else {
+        toast.error("Ошибка при обновлении оборудования");
+      }
     },
   });
 };
