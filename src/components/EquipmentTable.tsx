@@ -77,7 +77,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
               <TableHead>Спецификация</TableHead>
               <TableHead>Документы</TableHead>
               <TableHead>Стандарт</TableHead>
-              <TableHead className="text-right">Действия</TableHead>
+              <TableHead className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,14 +109,14 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                           className="text-xs text-blue-600 hover:underline truncate max-w-[150px]"
                           title={doc.url}
                         >
-                          Документ {idx + 1}
+                          {doc.name || `Документ ${idx + 1}`}
                         </a>
                       ))}
                     </div>
                   ) : '-'}
                 </TableCell>
                 <TableCell>{eq.standard || '-'}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"

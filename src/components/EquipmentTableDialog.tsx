@@ -85,7 +85,7 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
                 <TableHead>Спецификация</TableHead>
                 <TableHead>Документы</TableHead>
                 <TableHead>Стандарт</TableHead>
-                {canEdit && <TableHead className="w-[100px]">Действия</TableHead>}
+                {canEdit && <TableHead className="w-[100px] sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">Действия</TableHead>}
               </TableRow>
               </TableHeader>
               <TableBody>
@@ -113,12 +113,22 @@ export const EquipmentTableDialog: React.FC<EquipmentTableDialogProps> = ({
                     </TableCell>
                     <TableCell>
                       {item.documents && Array.isArray(item.documents) && item.documents.length > 0 
-                        ? `${item.documents.length} ссылок` 
+                        ? item.documents.map((doc: any, idx: number) => (
+                            <a
+                              key={idx}
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline block"
+                            >
+                              {doc.name || `Документ ${idx + 1}`}
+                            </a>
+                          ))
                         : '-'}
                     </TableCell>
                     <TableCell>{item.standard || '-'}</TableCell>
                     {canEdit && (
-                      <TableCell>
+                      <TableCell className="sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"

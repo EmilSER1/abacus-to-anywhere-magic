@@ -38,7 +38,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
     brand: '',
     country: '',
     specification: '',
-    documents: [] as Array<{ url: string }>,
+    documents: [] as Array<{ url: string; name: string }>,
     standard: '',
     quantity: '',
     unit: '',
@@ -46,6 +46,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
   });
 
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
+  const [newDocumentName, setNewDocumentName] = useState('');
 
   useEffect(() => {
     if (equipment && !isNew) {
@@ -82,6 +83,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
       });
     }
     setNewDocumentUrl('');
+    setNewDocumentName('');
   }, [equipment, isNew, isOpen]);
 
   const handleAddDocumentUrl = () => {
@@ -89,12 +91,17 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
       toast.error("Введите ссылку на документ");
       return;
     }
+    if (!newDocumentName.trim()) {
+      toast.error("Введите название документа");
+      return;
+    }
 
     setFormData({
       ...formData,
-      documents: [...formData.documents, { url: newDocumentUrl.trim() }],
+      documents: [...formData.documents, { url: newDocumentUrl.trim(), name: newDocumentName.trim() }],
     });
     setNewDocumentUrl('');
+    setNewDocumentName('');
     toast.success("Ссылка добавлена");
   };
 
@@ -228,40 +235,51 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
           <div className="grid gap-2">
             <Label>Ссылки на документы</Label>
             {canEdit && (
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Input
-                  type="url"
-                  placeholder="https://example.com/document.pdf"
-                  value={newDocumentUrl}
-                  onChange={(e) => setNewDocumentUrl(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddDocumentUrl();
-                    }
-                  }}
+                  type="text"
+                  placeholder="Название документа"
+                  value={newDocumentName}
+                  onChange={(e) => setNewDocumentName(e.target.value)}
                 />
-                <Button
-                  type="button"
-                  onClick={handleAddDocumentUrl}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/document.pdf"
+                    value={newDocumentUrl}
+                    onChange={(e) => setNewDocumentUrl(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddDocumentUrl();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddDocumentUrl}
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
             {formData.documents.length > 0 && (
               <div className="space-y-2 mt-2">
                 {formData.documents.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex-1 truncate"
-                    >
-                      {doc.url}
-                    </a>
+                  <div key={index} className="flex items-center justify-between p-2 border rounded gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{doc.name}</div>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline truncate block"
+                      >
+                        {doc.url}
+                      </a>
+                    </div>
                     {canEdit && (
                       <Button
                         type="button"
