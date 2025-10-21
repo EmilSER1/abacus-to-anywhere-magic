@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAddEquipment, useUpdateEquipment, Equipment } from "@/hooks/useRoomEquipment";
+import { useEquipmentFiles, EquipmentDocument } from "@/hooks/useEquipmentFiles";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Loader2, X, Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface EquipmentEditDialogProps {
   isOpen: boolean;
@@ -24,6 +28,9 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
 }) => {
   const addEquipment = useAddEquipment();
   const updateEquipment = useUpdateEquipment();
+  const { uploadFile, deleteFile, getFileUrl } = useEquipmentFiles();
+  const { canEdit } = useUserRole();
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     equipment_code: '',
@@ -70,6 +77,40 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
       });
     }
   }, [equipment, isNew]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const uploadedDocs: EquipmentDocument[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const doc = await uploadFile(file, equipment?.id || 'temp');
+      if (doc) {
+        uploadedDocs.push(doc);
+      }
+    }
+
+    setFormData({
+      ...formData,
+      documents: [...formData.documents, ...uploadedDocs],
+    });
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  const handleFileDelete = async (doc: EquipmentDocument) => {
+    const success = await deleteFile(doc.url);
+    if (success) {
+      setFormData({
+        ...formData,
+        documents: formData.documents.filter((d: EquipmentDocument) => d.url !== doc.url),
+      });
+      toast.success("Файл удален");
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -166,9 +207,51 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
 
           <div className="grid gap-2">
             <Label htmlFor="documents">Документы</Label>
-            <div className="text-sm text-muted-foreground">
-              Функция загрузки файлов будет добавлена позже
-            </div>
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                <Input
+                  id="documents"
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+                {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+            )}
+            {formData.documents.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {formData.documents.map((doc: EquipmentDocument, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm truncate max-w-[200px]">{doc.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(doc.size / 1024).toFixed(2)} KB)
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(getFileUrl(doc.url), '_blank')}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleFileDelete(doc)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid gap-2">
