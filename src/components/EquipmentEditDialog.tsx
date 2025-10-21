@@ -77,6 +77,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
     other_requirements: '',
     // Purchase information
     purchase_price: null as number | null,
+    purchase_currency: '',
     price_updated_at: null as string | null,
     incoterms: '',
     supplier: '',
@@ -134,6 +135,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         medical_gas_other: equipment.medical_gas_other || '',
         other_requirements: equipment.other_requirements || '',
         purchase_price: equipment.purchase_price || null,
+        purchase_currency: equipment.purchase_currency || '',
         price_updated_at: equipment.price_updated_at || null,
         incoterms: equipment.incoterms || '',
         supplier: equipment.supplier || '',
@@ -185,6 +187,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         medical_gas_other: '',
         other_requirements: '',
         purchase_price: null,
+        purchase_currency: '',
         price_updated_at: null,
         incoterms: '',
         supplier: '',
@@ -761,6 +764,25 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                       onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value ? Number(e.target.value) : null })}
                       disabled={!canEdit()}
                     />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="purchase_currency">Валюта</Label>
+                    <Select
+                      value={formData.purchase_currency}
+                      onValueChange={(value) => setFormData({ ...formData, purchase_currency: value })}
+                      disabled={!canEdit()}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите валюту" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">Доллар США (USD)</SelectItem>
+                        <SelectItem value="RUB">Российский рубль (RUB)</SelectItem>
+                        <SelectItem value="KZT">Тенге (KZT)</SelectItem>
+                        <SelectItem value="EUR">Евро (EUR)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid gap-2">

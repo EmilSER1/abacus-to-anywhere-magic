@@ -50,6 +50,7 @@ export interface Equipment {
   other_requirements: string | null;
   // Purchase information (admin/staff only)
   purchase_price: number | null;
+  purchase_currency: string | null;
   price_updated_at: string | null;
   incoterms: string | null;
   supplier: string | null;

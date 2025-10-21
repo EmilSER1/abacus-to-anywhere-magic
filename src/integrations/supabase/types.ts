@@ -54,6 +54,7 @@ export type Database = {
           power_watts_peak: string | null
           precision_ac: boolean | null
           price_updated_at: string | null
+          purchase_currency: string | null
           purchase_price: number | null
           quantity: string | null
           raised_floor: string | null
@@ -108,6 +109,7 @@ export type Database = {
           power_watts_peak?: string | null
           precision_ac?: boolean | null
           price_updated_at?: string | null
+          purchase_currency?: string | null
           purchase_price?: number | null
           quantity?: string | null
           raised_floor?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           power_watts_peak?: string | null
           precision_ac?: boolean | null
           price_updated_at?: string | null
+          purchase_currency?: string | null
           purchase_price?: number | null
           quantity?: string | null
           raised_floor?: string | null

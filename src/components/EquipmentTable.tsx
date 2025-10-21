@@ -209,7 +209,9 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                           {eq.purchase_price && (
                             <div>
                               <div className="text-xs text-muted-foreground">Цена закупа</div>
-                              <div className="text-sm font-medium">{eq.purchase_price}</div>
+                              <div className="text-sm font-medium">
+                                {eq.purchase_price} {eq.purchase_currency || ''}
+                              </div>
                             </div>
                           )}
                           {eq.price_updated_at && (
