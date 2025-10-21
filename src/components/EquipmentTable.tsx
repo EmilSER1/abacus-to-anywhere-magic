@@ -26,8 +26,6 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const { data: equipment = [], isLoading } = useRoomEquipment(roomId);
   const deleteEquipment = useDeleteEquipment();
   const { canEdit } = useUserRole();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollbarRef = useRef<HTMLDivElement>(null);
   
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,102 +34,6 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const [expandedSpecs, setExpandedSpecs] = useState<string[]>([]);
   const [expandedPurchase, setExpandedPurchase] = useState<string[]>([]);
 
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    const scrollbar = scrollbarRef.current;
-    
-    if (!scrollContainer || !scrollbar) return;
-
-    const scrollbarThumb = scrollbar.firstChild as HTMLElement;
-    if (!scrollbarThumb) return;
-
-    const updateScrollbarThumb = () => {
-      const containerWidth = scrollContainer.clientWidth;
-      const scrollWidth = scrollContainer.scrollWidth;
-      
-      const thumbWidthRatio = Math.min(containerWidth / scrollWidth, 1);
-      const thumbWidth = thumbWidthRatio * scrollbar.clientWidth;
-      scrollbarThumb.style.width = `${thumbWidth}px`;
-      
-      const maxScroll = scrollWidth - containerWidth;
-      if (maxScroll > 0) {
-        const scrollPercentage = scrollContainer.scrollLeft / maxScroll;
-        const maxThumbPos = scrollbar.clientWidth - thumbWidth;
-        scrollbarThumb.style.transform = `translateX(${scrollPercentage * maxThumbPos}px)`;
-      } else {
-        scrollbarThumb.style.transform = `translateX(0px)`;
-      }
-    };
-
-    let isDragging = false;
-    let startX = 0;
-    let startScrollLeft = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      const thumbRect = scrollbarThumb.getBoundingClientRect();
-      
-      if (e.clientX >= thumbRect.left && e.clientX <= thumbRect.right) {
-        isDragging = true;
-        startX = e.clientX;
-        startScrollLeft = scrollContainer.scrollLeft;
-        e.preventDefault();
-        document.body.style.userSelect = 'none';
-      } else {
-        const scrollbarRect = scrollbar.getBoundingClientRect();
-        const clickPosition = e.clientX - scrollbarRect.left;
-        const thumbWidth = parseFloat(scrollbarThumb.style.width);
-        const targetThumbPos = clickPosition - (thumbWidth / 2);
-        const maxThumbPos = scrollbar.clientWidth - thumbWidth;
-        const percentage = Math.max(0, Math.min(1, targetThumbPos / maxThumbPos));
-        
-        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-        scrollContainer.scrollLeft = percentage * maxScroll;
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      
-      const dx = e.clientX - startX;
-      const thumbWidth = parseFloat(scrollbarThumb.style.width);
-      const maxThumbMove = scrollbar.clientWidth - thumbWidth;
-      const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-      
-      if (maxThumbMove > 0) {
-        const scrollRatio = maxScroll / maxThumbMove;
-        scrollContainer.scrollLeft = startScrollLeft + (dx * scrollRatio);
-      }
-      
-      e.preventDefault();
-    };
-
-    const handleMouseUp = () => {
-      if (isDragging) {
-        isDragging = false;
-        document.body.style.userSelect = '';
-      }
-    };
-
-    const handleScroll = () => updateScrollbarThumb();
-
-    scrollContainer.addEventListener('scroll', handleScroll);
-    scrollbar.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    setTimeout(updateScrollbarThumb, 100);
-    
-    const handleResize = () => updateScrollbarThumb();
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
-      scrollbar.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [equipment]);
 
   const handleEdit = (eq: Equipment) => {
     setEditingEquipment(eq);
@@ -201,8 +103,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
           Нет оборудования в этом помещении
         </div>
       ) : (
-        <>
-          <div ref={scrollContainerRef} className="overflow-x-auto">
+        <div className="overflow-x-auto">
             <Table>
               <TableHeader className="sticky top-0 z-20 bg-muted/30">
                 <TableRow>
@@ -585,16 +486,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                 ))}
               </TableBody>
             </Table>
-          </div>
-          
-          {/* Fixed scrollbar at bottom of screen */}
-          <div 
-            ref={scrollbarRef}
-            className="fixed bottom-0 left-0 md:left-[280px] right-0 h-5 bg-muted/90 backdrop-blur-sm border-t border-border z-50"
-          >
-            <div className="h-full bg-primary rounded-full cursor-grab active:cursor-grabbing hover:bg-primary/80 transition-colors" />
-          </div>
-        </>
+        </div>
       )}
 
       <EquipmentDialog
