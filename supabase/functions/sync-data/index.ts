@@ -63,21 +63,63 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    // SECURITY: Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create client with user's auth token
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Invalid authentication token:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify user has admin role
+    const { data: userRole, error: roleError } = await supabase.rpc('get_user_primary_role', { _user_id: user.id });
+    
+    if (roleError || userRole !== 'admin') {
+      console.error('Access denied. User role:', userRole, 'Error:', roleError);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated admin user:', user.email);
+
+    // Use service role key for data operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
     const { action } = await req.json()
 
     if (action === 'sync-projector-data') {
-      console.log('Starting projector data sync with sample data...')
+      console.log('Starting projector data sync by admin:', user.email)
 
       try {
         console.log(`Using ${sampleProjectorData.length} sample projector records`)
         
         // Clear existing data
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await supabaseAdmin
           .from('projector_floors')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -88,7 +130,7 @@ Deno.serve(async (req) => {
         }
 
         // Insert sample data
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseAdmin
           .from('projector_floors')
           .insert(sampleProjectorData)
 
@@ -114,13 +156,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'sync-turar-data') {
-      console.log('Starting turar data sync with sample data...')
+      console.log('Starting turar data sync by admin:', user.email)
 
       try {
         console.log(`Using ${sampleTurarData.length} sample turar records`)
         
         // Clear existing data
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await supabaseAdmin
           .from('turar_medical')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -131,7 +173,7 @@ Deno.serve(async (req) => {
         }
 
         // Insert sample data
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseAdmin
           .from('turar_medical')
           .insert(sampleTurarData)
 
@@ -157,14 +199,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'sync-all') {
-      console.log('Syncing all sample data...')
+      console.log('Syncing all sample data by admin:', user.email)
 
       let totalInserted = 0
       let messages = []
 
       // Sync projector data
       try {
-        const { error: deleteError1 } = await supabase
+        const { error: deleteError1 } = await supabaseAdmin
           .from('projector_floors')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -173,7 +215,7 @@ Deno.serve(async (req) => {
           throw deleteError1
         }
 
-        const { error: insertError1 } = await supabase
+        const { error: insertError1 } = await supabaseAdmin
           .from('projector_floors')
           .insert(sampleProjectorData)
 
@@ -191,7 +233,7 @@ Deno.serve(async (req) => {
 
       // Sync turar data
       try {
-        const { error: deleteError2 } = await supabase
+        const { error: deleteError2 } = await supabaseAdmin
           .from('turar_medical')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -200,7 +242,7 @@ Deno.serve(async (req) => {
           throw deleteError2
         }
 
-        const { error: insertError2 } = await supabase
+        const { error: insertError2 } = await supabaseAdmin
           .from('turar_medical')
           .insert(sampleTurarData)
 

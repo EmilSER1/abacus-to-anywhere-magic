@@ -301,6 +301,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -316,6 +337,17 @@ export type Database = {
           department_name: string
         }[]
       }
+      get_user_primary_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -325,14 +357,20 @@ export type Database = {
         Returns: boolean
       }
       update_user_role_secure: {
-        Args: {
-          new_role: Database["public"]["Enums"]["user_role"]
-          target_user_id: string
-        }
+        Args:
+          | {
+              new_role: Database["public"]["Enums"]["app_role"]
+              target_user_id: string
+            }
+          | {
+              new_role: Database["public"]["Enums"]["user_role"]
+              target_user_id: string
+            }
         Returns: boolean
       }
     }
     Enums: {
+      app_role: "admin" | "staff" | "user" | "none"
       user_role: "admin" | "staff" | "user" | "none"
     }
     CompositeTypes: {
@@ -461,6 +499,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "staff", "user", "none"],
       user_role: ["admin", "staff", "user", "none"],
     },
   },

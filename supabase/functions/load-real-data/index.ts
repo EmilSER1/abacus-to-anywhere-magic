@@ -129,18 +129,60 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    // SECURITY: Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create client with user's auth token
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Invalid authentication token:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify user has admin role
+    const { data: userRole, error: roleError } = await supabase.rpc('get_user_primary_role', { _user_id: user.id });
+    
+    if (roleError || userRole !== 'admin') {
+      console.error('Access denied. User role:', userRole, 'Error:', roleError);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated admin user:', user.email);
+
+    // Use service role key for data operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
     const { action } = await req.json()
 
     if (action === 'load-projector-batch') {
-      console.log('Loading real projector data...')
+      console.log('Loading real projector data by admin:', user.email)
 
       // Clear existing data
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseAdmin
         .from('projector_floors')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -151,7 +193,7 @@ Deno.serve(async (req) => {
       }
 
       // Insert real data
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('projector_floors')
         .insert(realProjectorData)
 
@@ -176,10 +218,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'load-turar-batch') {
-      console.log('Loading real turar data...')
+      console.log('Loading real turar data by admin:', user.email)
 
       // Clear existing data
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseAdmin
         .from('turar_medical')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
@@ -190,7 +232,7 @@ Deno.serve(async (req) => {
       }
 
       // Insert real data
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('turar_medical')
         .insert(realTurarData)
 
