@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,6 @@ import { Equipment, useRoomEquipment, useDeleteEquipment } from '@/hooks/useRoom
 import { EquipmentDialog } from './EquipmentDialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useUserRole } from '@/hooks/useUserRole';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +26,8 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const { data: equipment = [], isLoading } = useRoomEquipment(roomId);
   const deleteEquipment = useDeleteEquipment();
   const { canEdit } = useUserRole();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
   
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -34,6 +35,63 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const [deleteConfirm, setDeleteConfirm] = useState<Equipment | null>(null);
   const [expandedSpecs, setExpandedSpecs] = useState<string[]>([]);
   const [expandedPurchase, setExpandedPurchase] = useState<string[]>([]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    const scrollbar = scrollbarRef.current;
+    
+    if (!scrollContainer || !scrollbar) return;
+
+    const handleScroll = () => {
+      const scrollPercentage = scrollContainer.scrollLeft / (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+      const scrollbarInner = scrollbar.firstChild as HTMLElement;
+      if (scrollbarInner) {
+        scrollbarInner.style.transform = `translateX(${scrollPercentage * (scrollbar.clientWidth - scrollbarInner.clientWidth)}px)`;
+      }
+    };
+
+    const handleScrollbarDrag = (e: MouseEvent) => {
+      const scrollbarInner = scrollbar.firstChild as HTMLElement;
+      if (!scrollbarInner) return;
+      
+      const scrollbarRect = scrollbar.getBoundingClientRect();
+      const percentage = (e.clientX - scrollbarRect.left) / scrollbarRect.width;
+      scrollContainer.scrollLeft = percentage * (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+    };
+
+    let isDragging = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      handleScrollbarDrag(e);
+      e.preventDefault();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        handleScrollbarDrag(e);
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    scrollbar.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    // Initial update
+    handleScroll();
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      scrollbar.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [equipment]);
 
   const handleEdit = (eq: Equipment) => {
     setEditingEquipment(eq);
@@ -103,7 +161,8 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
           Нет оборудования в этом помещении
         </div>
       ) : (
-        <ScrollArea className="h-[calc(100vh-16rem)] w-full border rounded-lg">
+        <>
+        <div ref={scrollContainerRef} className="overflow-x-auto border rounded-lg">
         <Table>
           <TableHeader className="sticky top-0 z-20 bg-muted/30">
             <TableRow>
@@ -505,8 +564,16 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
             ))}
           </TableBody>
         </Table>
-        <ScrollBar orientation="horizontal" className="h-3" />
-        </ScrollArea>
+        </div>
+        
+        {/* Fixed scrollbar at bottom of screen */}
+        <div 
+          ref={scrollbarRef}
+          className="fixed bottom-0 left-0 right-0 h-3 bg-muted/30 backdrop-blur-sm border-t border-border cursor-pointer z-50"
+        >
+          <div className="h-full w-1/3 bg-border rounded-full transition-transform" />
+        </div>
+        </>
       )}
 
       <EquipmentDialog
