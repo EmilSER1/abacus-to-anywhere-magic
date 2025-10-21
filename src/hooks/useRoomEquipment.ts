@@ -48,6 +48,13 @@ export interface Equipment {
   medical_gas_n2o: string | null;
   medical_gas_other: string | null;
   other_requirements: string | null;
+  // Purchase information (admin/staff only)
+  purchase_price: number | null;
+  price_updated_at: string | null;
+  incoterms: string | null;
+  supplier: string | null;
+  supplier_status: string | null;
+  supplier_contacts: any;
   created_at: string;
   updated_at: string;
 }

@@ -75,6 +75,13 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
     medical_gas_n2o: '',
     medical_gas_other: '',
     other_requirements: '',
+    // Purchase information
+    purchase_price: null as number | null,
+    price_updated_at: null as string | null,
+    incoterms: '',
+    supplier: '',
+    supplier_status: '',
+    supplier_contacts: [] as Array<{ name: string; phones: string[]; emails: string[]; city: string; address: string }>,
   });
 
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
@@ -126,6 +133,12 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
         medical_gas_n2o: equipment.medical_gas_n2o || '',
         medical_gas_other: equipment.medical_gas_other || '',
         other_requirements: equipment.other_requirements || '',
+        purchase_price: equipment.purchase_price || null,
+        price_updated_at: equipment.price_updated_at || null,
+        incoterms: equipment.incoterms || '',
+        supplier: equipment.supplier || '',
+        supplier_status: equipment.supplier_status || '',
+        supplier_contacts: equipment.supplier_contacts || [],
       });
     } else {
       setFormData({

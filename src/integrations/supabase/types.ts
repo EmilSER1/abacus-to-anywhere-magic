@@ -40,6 +40,7 @@ export type Database = {
           hot_water: string | null
           humidity_temperature: string | null
           id: string
+          incoterms: string | null
           medical_gas_ma4: string | null
           medical_gas_ma7: string | null
           medical_gas_n2o: string | null
@@ -52,11 +53,16 @@ export type Database = {
           power_watts: string | null
           power_watts_peak: string | null
           precision_ac: boolean | null
+          price_updated_at: string | null
+          purchase_price: number | null
           quantity: string | null
           raised_floor: string | null
           room_id: string | null
           specification: string | null
           standard: string | null
+          supplier: string | null
+          supplier_contacts: Json | null
+          supplier_status: string | null
           unit: string | null
           updated_at: string
           ups: string | null
@@ -88,6 +94,7 @@ export type Database = {
           hot_water?: string | null
           humidity_temperature?: string | null
           id?: string
+          incoterms?: string | null
           medical_gas_ma4?: string | null
           medical_gas_ma7?: string | null
           medical_gas_n2o?: string | null
@@ -100,11 +107,16 @@ export type Database = {
           power_watts?: string | null
           power_watts_peak?: string | null
           precision_ac?: boolean | null
+          price_updated_at?: string | null
+          purchase_price?: number | null
           quantity?: string | null
           raised_floor?: string | null
           room_id?: string | null
           specification?: string | null
           standard?: string | null
+          supplier?: string | null
+          supplier_contacts?: Json | null
+          supplier_status?: string | null
           unit?: string | null
           updated_at?: string
           ups?: string | null
@@ -136,6 +148,7 @@ export type Database = {
           hot_water?: string | null
           humidity_temperature?: string | null
           id?: string
+          incoterms?: string | null
           medical_gas_ma4?: string | null
           medical_gas_ma7?: string | null
           medical_gas_n2o?: string | null
@@ -148,11 +161,16 @@ export type Database = {
           power_watts?: string | null
           power_watts_peak?: string | null
           precision_ac?: boolean | null
+          price_updated_at?: string | null
+          purchase_price?: number | null
           quantity?: string | null
           raised_floor?: string | null
           room_id?: string | null
           specification?: string | null
           standard?: string | null
+          supplier?: string | null
+          supplier_contacts?: Json | null
+          supplier_status?: string | null
           unit?: string | null
           updated_at?: string
           ups?: string | null

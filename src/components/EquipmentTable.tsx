@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Plus, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
 import { Equipment, useRoomEquipment, useDeleteEquipment } from '@/hooks/useRoomEquipment';
 import { EquipmentDialog } from './EquipmentDialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,12 +25,14 @@ interface EquipmentTableProps {
 export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
   const { data: equipment = [], isLoading } = useRoomEquipment(roomId);
   const deleteEquipment = useDeleteEquipment();
+  const { canEdit } = useUserRole();
   
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Equipment | null>(null);
   const [expandedSpecs, setExpandedSpecs] = useState<string[]>([]);
+  const [expandedPurchase, setExpandedPurchase] = useState<string[]>([]);
 
   const handleEdit = (eq: Equipment) => {
     setEditingEquipment(eq);
@@ -56,6 +59,14 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
     );
   };
 
+  const togglePurchase = (equipmentId: string) => {
+    setExpandedPurchase(prev => 
+      prev.includes(equipmentId) 
+        ? prev.filter(id => id !== equipmentId)
+        : [...prev, equipmentId]
+    );
+  };
+
   const hasSpecs = (eq: Equipment) => {
     return !!(eq.dimensions || eq.humidity_temperature || eq.voltage || eq.frequency || 
       eq.power_watts || eq.power_watts_peak || eq.ups || eq.floor_load || 
@@ -66,6 +77,11 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
       eq.raised_floor || eq.ceiling_drops || eq.medical_gas_o2 || 
       eq.medical_gas_ma4 || eq.medical_gas_ma7 || eq.medical_gas_n2o || 
       eq.medical_gas_other || eq.other_requirements);
+  };
+
+  const hasPurchaseInfo = (eq: Equipment) => {
+    return !!(eq.purchase_price || eq.price_updated_at || eq.incoterms || 
+      eq.supplier || eq.supplier_status || (eq.supplier_contacts && eq.supplier_contacts.length > 0));
   };
 
   if (isLoading) {
@@ -141,6 +157,16 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                   <TableCell>{eq.standard || '-'}</TableCell>
                   <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     <div className="flex justify-end gap-2">
+                      {canEdit() && hasPurchaseInfo(eq) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => togglePurchase(eq.id)}
+                          title="Закупочная информация"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                        </Button>
+                      )}
                       {hasSpecs(eq) && (
                         <Button
                           variant="ghost"
@@ -172,6 +198,89 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                     </div>
                   </TableCell>
                 </TableRow>
+                {canEdit() && expandedPurchase.includes(eq.id) && (
+                  <TableRow className="bg-accent/20">
+                    <TableCell colSpan={11}>
+                      <div className="p-4 space-y-4">
+                        <h4 className="font-semibold text-sm mb-3">Закупочная информация</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {eq.purchase_price && (
+                            <div>
+                              <div className="text-xs text-muted-foreground">Цена закупа</div>
+                              <div className="text-sm font-medium">{eq.purchase_price}</div>
+                            </div>
+                          )}
+                          {eq.price_updated_at && (
+                            <div>
+                              <div className="text-xs text-muted-foreground">Дата обновления</div>
+                              <div className="text-sm font-medium">
+                                {new Date(eq.price_updated_at).toLocaleDateString('ru-RU')}
+                              </div>
+                            </div>
+                          )}
+                          {eq.incoterms && (
+                            <div>
+                              <div className="text-xs text-muted-foreground">Условия инкотермс</div>
+                              <div className="text-sm font-medium">{eq.incoterms}</div>
+                            </div>
+                          )}
+                          {eq.supplier && (
+                            <div>
+                              <div className="text-xs text-muted-foreground">Поставщик</div>
+                              <div className="text-sm font-medium">{eq.supplier}</div>
+                            </div>
+                          )}
+                          {eq.supplier_status && (
+                            <div>
+                              <div className="text-xs text-muted-foreground">Статус поставщика</div>
+                              <div className="text-sm font-medium">
+                                <Badge variant="outline">{eq.supplier_status}</Badge>
+                              </div>
+                            </div>
+                          )}
+                          {eq.supplier_contacts && eq.supplier_contacts.length > 0 && (
+                            <div className="col-span-2 md:col-span-3">
+                              <div className="text-xs text-muted-foreground mb-2">Контакты</div>
+                              <div className="space-y-3">
+                                {eq.supplier_contacts.map((contact: any, idx: number) => (
+                                  <div key={idx} className="border rounded-lg p-3 space-y-1">
+                                    {contact.name && (
+                                      <div className="font-medium">{contact.name}</div>
+                                    )}
+                                    {contact.phones && contact.phones.length > 0 && (
+                                      <div className="text-xs">
+                                        <span className="text-muted-foreground">Тел: </span>
+                                        {contact.phones.join(', ')}
+                                      </div>
+                                    )}
+                                    {contact.emails && contact.emails.length > 0 && (
+                                      <div className="text-xs">
+                                        <span className="text-muted-foreground">Email: </span>
+                                        {contact.emails.join(', ')}
+                                      </div>
+                                    )}
+                                    {contact.city && (
+                                      <div className="text-xs">
+                                        <span className="text-muted-foreground">Город: </span>
+                                        {contact.city}
+                                      </div>
+                                    )}
+                                    {contact.address && (
+                                      <div className="text-xs">
+                                        <span className="text-muted-foreground">Адрес: </span>
+                                        {contact.address}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
                 {expandedSpecs.includes(eq.id) && (
                   <TableRow className="bg-muted/50">
                     <TableCell colSpan={11}>
