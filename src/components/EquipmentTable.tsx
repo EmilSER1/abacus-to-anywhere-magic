@@ -155,9 +155,9 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                     ) : '-'}
                   </TableCell>
                   <TableCell>{eq.standard || '-'}</TableCell>
-                  <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                  <TableCell className="text-right sticky right-0 bg-background shadow-[-2px_0_4px_rgba(0,0,0,0.1)] z-10">
                     <div className="flex justify-end gap-2">
-                      {canEdit() && hasPurchaseInfo(eq) && (
+                      {canEdit() && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -185,6 +185,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(eq)}
+                        title="Редактировать"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -192,6 +193,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeleteConfirm(eq)}
+                        title="Удалить"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

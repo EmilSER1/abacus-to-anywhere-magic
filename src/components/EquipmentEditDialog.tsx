@@ -442,7 +442,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="dimensions"
                     value={formData.dimensions}
                     onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -452,7 +452,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="humidity_temperature"
                     value={formData.humidity_temperature}
                     onChange={(e) => setFormData({ ...formData, humidity_temperature: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -462,7 +462,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="voltage"
                     value={formData.voltage}
                     onChange={(e) => setFormData({ ...formData, voltage: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -472,7 +472,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="frequency"
                     value={formData.frequency}
                     onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -482,7 +482,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="power_watts"
                     value={formData.power_watts}
                     onChange={(e) => setFormData({ ...formData, power_watts: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -492,7 +492,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="power_watts_peak"
                     value={formData.power_watts_peak}
                     onChange={(e) => setFormData({ ...formData, power_watts_peak: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -502,7 +502,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="ups"
                     value={formData.ups}
                     onChange={(e) => setFormData({ ...formData, ups: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -512,7 +512,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="floor_load"
                     value={formData.floor_load}
                     onChange={(e) => setFormData({ ...formData, floor_load: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -522,7 +522,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="floor_load_heaviest"
                     value={formData.floor_load_heaviest}
                     onChange={(e) => setFormData({ ...formData, floor_load_heaviest: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -532,7 +532,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="ceiling_load_heaviest"
                     value={formData.ceiling_load_heaviest}
                     onChange={(e) => setFormData({ ...formData, ceiling_load_heaviest: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -543,7 +543,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                       id="chiller"
                       checked={formData.chiller}
                       onCheckedChange={(checked) => setFormData({ ...formData, chiller: checked })}
-                      disabled={!canEdit}
+                      disabled={!canEdit()}
                     />
                   </Label>
                 </div>
@@ -554,7 +554,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="exhaust"
                     value={formData.exhaust}
                     onChange={(e) => setFormData({ ...formData, exhaust: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -564,7 +564,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="drainage"
                     value={formData.drainage}
                     onChange={(e) => setFormData({ ...formData, drainage: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -574,7 +574,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="hot_water"
                     value={formData.hot_water}
                     onChange={(e) => setFormData({ ...formData, hot_water: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -584,7 +584,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="cold_water"
                     value={formData.cold_water}
                     onChange={(e) => setFormData({ ...formData, cold_water: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -594,7 +594,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="distilled_water"
                     value={formData.distilled_water}
                     onChange={(e) => setFormData({ ...formData, distilled_water: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -604,7 +604,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="neutralization_tank"
                     value={formData.neutralization_tank}
                     onChange={(e) => setFormData({ ...formData, neutralization_tank: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -614,7 +614,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="data_requirements"
                     value={formData.data_requirements}
                     onChange={(e) => setFormData({ ...formData, data_requirements: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -624,7 +624,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     id="emergency_buttons"
                     value={formData.emergency_buttons}
                     onChange={(e) => setFormData({ ...formData, emergency_buttons: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -635,7 +635,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Количество и напряжение"
                     value={formData.xray_warning_lamps}
                     onChange={(e) => setFormData({ ...formData, xray_warning_lamps: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -646,7 +646,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Да/Нет и Глубина"
                     value={formData.raised_floor}
                     onChange={(e) => setFormData({ ...formData, raised_floor: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -657,7 +657,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Да/Нет и Глубина"
                     value={formData.ceiling_drops}
                     onChange={(e) => setFormData({ ...formData, ceiling_drops: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -668,7 +668,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                       id="precision_ac"
                       checked={formData.precision_ac}
                       onCheckedChange={(checked) => setFormData({ ...formData, precision_ac: checked })}
-                      disabled={!canEdit}
+                      disabled={!canEdit()}
                     />
                   </Label>
                 </div>
@@ -680,7 +680,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Прямое подключение устройства"
                     value={formData.medical_gas_o2}
                     onChange={(e) => setFormData({ ...formData, medical_gas_o2: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -691,7 +691,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Прямое подключение устройства"
                     value={formData.medical_gas_ma4}
                     onChange={(e) => setFormData({ ...formData, medical_gas_ma4: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -702,7 +702,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Прямое подключение устройства"
                     value={formData.medical_gas_ma7}
                     onChange={(e) => setFormData({ ...formData, medical_gas_ma7: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -713,7 +713,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Прямое подключение устройства"
                     value={formData.medical_gas_n2o}
                     onChange={(e) => setFormData({ ...formData, medical_gas_n2o: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -724,7 +724,7 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     placeholder="Прямое подключение устройства"
                     value={formData.medical_gas_other}
                     onChange={(e) => setFormData({ ...formData, medical_gas_other: e.target.value })}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
 
@@ -735,12 +735,179 @@ export const EquipmentEditDialog: React.FC<EquipmentEditDialogProps> = ({
                     value={formData.other_requirements}
                     onChange={(e) => setFormData({ ...formData, other_requirements: e.target.value })}
                     rows={3}
-                    disabled={!canEdit}
+                    disabled={!canEdit()}
                   />
                 </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
+
+          {canEdit() && (
+            <Collapsible className="border rounded-lg p-4 bg-accent/10">
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between" type="button">
+                  <span className="font-semibold">Закупочная информация (только для админов и сотрудников)</span>
+                  <ChevronDown className="h-4 w-4 transition-transform" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="purchase_price">Цена закупа</Label>
+                    <Input
+                      id="purchase_price"
+                      type="number"
+                      value={formData.purchase_price || ''}
+                      onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value ? Number(e.target.value) : null })}
+                      disabled={!canEdit()}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="price_updated_at">Дата обновления</Label>
+                    <Input
+                      id="price_updated_at"
+                      type="date"
+                      value={formData.price_updated_at ? formData.price_updated_at.split('T')[0] : ''}
+                      onChange={(e) => setFormData({ ...formData, price_updated_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                      disabled={!canEdit()}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="incoterms">Условия инкотермс</Label>
+                    <Input
+                      id="incoterms"
+                      value={formData.incoterms}
+                      onChange={(e) => setFormData({ ...formData, incoterms: e.target.value })}
+                      disabled={!canEdit()}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="supplier">Поставщик</Label>
+                    <Input
+                      id="supplier"
+                      value={formData.supplier}
+                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                      disabled={!canEdit()}
+                    />
+                  </div>
+
+                  <div className="grid gap-2 col-span-2">
+                    <Label htmlFor="supplier_status">Статус поставщика</Label>
+                    <Select
+                      value={formData.supplier_status}
+                      onValueChange={(value) => setFormData({ ...formData, supplier_status: value })}
+                      disabled={!canEdit()}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите статус" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Завод">Завод</SelectItem>
+                        <SelectItem value="Представительство">Представительство</SelectItem>
+                        <SelectItem value="Дилер">Дилер</SelectItem>
+                        <SelectItem value="Перекуп">Перекуп</SelectItem>
+                        <SelectItem value="Дистрибутор">Дистрибутор</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Контакты поставщика</Label>
+                    <div className="space-y-2">
+                      {formData.supplier_contacts.map((contact, idx) => (
+                        <div key={idx} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium text-sm">Контакт {idx + 1}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newContacts = formData.supplier_contacts.filter((_, i) => i !== idx);
+                                setFormData({ ...formData, supplier_contacts: newContacts });
+                              }}
+                              disabled={!canEdit()}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            placeholder="Имя"
+                            value={contact.name}
+                            onChange={(e) => {
+                              const newContacts = [...formData.supplier_contacts];
+                              newContacts[idx] = { ...contact, name: e.target.value };
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                            disabled={!canEdit()}
+                          />
+                          <Input
+                            placeholder="Телефоны (через запятую)"
+                            value={contact.phones.join(', ')}
+                            onChange={(e) => {
+                              const newContacts = [...formData.supplier_contacts];
+                              newContacts[idx] = { ...contact, phones: e.target.value.split(',').map(p => p.trim()) };
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                            disabled={!canEdit()}
+                          />
+                          <Input
+                            placeholder="Email (через запятую)"
+                            value={contact.emails.join(', ')}
+                            onChange={(e) => {
+                              const newContacts = [...formData.supplier_contacts];
+                              newContacts[idx] = { ...contact, emails: e.target.value.split(',').map(e => e.trim()) };
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                            disabled={!canEdit()}
+                          />
+                          <Input
+                            placeholder="Город"
+                            value={contact.city}
+                            onChange={(e) => {
+                              const newContacts = [...formData.supplier_contacts];
+                              newContacts[idx] = { ...contact, city: e.target.value };
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                            disabled={!canEdit()}
+                          />
+                          <Input
+                            placeholder="Адрес"
+                            value={contact.address}
+                            onChange={(e) => {
+                              const newContacts = [...formData.supplier_contacts];
+                              newContacts[idx] = { ...contact, address: e.target.value };
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                            disabled={!canEdit()}
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            supplier_contacts: [...formData.supplier_contacts, { name: '', phones: [], emails: [], city: '', address: '' }]
+                          });
+                        }}
+                        className="w-full"
+                        disabled={!canEdit()}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Добавить контакт
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
 
         <DialogFooter>

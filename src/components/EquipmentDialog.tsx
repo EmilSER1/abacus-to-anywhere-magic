@@ -693,6 +693,159 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
               </div>
             </CollapsibleContent>
           </Collapsible>
+
+          <Collapsible className="border rounded-lg p-4 bg-accent/10">
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full justify-between" type="button">
+                <span className="font-semibold">Закупочная информация (для админов и сотрудников)</span>
+                <ChevronDown className="h-4 w-4 transition-transform" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="purchase_price">Цена закупа</Label>
+                  <Input
+                    id="purchase_price"
+                    type="number"
+                    value={formData.purchase_price || ''}
+                    onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value ? Number(e.target.value) : null })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="price_updated_at">Дата обновления</Label>
+                  <Input
+                    id="price_updated_at"
+                    type="date"
+                    value={formData.price_updated_at ? formData.price_updated_at.split('T')[0] : ''}
+                    onChange={(e) => setFormData({ ...formData, price_updated_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="incoterms">Условия инкотермс</Label>
+                  <Input
+                    id="incoterms"
+                    value={formData.incoterms}
+                    onChange={(e) => setFormData({ ...formData, incoterms: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="supplier">Поставщик</Label>
+                  <Input
+                    id="supplier"
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-2 col-span-2">
+                  <Label htmlFor="supplier_status">Статус поставщика</Label>
+                  <Select
+                    value={formData.supplier_status}
+                    onValueChange={(value) => setFormData({ ...formData, supplier_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите статус" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Завод">Завод</SelectItem>
+                      <SelectItem value="Представительство">Представительство</SelectItem>
+                      <SelectItem value="Дилер">Дилер</SelectItem>
+                      <SelectItem value="Перекуп">Перекуп</SelectItem>
+                      <SelectItem value="Дистрибутор">Дистрибутор</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2 col-span-2">
+                  <Label>Контакты поставщика</Label>
+                  <div className="space-y-2">
+                    {formData.supplier_contacts.map((contact, idx) => (
+                      <div key={idx} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium text-sm">Контакт {idx + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newContacts = formData.supplier_contacts.filter((_, i) => i !== idx);
+                              setFormData({ ...formData, supplier_contacts: newContacts });
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder="Имя"
+                          value={contact.name}
+                          onChange={(e) => {
+                            const newContacts = [...formData.supplier_contacts];
+                            newContacts[idx] = { ...contact, name: e.target.value };
+                            setFormData({ ...formData, supplier_contacts: newContacts });
+                          }}
+                        />
+                        <Input
+                          placeholder="Телефоны (через запятую)"
+                          value={contact.phones.join(', ')}
+                          onChange={(e) => {
+                            const newContacts = [...formData.supplier_contacts];
+                            newContacts[idx] = { ...contact, phones: e.target.value.split(',').map(p => p.trim()) };
+                            setFormData({ ...formData, supplier_contacts: newContacts });
+                          }}
+                        />
+                        <Input
+                          placeholder="Email (через запятую)"
+                          value={contact.emails.join(', ')}
+                          onChange={(e) => {
+                            const newContacts = [...formData.supplier_contacts];
+                            newContacts[idx] = { ...contact, emails: e.target.value.split(',').map(e => e.trim()) };
+                            setFormData({ ...formData, supplier_contacts: newContacts });
+                          }}
+                        />
+                        <Input
+                          placeholder="Город"
+                          value={contact.city}
+                          onChange={(e) => {
+                            const newContacts = [...formData.supplier_contacts];
+                            newContacts[idx] = { ...contact, city: e.target.value };
+                            setFormData({ ...formData, supplier_contacts: newContacts });
+                          }}
+                        />
+                        <Input
+                          placeholder="Адрес"
+                          value={contact.address}
+                          onChange={(e) => {
+                            const newContacts = [...formData.supplier_contacts];
+                            newContacts[idx] = { ...contact, address: e.target.value };
+                            setFormData({ ...formData, supplier_contacts: newContacts });
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          supplier_contacts: [...formData.supplier_contacts, { name: '', phones: [], emails: [], city: '', address: '' }]
+                        });
+                      }}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Добавить контакт
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <DialogFooter>
