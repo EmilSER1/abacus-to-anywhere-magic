@@ -7,6 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { EquipmentTable } from '@/components/EquipmentTable';
 import { EditDepartmentDialog } from '@/components/EditDepartmentDialog';
 import { EditRoomDialog } from '@/components/EditRoomDialog';
+import { AddDepartmentDialog } from '@/components/AddDepartmentDialog';
+import { AddRoomDialog } from '@/components/AddRoomDialog';
 
 import { useSearchParams } from 'react-router-dom';
 import { useFloorsData, FloorData } from '@/hooks/useFloorsData';
@@ -374,6 +376,9 @@ const FloorsPage: React.FC = () => {
                       {floor.stats.totalDepartments} отд. • {floor.stats.totalRooms} пом. • {floor.stats.totalEquipment} об.
                     </span>
                   </div>
+                  {canEdit() && (
+                    <AddDepartmentDialog floor={floor.number} />
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -390,7 +395,14 @@ const FloorsPage: React.FC = () => {
                                 <span className="font-medium">{department.name}</span>
                                 <Badge variant="secondary">{department.block}</Badge>
                                 {canEdit() && (
-                                  <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
+                                  <>
+                                    <EditDepartmentDialog department={{ id: deptKey, name: department.name }} />
+                                    <AddRoomDialog 
+                                      floor={floor.number} 
+                                      block={department.block} 
+                                      department={department.name} 
+                                    />
+                                  </>
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground">
