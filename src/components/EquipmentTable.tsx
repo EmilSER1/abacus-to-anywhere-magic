@@ -69,6 +69,8 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
             <TableRow>
               <TableHead>Код оборудования</TableHead>
               <TableHead>Наименование</TableHead>
+              <TableHead>Наименование (модель)</TableHead>
+              <TableHead>Код оборудования*</TableHead>
               <TableHead>Вид</TableHead>
               <TableHead>Бренд</TableHead>
               <TableHead>Страна</TableHead>
@@ -83,6 +85,8 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
               <TableRow key={eq.id}>
                 <TableCell>{eq.equipment_code || '-'}</TableCell>
                 <TableCell className="font-medium">{eq.equipment_name || '-'}</TableCell>
+                <TableCell>{eq.model_name || '-'}</TableCell>
+                <TableCell>{eq.equipment_code_required || '-'}</TableCell>
                 <TableCell>
                   {eq.equipment_type ? (
                     <Badge variant={eq.equipment_type === 'МИ' ? 'default' : 'secondary'}>
@@ -95,7 +99,20 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ roomId }) => {
                 <TableCell className="max-w-xs truncate">{eq.specification || '-'}</TableCell>
                 <TableCell>
                   {eq.documents && Array.isArray(eq.documents) && eq.documents.length > 0 ? (
-                    <Badge variant="outline">{eq.documents.length} файл(ов)</Badge>
+                    <div className="flex flex-col gap-1">
+                      {eq.documents.map((doc: any, idx: number) => (
+                        <a
+                          key={idx}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline truncate max-w-[150px]"
+                          title={doc.url}
+                        >
+                          Документ {idx + 1}
+                        </a>
+                      ))}
+                    </div>
                   ) : '-'}
                 </TableCell>
                 <TableCell>{eq.standard || '-'}</TableCell>

@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Equipment, useUpdateEquipment, useAddEquipment } from '@/hooks/useRoomEquipment';
+import { Plus, X } from 'lucide-react';
+import { toast } from "sonner";
 
 interface EquipmentDialogProps {
   equipment: Equipment | null;
@@ -34,9 +36,11 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
     brand: '',
     country: '',
     specification: '',
-    documents: [] as string[],
+    documents: [] as Array<{ url: string }>,
     standard: '',
   });
+
+  const [newDocumentUrl, setNewDocumentUrl] = useState('');
 
   useEffect(() => {
     if (equipment) {
@@ -66,7 +70,30 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
         standard: '',
       });
     }
+    setNewDocumentUrl('');
   }, [equipment]);
+
+  const handleAddDocumentUrl = () => {
+    if (!newDocumentUrl.trim()) {
+      toast.error("Введите ссылку на документ");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      documents: [...formData.documents, { url: newDocumentUrl.trim() }],
+    });
+    setNewDocumentUrl('');
+    toast.success("Ссылка добавлена");
+  };
+
+  const handleDeleteDocumentUrl = (index: number) => {
+    setFormData({
+      ...formData,
+      documents: formData.documents.filter((_, i) => i !== index),
+    });
+    toast.success("Ссылка удалена");
+  };
 
   const handleSave = () => {
     if (isNew) {
@@ -128,6 +155,15 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
           </div>
 
           <div className="grid gap-2">
+            <Label htmlFor="equipment_code_required">Код оборудования*</Label>
+            <Input
+              id="equipment_code_required"
+              value={formData.equipment_code_required}
+              onChange={(e) => setFormData({ ...formData, equipment_code_required: e.target.value })}
+            />
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="equipment_type">Вид</Label>
             <Select
               value={formData.equipment_type}
@@ -174,10 +210,52 @@ export const EquipmentDialog: React.FC<EquipmentDialogProps> = ({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="documents">Документы</Label>
-            <div className="text-sm text-muted-foreground">
-              Функционал загрузки файлов будет добавлен позже
+            <Label>Ссылки на документы</Label>
+            <div className="flex gap-2">
+              <Input
+                type="url"
+                placeholder="https://example.com/document.pdf"
+                value={newDocumentUrl}
+                onChange={(e) => setNewDocumentUrl(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddDocumentUrl();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                onClick={handleAddDocumentUrl}
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+            {formData.documents.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {formData.documents.map((doc, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline flex-1 truncate"
+                    >
+                      {doc.url}
+                    </a>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteDocumentUrl(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid gap-2">
