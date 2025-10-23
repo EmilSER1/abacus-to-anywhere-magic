@@ -1,17 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Building2, Search, Settings, Plus, FolderOpen } from "lucide-react"
-import { Link } from "react-router-dom"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Building2, Search, Settings, Plus, FolderOpen } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Панель управления</h1>
-        <p className="text-muted-foreground text-lg">
-          Добро пожаловать в систему управления медицинского центра МГБ
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Панель управления!</h1>
+        <p className="text-muted-foreground text-lg">Добро пожаловать в систему управления медицинского центра МГБ</p>
       </div>
 
       {/* Projects Section */}
@@ -20,7 +18,7 @@ const Index = () => {
           <FolderOpen className="h-5 w-5 text-primary" />
           <h2 className="text-2xl font-semibold">Проекты</h2>
         </div>
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Active Project - МГБ */}
           <Link to="/floors">
@@ -51,9 +49,7 @@ const Index = () => {
             <CardHeader className="h-full">
               <CardContent className="flex flex-col items-center justify-center h-full p-6">
                 <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground text-center">
-                  Добавить новый проект
-                </p>
+                <p className="text-sm text-muted-foreground text-center">Добавить новый проект</p>
               </CardContent>
             </CardHeader>
           </Card>
@@ -63,7 +59,7 @@ const Index = () => {
       {/* System Functions */}
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">Системные функции</h2>
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Link to="/search">
             <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1 border-border/40">
@@ -74,12 +70,8 @@ const Index = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="mb-2">
-                  Быстрый поиск по данным проекта
-                </CardDescription>
-                <p className="text-xs font-medium text-primary">
-                  Мгновенный поиск
-                </p>
+                <CardDescription className="mb-2">Быстрый поиск по данным проекта</CardDescription>
+                <p className="text-xs font-medium text-primary">Мгновенный поиск</p>
               </CardContent>
             </Card>
           </Link>
@@ -93,19 +85,15 @@ const Index = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="mb-2">
-                  Управление системой и пользователями
-                </CardDescription>
-                <p className="text-xs font-medium text-primary">
-                  Системные настройки
-                </p>
+                <CardDescription className="mb-2">Управление системой и пользователями</CardDescription>
+                <p className="text-xs font-medium text-primary">Системные настройки</p>
               </CardContent>
             </Card>
           </Link>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Index
+export default Index;
