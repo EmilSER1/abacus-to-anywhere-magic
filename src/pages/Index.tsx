@@ -8,7 +8,7 @@ const Index = () => {
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Панель управления!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Панель управления</h1>
         <p className="text-muted-foreground text-lg">Добро пожаловать в систему управления медицинского центра МГБ</p>
       </div>
 
